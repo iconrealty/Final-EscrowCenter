@@ -10,6 +10,7 @@ import { CalendarView } from './components/calendar/CalendarView';
 import { AddEditModal } from './components/modals/AddEditModal';
 import { DetailModal } from './components/modals/DetailModal';
 import { ConfirmModal } from './components/modals/ConfirmModal';
+import { AuthModal } from './components/modals/AuthModal';
 import { useEscrows } from './hooks/useEscrows';
 import { Escrow } from './types';
 import { differenceInDays, parseISO, getISOWeek, getISOWeekYear } from 'date-fns';
@@ -32,6 +33,7 @@ function App() {
   const [detailEscrow, setDetailEscrow] = useState<Escrow | null>(null);
   
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const urgentCount = escrows.filter(e => e.status === 'Open' && differenceInDays(parseISO(String(e.coeDate || new Date().toISOString())), new Date()) <= 5).length;
 
@@ -96,6 +98,7 @@ function App() {
             setIsAddEditOpen(true);
           }} 
           onImportEscrows={importEscrows}
+          onOpenAuth={() => setIsAuthOpen(true)}
         />
         
         <StatsBar escrows={escrows} />
@@ -216,6 +219,10 @@ function App() {
           onConfirm={handleDelete}
           onCancel={() => setConfirmDeleteId(null)}
         />
+      )}
+
+      {isAuthOpen && (
+        <AuthModal onClose={() => setIsAuthOpen(false)} />
       )}
 
       {/* Mobile Bottom Navigation Bar */}

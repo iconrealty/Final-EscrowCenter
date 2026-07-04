@@ -1,85 +1,175 @@
 import { useState, useEffect } from 'react';
 import { Escrow, ALL_TASKS } from '../types';
-
-const SEED_ESCROWS: Escrow[] = [];
+import { useAuth } from '../context/AuthContext';
+import { db } from '../lib/firebase';
+import { 
+  collection, 
+  doc, 
+  onSnapshot, 
+  setDoc, 
+  deleteDoc, 
+  updateDoc, 
+  writeBatch,
+  query,
+  orderBy
+} from 'firebase/firestore';
 
 export function useEscrows() {
-  const [escrows, setEscrows] = useState<Escrow[]>(() => {
-    try {
-      const saved = localStorage.getItem('escrows');
-      let parsed = saved ? JSON.parse(saved) : [];
-      
-      // Filter out '123 main st' and any seed escrows
-      parsed = parsed.filter((e: any) => 
-        !e.address?.toLowerCase().includes('123 main st') && 
-        !e.id?.toString().startsWith('seed-')
-      );
+  const { user } = useAuth();
+  const [escrows, setEscrows] = useState<Escrow[]>([]);
+  const [firestoreLoading, setFirestoreLoading] = useState(false);
 
-      // Migrate existing/legacy escrows that don't have split client name fields
-      parsed = parsed.map((e: any) => {
-        if (!e.clientFirstName && !e.clientLastName) {
-          const rawName = e.clientName || '';
-          const parts = rawName.trim().split(/\s+/);
-          e.clientFirstName = parts[0] || '';
-          e.clientLastName = parts.slice(1).join(' ') || '';
-        }
-        return e;
-      });
-
-      return parsed.map((e: any) => ({
-        ...e,
-        tasks: e.tasks || {}
-      }));
-    } catch (err) {
-      console.error("Error parsing escrows from local storage", err);
-      return [];
-    }
-  });
-
+  // 1. Sync from either LocalStorage (when user is offline/guest) or Firestore (when user is logged in)
   useEffect(() => {
-    localStorage.setItem('escrows', JSON.stringify(escrows));
-  }, [escrows]);
+    if (!user) {
+      // Offline / guest mode: load from LocalStorage
+      try {
+        const saved = localStorage.getItem('escrows');
+        let parsed = saved ? JSON.parse(saved) : [];
+        
+        // Filter out dummy/seed escrows
+        parsed = parsed.filter((e: any) => 
+          !e.address?.toLowerCase().includes('123 main st') && 
+          !e.id?.toString().startsWith('seed-')
+        );
 
-  const addEscrow = (data: Omit<Escrow, 'id' | 'lastUpdated' | 'tasks'>) => {
+        parsed = parsed.map((e: any) => {
+          if (!e.clientFirstName && !e.clientLastName) {
+            const rawName = e.clientName || '';
+            const parts = rawName.trim().split(/\s+/);
+            e.clientFirstName = parts[0] || '';
+            e.clientLastName = parts.slice(1).join(' ') || '';
+          }
+          return e;
+        });
+
+        setEscrows(parsed.map((e: any) => ({
+          ...e,
+          tasks: e.tasks || {}
+        })));
+      } catch (err) {
+        console.error("Error parsing escrows from local storage", err);
+        setEscrows([]);
+      }
+      setFirestoreLoading(false);
+      return;
+    }
+
+    // Authenticated mode: subscribe to user's escrows in Firestore
+    setFirestoreLoading(true);
+    const escrowsRef = collection(db, 'users', user.uid, 'escrows');
+    const q = query(escrowsRef, orderBy('lastUpdated', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const loadedEscrows: Escrow[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        loadedEscrows.push({
+          id: doc.id,
+          ...data,
+          tasks: data.tasks || {}
+        } as Escrow);
+      });
+      setEscrows(loadedEscrows);
+      setFirestoreLoading(false);
+    }, (error) => {
+      console.error("Error syncing with firestore:", error);
+      setFirestoreLoading(false);
+    });
+
+    return unsubscribe;
+  }, [user]);
+
+  // 2. Save offline escrows to LocalStorage ONLY when user is not authenticated
+  useEffect(() => {
+    if (!user) {
+      localStorage.setItem('escrows', JSON.stringify(escrows));
+    }
+  }, [escrows, user]);
+
+  const addEscrow = async (data: Omit<Escrow, 'id' | 'lastUpdated' | 'tasks'>) => {
+    const newId = crypto.randomUUID();
     const newEscrow: Escrow = {
       ...data,
-      id: crypto.randomUUID(),
+      id: newId,
       tasks: ALL_TASKS.reduce((acc, task) => ({ ...acc, [task.key]: false }), {}),
       lastUpdated: new Date().toISOString(),
     };
-    setEscrows((prev) => [...prev, newEscrow]);
+
+    if (user) {
+      // Sync to cloud
+      try {
+        const escrowDocRef = doc(db, 'users', user.uid, 'escrows', newId);
+        await setDoc(escrowDocRef, newEscrow);
+      } catch (error) {
+        console.error("Error adding escrow to Firestore:", error);
+      }
+    } else {
+      // Keep local
+      setEscrows((prev) => [newEscrow, ...prev]);
+    }
   };
 
-  const editEscrow = (id: string, data: Partial<Escrow>) => {
-    setEscrows((prev) =>
-      prev.map((escrow) => {
-        if (escrow.id === id) {
-          const updated = { ...escrow, ...data, lastUpdated: new Date().toISOString() };
+  const editEscrow = async (id: string, data: Partial<Escrow>) => {
+    if (user) {
+      try {
+        const escrowDocRef = doc(db, 'users', user.uid, 'escrows', id);
+        const escrowToUpdate = escrows.find(e => e.id === id);
+        if (escrowToUpdate) {
+          const updated = { ...escrowToUpdate, ...data, lastUpdated: new Date().toISOString() };
           
           // Auto-close logic
           const allTasksDone = ALL_TASKS.every((t) => updated.tasks[t.key]);
           if (allTasksDone && updated.status !== 'Cancelled') {
             updated.status = 'Closed';
           }
-          
-          return updated;
+          await setDoc(escrowDocRef, updated);
         }
-        return escrow;
-      })
-    );
+      } catch (error) {
+        console.error("Error updating escrow in Firestore:", error);
+      }
+    } else {
+      setEscrows((prev) =>
+        prev.map((escrow) => {
+          if (escrow.id === id) {
+            const updated = { ...escrow, ...data, lastUpdated: new Date().toISOString() };
+            
+            // Auto-close logic
+            const allTasksDone = ALL_TASKS.every((t) => updated.tasks[t.key]);
+            if (allTasksDone && updated.status !== 'Cancelled') {
+              updated.status = 'Closed';
+            }
+            
+            return updated;
+          }
+          return escrow;
+        })
+      );
+    }
   };
 
-  const deleteEscrow = (id: string) => {
-    setEscrows((prev) => prev.filter((e) => e.id !== id));
+  const deleteEscrow = async (id: string) => {
+    if (user) {
+      try {
+        const escrowDocRef = doc(db, 'users', user.uid, 'escrows', id);
+        await deleteDoc(escrowDocRef);
+      } catch (error) {
+        console.error("Error deleting escrow from Firestore:", error);
+      }
+    } else {
+      setEscrows((prev) => prev.filter((e) => e.id !== id));
+    }
   };
 
-  const toggleTask = (escrowId: string, taskKey: string) => {
-    setEscrows((prev) =>
-      prev.map((escrow) => {
-        if (escrow.id === escrowId) {
-          const newTasks = { ...escrow.tasks, [taskKey]: !escrow.tasks[taskKey] };
+  const toggleTask = async (escrowId: string, taskKey: string) => {
+    if (user) {
+      try {
+        const escrowDocRef = doc(db, 'users', user.uid, 'escrows', escrowId);
+        const escrowToUpdate = escrows.find(e => e.id === escrowId);
+        if (escrowToUpdate) {
+          const newTasks = { ...escrowToUpdate.tasks, [taskKey]: !escrowToUpdate.tasks[taskKey] };
           const updated = {
-            ...escrow,
+            ...escrowToUpdate,
             tasks: newTasks,
             lastUpdated: new Date().toISOString(),
           };
@@ -89,17 +179,39 @@ export function useEscrows() {
           if (allTasksDone && updated.status !== 'Cancelled') {
             updated.status = 'Closed';
           }
-          
-          return updated;
+
+          await setDoc(escrowDocRef, updated);
         }
-        return escrow;
-      })
-    );
+      } catch (error) {
+        console.error("Error toggling task in Firestore:", error);
+      }
+    } else {
+      setEscrows((prev) =>
+        prev.map((escrow) => {
+          if (escrow.id === escrowId) {
+            const newTasks = { ...escrow.tasks, [taskKey]: !escrow.tasks[taskKey] };
+            const updated = {
+              ...escrow,
+              tasks: newTasks,
+              lastUpdated: new Date().toISOString(),
+            };
+            
+            // Auto-close logic
+            const allTasksDone = ALL_TASKS.every((t) => updated.tasks[t.key]);
+            if (allTasksDone && updated.status !== 'Cancelled') {
+              updated.status = 'Closed';
+            }
+            
+            return updated;
+          }
+          return escrow;
+        })
+      );
+    }
   };
 
-  const importEscrows = (importedData: Partial<Escrow>[]) => {
+  const importEscrows = async (importedData: Partial<Escrow>[]) => {
     const newEscrows: Escrow[] = importedData.map(data => {
-      // Split name if only full clientName is available in imported data
       let clientFirstName = data.clientFirstName || '';
       let clientLastName = data.clientLastName || '';
       if (!clientFirstName && !clientLastName && (data as any).clientName) {
@@ -141,8 +253,29 @@ export function useEscrows() {
       };
     });
 
-    setEscrows((prev) => [...prev, ...newEscrows]);
+    if (user) {
+      try {
+        const batch = writeBatch(db);
+        newEscrows.forEach((escrow) => {
+          const docRef = doc(db, 'users', user.uid, 'escrows', escrow.id);
+          batch.set(docRef, escrow);
+        });
+        await batch.commit();
+      } catch (error) {
+        console.error("Error importing escrows to Firestore:", error);
+      }
+    } else {
+      setEscrows((prev) => [...newEscrows, ...prev]);
+    }
   };
 
-  return { escrows, addEscrow, editEscrow, deleteEscrow, toggleTask, importEscrows };
+  return { 
+    escrows, 
+    addEscrow, 
+    editEscrow, 
+    deleteEscrow, 
+    toggleTask, 
+    importEscrows,
+    firestoreLoading
+  };
 }

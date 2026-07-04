@@ -1,16 +1,20 @@
-import React, { useRef } from 'react';
-import { Plus, Download, Upload } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Plus, Download, Upload, Cloud, CloudOff, LogOut, User } from 'lucide-react';
 import { downloadCsvTemplate, parseCsv } from '../../utils/csvUtils';
+import { useAuth } from '../../context/AuthContext';
 
 interface TopNavProps {
   activeTab: string;
   setActiveTab: (t: string) => void;
   onNewEscrow: () => void;
   onImportEscrows: (data: any[]) => void;
+  onOpenAuth: () => void;
 }
 
-export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows }: TopNavProps) {
+export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, onOpenAuth }: TopNavProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user, signOut } = useAuth();
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -33,6 +37,15 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows }
       }
     };
     reader.readAsText(file);
+  };
+
+  // Extract initials for the user profile circle
+  const getUserInitials = () => {
+    if (!user) return '?';
+    if (user.displayName) {
+      return user.displayName.split(/\s+/).map(p => p[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return user.email ? user.email[0].toUpperCase() : 'U';
   };
 
   return (
@@ -68,6 +81,63 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows }
       </div>
 
       <div className="flex items-center gap-2 sm:gap-2.5 relative shrink-0">
+        {/* Firebase Cloud Sync Status */}
+        {user ? (
+          <div className="relative">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="flex items-center gap-1.5 sm:gap-2 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 rounded-xl px-2.5 py-1.5 transition-colors cursor-pointer text-emerald-800"
+              title="Cloud Connected & Active Syncing"
+            >
+              <Cloud size={16} className="text-emerald-600 animate-pulse" />
+              <div className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center">
+                {getUserInitials()}
+              </div>
+              <span className="text-xs font-bold hidden sm:inline truncate max-w-[80px]">
+                {user.displayName || 'Synced'}
+              </span>
+            </button>
+            
+            {showDropdown && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowDropdown(false)}
+                />
+                <div className="absolute right-0 mt-2 w-56 bg-white border border-[#e5e5ea] rounded-2xl shadow-lg py-2.5 z-50 animate-scale-up">
+                  <div className="px-4 py-2 border-b border-[#e5e5ea] mb-1.5">
+                    <p className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Signed In As</p>
+                    <p className="text-xs font-bold text-[#1d1d1f] truncate mt-0.5">{user.displayName || 'User'}</p>
+                    <p className="text-[11px] text-[#86868b] truncate">{user.email}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowDropdown(false);
+                      signOut();
+                    }}
+                    className="w-full px-4 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                  >
+                    <LogOut size={14} />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={onOpenAuth}
+            className="flex items-center gap-1.5 bg-[#1B3A5C]/10 hover:bg-[#1B3A5C]/15 border border-[#1B3A5C]/20 text-[#1B3A5C] px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95"
+            title="Sign In to Sync"
+          >
+            <CloudOff size={15} className="text-slate-500" />
+            <span className="hidden sm:inline">Cloud Sync Off</span>
+            <span className="sm:hidden">Sync</span>
+          </button>
+        )}
+
+        <div className="h-6 w-px bg-slate-200 hidden xs:block" />
+
         <button
           onClick={downloadCsvTemplate}
           className="flex items-center justify-center bg-white hover:bg-slate-50 text-[#1B3A5C] hover:text-[#11253C] w-9 h-9 rounded-xl transition-all border border-[#e5e5ea] active:scale-95 shadow-sm"
@@ -102,3 +172,4 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows }
     </div>
   );
 }
+
