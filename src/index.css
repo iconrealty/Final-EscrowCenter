@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --color-app-bg: #f5f5f7;
+  --color-sidebar-bg: #ffffff;
+  --color-navy-card: rgba(0,0,0,0.02);
+  --color-nav-border: #e5e5ea;
+  --color-gold-primary: #FF7518;
+  --color-gold-hover: #b34a15;
+  --color-white-cards: #ffffff;
+  --color-card-border: #e5e5ea;
+  --color-light-stripe: #fafafa;
+  --color-muted-gray: #f5f5f7;
+  --color-text-primary: #1d1d1f;
+  --color-text-secondary: #86868b;
+  --color-text-muted: #86868b;
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: #fca5a5; }
+  50% { border-color: #ef4444; }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+body {
+  background-color: var(--color-app-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+

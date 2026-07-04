@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escrow Tracker</title>
+<style>
+  :root {
+    --navy: #1B3A5C;
+    --teal: #1B3A5C;
+    --amber: #EF9F27;
+    --red: #E24B4A;
+    --light-gray: #f5f5f7;
+    --white: #FFFFFF;
+    --text: #1d1d1f;
+    --border: #e5e5ea;
+  }
+  
+  * { box-sizing: border-box; }
+  body, html { 
+    margin: 0; 
+    padding: 0; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+    background: var(--light-gray); 
+    color: var(--text); 
+  }
+  
+  header { 
+    background: var(--navy); 
+    color: var(--white); 
+    padding: 1.5rem 2rem; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+  }
+  h1, h2, h3, h4 { margin: 0; }
+  
+  button { 
+    cursor: pointer; 
+    border: none; 
+    border-radius: 4px; 
+    padding: 0.5rem 1rem; 
+    font-weight: bold; 
+    font-size: 0.9rem;
+  }
+  .btn-primary { background: var(--teal); color: var(--white); }
+  .btn-danger { background: var(--red); color: var(--white); }
+  .btn-outline { background: transparent; border: 1px solid var(--navy); color: var(--navy); }
+  
+  .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+  
+  .metrics { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+  .metric-card { 
+    flex: 1; 
+    background: var(--white); 
+    padding: 1.5rem; 
+    text-align: center; 
+    border-bottom: 4px solid var(--navy); 
+    min-width: 200px; 
+  }
+  .metric-val { font-size: 2.5rem; font-weight: bold; color: var(--navy); margin-bottom: 0.5rem; }
+  .metric-label { font-size: 0.85rem; text-transform: uppercase; color: #666; letter-spacing: 1px; }
+  
+  .toolbar { display: flex; justify-content: space-between; margin-bottom: 1rem; align-items: center; }
+  select { padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;}
+  
+  .escrow-list { display: flex; flex-direction: column; gap: 1rem; }
+  .escrow-card { background: var(--white); padding: 1.5rem; border-left: 6px solid var(--navy); }
+  
+  .card-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; flex-wrap: wrap; gap: 1rem;}
+  .card-header-left { flex: 2; min-width: 300px; }
+  .card-header-right { flex: 1; text-align: right; min-width: 200px;}
+  
+  .address { font-size: 1.25rem; font-weight: bold; color: var(--navy); margin-bottom: 0.25rem; }
+  .meta { font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;}
+  
+  .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: white;}
+  .badge.pending { background: #999; }
+  .badge.in-progress { background: var(--amber); }
+  .badge.done { background: var(--teal); }
+  .badge.overdue { background: var(--red); }
+  
+  .progress-container { margin-top: 1rem; background: var(--light-gray); height: 8px; width: 100%; border-radius: 4px; overflow: hidden; }
+  .progress-fill { background: var(--navy); height: 100%; transition: width 0.3s; }
+  
+  .card-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;}
+  .card-body { display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--light-gray); }
+  .card-body.open { display: block; }
+  
+  .checklists { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .checklist { flex: 1; min-width: 300px; }
+  .checklist h4 { margin-bottom: 1rem; color: var(--navy); border-bottom: 2px solid var(--light-gray); padding-bottom: 0.5rem; }
+  
+  .item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--light-gray); border-left: 4px solid #ccc; cursor: pointer; user-select: none; }
+  .item:hover { background: #e2e8f0; }
+  .item.pending { border-left-color: #ccc; }
+  .item.in-progress { border-left-color: var(--amber); }
+  .item.done { border-left-color: var(--teal); }
+  .item.overdue { border-left-color: var(--red); }
+  
+  .item-label { font-weight: bold; font-size: 0.9rem; }
+  .item-meta { font-size: 0.8rem; color: #666; display: flex; gap: 1rem; align-items: center;}
+  
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; overflow-y: auto;}
+  .modal-overlay.open { display: flex; }
+  .modal-content { background: var(--white); padding: 2rem; width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; position: relative; border-radius: 8px;}
+  .close-btn { position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #999; }
+  
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; margin-bottom: 0.25rem; font-weight: bold; font-size: 0.9rem; color: var(--navy); }
+  .form-group input { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; box-sizing: border-box;}
+  .form-row { display: flex; gap: 1rem; }
+  .form-row > * { flex: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Escrow Tracker</h1>
+  <button class="btn btn-primary" onclick="openModal()">+ New Escrow</button>
+</header>
+
+<div class="container">
+  <div class="metrics" id="metricsContainer">
+    <!-- Populated by JS -->
+  </div>
+  
+  <div class="toolbar">
+    <div>
+      <label style="font-weight: bold; color: var(--navy);">Sort by: </label>
+      <select id="sortSelect" onchange="renderEscrows()">
+        <option value="coe">COE Date (Soonest First)</option>
+        <option value="overdue">Most Overdue Items</option>
+        <option value="recent">Most Recently Opened</option>
+      </select>
+    </div>
+  </div>
+  
+  <div class="escrow-list" id="escrowList">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeModal()">&times;</button>
+    <h2 id="modalTitle" style="margin-bottom:1.5rem; color:var(--navy);">Add Escrow</h2>
+    <form id="escrowForm" onsubmit="saveEscrow(event)">
+      <input type="hidden" id="escrowId">
+      <div class="form-group">
+        <label>Property Address</label>
+        <input type="text" id="f_address" required placeholder="123 Main St, Los Angeles, CA">
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Price ($)</label><input type="number" id="f_price" required></div>
+        <div class="form-group"><label>Escrow Number</label><input type="text" id="f_escrowNumber"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Open Date</label><input type="date" id="f_openDate" required></div>
+        <div class="form-group"><label>COE Date</label><input type="date" id="f_coeDate" required></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Buyer Name</label><input type="text" id="f_buyerName"></div>
+        <div class="form-group"><label>Seller Name</label><input type="text" id="f_sellerName"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Escrow Officer</label><input type="text" id="f_officer"></div>
+        <div class="form-group"><label>Lender</label><input type="text" id="f_lender"></div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:1rem; margin-top:2rem;">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Escrow</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'ca_escrow_tracker_data';
+const defaultMilestones = ["Offer accepted", "Earnest money deposited", "Disclosures delivered", "Inspection completed", "Loan docs to escrow", "Final walk-through", "Close of escrow"];
+const defaultContingencies = ["Inspection removal", "Appraisal removal", "Loan contingency removal"];
+
+let escrows = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+function generateId() { return Math.random().toString(36).substr(2, 9); }
+function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+
+function calculateStatus(item) {
+  if (item.status === 'done') return 'done';
+  if (item.dueDate && item.dueDate < getTodayStr()) return 'overdue';
+  return item.status || 'pending';
+}
+
+function computeProgress(escrow) {
+  const open = new Date(escrow.openDate).getTime();
+  const coe = new Date(escrow.coeDate).getTime();
+  const now = new Date().getTime();
+  if (now <= open) return 0;
+  if (now >= coe) return 100;
+  return Math.max(0, Math.min(100, Math.round(((now - open) / (coe - open)) * 100)));
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(escrows));
+  renderMetrics();
+  renderEscrows();
+}
+
+function openModal(id = null) {
+  document.getElementById('modalOverlay').classList.add('open');
+  const form = document.getElementById('escrowForm');
+  form.reset();
+  document.getElementById('escrowId').value = '';
+  document.getElementById('modalTitle').innerText = 'Add Escrow';
+  if (!id) {
+    document.getElementById('f_openDate').value = getTodayStr();
+  }
+  
+  if(id) {
+    const esc = escrows.find(e => e.id === id);
+    if(esc) {
+      document.getElementById('modalTitle').innerText = 'Edit Escrow';
+      document.getElementById('escrowId').value = esc.id;
+      document.getElementById('f_address').value = esc.address;
+      document.getElementById('f_price').value = esc.price;
+      document.getElementById('f_escrowNumber').value = esc.escrowNumber || '';
+      document.getElementById('f_openDate').value = esc.openDate;
+      document.getElementById('f_coeDate').value = esc.coeDate;
+      document.getElementById('f_buyerName').value = esc.buyerName || '';
+      document.getElementById('f_sellerName').value = esc.sellerName || '';
+      document.getElementById('f_officer').value = esc.officer || '';
+      document.getElementById('f_lender').value = esc.lender || '';
+    }
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function saveEscrow(e) {
+  e.preventDefault();
+  const id = document.getElementById('escrowId').value;
+  const address = document.getElementById('f_address').value;
+  const price = document.getElementById('f_price').value;
+  const escrowNumber = document.getElementById('f_escrowNumber').value;
+  const openDate = document.getElementById('f_openDate').value;
+  const coeDate = document.getElementById('f_coeDate').value;
+  const buyerName = document.getElementById('f_buyerName').value;
+  const sellerName = document.getElementById('f_sellerName').value;
+  const officer = document.getElementById('f_officer').value;
+  const lender = document.getElementById('f_lender').value;
+
+  if (id) {
+    const esc = escrows.find(e => e.id === id);
+    esc.address = address; esc.price = price; esc.escrowNumber = escrowNumber; esc.openDate = openDate; esc.coeDate = coeDate;
+    esc.buyerName = buyerName; esc.sellerName = sellerName; esc.officer = officer; esc.lender = lender;
+  } else {
+    // Initial scaffold
+    const newEscrow = {
+      id: generateId(),
+      address, price, escrowNumber, openDate, coeDate, buyerName, sellerName, officer, lender, status: 'Open',
+      items: []
+    };
+    defaultMilestones.forEach(m => newEscrow.items.push({ id: generateId(), label: m, type: 'milestone', status: 'pending', dueDate: '' }));
+    defaultContingencies.forEach(c => newEscrow.items.push({ id: generateId(), label: c, type: 'contingency', status: 'pending', dueDate: '' }));
+    escrows.push(newEscrow);
+  }
+  
+  saveData();
+  closeModal();
+}
+
+function deleteEscrow(id) {
+  if(confirm('Are you sure you want to delete this escrow?')) {
+    escrows = escrows.filter(e => e.id !== id);
+    saveData();
+  }
+}
+
+function toggleItemStatus(eId, itemId) {
+  const esc = escrows.find(e => e.id === eId);
+  if(!esc) return;
+  const itm = esc.items.find(i => i.id === itemId);
+  if(!itm) return;
+  
+  if (itm.status === 'pending') itm.status = 'in-progress';
+  else if (itm.status === 'in-progress') itm.status = 'done';
+  else itm.status = 'pending';
+  
+  saveData();
+}
+
+function setItemDate(e, eId, itemId) {
+  e.stopPropagation(); // prevent row click toggle
+  const val = e.target.value;
+  const esc = escrows.find(e => e.id === eId);
+  const itm = esc.items.find(i => i.id === itemId);
+  if(itm) {
+    itm.dueDate = val;
+    saveData();
+  }
+}
+
+function addCustomItem(eId, type) {
+  const label = prompt('Enter item label:');
+  if(!label) return;
+  const dueDate = prompt('Enter due date (YYYY-MM-DD):', '') || '';
+  const esc = escrows.find(e => e.id === eId);
+  esc.items.push({ id: generateId(), label, type, status: 'pending', dueDate: dueDate });
+  saveData();
+}
+
+function toggleExpand(id) {
+  const body = document.getElementById('body-' + id);
+  body.classList.toggle('open');
+}
+
+function renderMetrics() {
+  const activeCount = escrows.length;
+  let openContingencies = 0;
+  let dueThisWeek = 0;
+  let nextCoe = null;
+  
+  const today = getTodayStr();
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
+  escrows.forEach(e => {
+    if (!nextCoe || e.coeDate < nextCoe) {
+      if (e.coeDate >= today) nextCoe = e.coeDate;
+    }
+    e.items.forEach(i => {
+      if (i.type === 'contingency' && i.status !== 'done') openContingencies++;
+      if (i.dueDate && i.status !== 'done' && i.dueDate >= today && i.dueDate <= nextWeekStr) dueThisWeek++;
+    });
+  });
+
+  const container = document.getElementById('metricsContainer');
+  container.innerHTML = \`
+    <div class="metric-card"><div class="metric-val">\${activeCount}</div><div class="metric-label">Active Escrows</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:var(--amber)">\${openContingencies}</div><div class="metric-label">Open Contingencies</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:var(--red)">\${dueThisWeek}</div><div class="metric-label">Items Due This Wk</div></div>
+    <div class="metric-card"><div class="metric-val" style="font-size:1.8rem; margin-top:0.7rem;">\${nextCoe || 'None'}</div><div class="metric-label">Next COE Date</div></div>
+  \`;
+}
+
+function renderEscrows() {
+  const sort = document.getElementById('sortSelect').value;
+  let sorted = [...escrows];
+  if (sort === 'coe') {
+    sorted.sort((a,b) => a.coeDate.localeCompare(b.coeDate));
+  } else if (sort === 'recent') {
+    sorted.sort((a,b) => b.openDate.localeCompare(a.openDate));
+  } else if (sort === 'overdue') {
+    sorted.sort((a,b) => {
+      const aOver = a.items.filter(i => calculateStatus(i) === 'overdue').length;
+      const bOver = b.items.filter(i => calculateStatus(i) === 'overdue').length;
+      return bOver - aOver;
+    });
+  }
+
+  const container = document.getElementById('escrowList');
+  container.innerHTML = sorted.map(esc => {
+    const progress = computeProgress(esc);
+    
+    const milestones = esc.items.filter(i => i.type === 'milestone');
+    const contingencies = esc.items.filter(i => i.type === 'contingency');
+    
+    // Status Badge
+    let overallBadge = '<span class="badge in-progress">In Progress</span>';
+    const allDone = esc.items.every(i => i.status === 'done');
+    const hasOverdue = esc.items.some(i => calculateStatus(i) === 'overdue');
+    if (allDone) overallBadge = '<span class="badge done">Cleared</span>';
+    else if (hasOverdue) overallBadge = '<span class="badge overdue">Overdue Items</span>';
+
+    const renderItem = (i) => {
+      const st = calculateStatus(i);
+      let stLabel = st.replace('-', ' ').toUpperCase();
+      return \`
+        <div class="item \${st}" onclick="toggleItemStatus('\${esc.id}', '\${i.id}')" title="Click to cycle status">
+          <div class="item-label">\${i.label}</div>
+          <div class="item-meta">
+            <input type="date" value="\${i.dueDate}" onclick="event.stopPropagation()" onchange="setItemDate(event, '\${esc.id}', '\${i.id}')" style="padding:0.2rem; border:1px solid #ccc; font-size:0.75rem;">
+            <span class="badge \${st}" style="min-width: 80px; text-align:center;">\${stLabel}</span>
+          </div>
+        </div>
+      \`;
+    };
+
+    return \`
+      <div class="escrow-card">
+        <div class="card-header" onclick="toggleExpand('\${esc.id}')">
+          <div class="card-header-left">
+            <div class="address">\${esc.address} <span style="font-size:1rem;font-weight:normal;color:#666">- $\${Number(esc.price).toLocaleString()}</span> \${overallBadge}</div>
+            <div class="meta">
+              <strong>COE: \${esc.coeDate}</strong> | 
+              Buyer: \${esc.buyerName || 'TBD'} | 
+              Seller: \${esc.sellerName || 'TBD'} | 
+              Officer: \${esc.officer || 'TBD'}
+            </div>
+            <div class="progress-container"><div class="progress-fill" style="width: \${progress}%"></div></div>
+          </div>
+          <div class="card-header-right">
+            <button class="btn btn-outline" style="margin-right:0.5rem;" onclick="event.stopPropagation(); openModal('\${esc.id}')">Edit</button>
+            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteEscrow('\${esc.id}')">Delete</button>
+          </div>
+        </div>
+        
+        <div class="card-body" id="body-\${esc.id}">
+          <div class="checklists">
+            <div class="checklist">
+              <div class="card-title-row">
+                <h4>Milestones</h4>
+                <button class="btn btn-outline" style="padding:0.2rem 0.5rem;font-size:0.8rem;" onclick="addCustomItem('\${esc.id}', 'milestone')">+ Add Milestone</button>
+              </div>
+              \${milestones.map(renderItem).join('')}
+            </div>
+            <div class="checklist">
+              <div class="card-title-row">
+                <h4>Contingencies</h4>
+                <button class="btn btn-outline" style="padding:0.2rem 0.5rem;font-size:0.8rem;" onclick="addCustomItem('\${esc.id}', 'contingency')">+ Add Contingency</button>
+              </div>
+              \${contingencies.map(renderItem).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    \`;
+  }).join('');
+}
+
+// Init
+renderMetrics();
+renderEscrows();
+
+</script>
+</body>
+</html>
