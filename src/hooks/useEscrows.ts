@@ -211,6 +211,20 @@ export function useEscrows() {
   };
 
   const importEscrows = async (importedData: Partial<Escrow>[]) => {
+    const cleanUndefined = (obj: any): any => {
+      const result: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (value !== undefined) {
+          if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+            result[key] = cleanUndefined(value);
+          } else {
+            result[key] = value;
+          }
+        }
+      }
+      return result;
+    };
+
     const newEscrows: Escrow[] = importedData.map(data => {
       let clientFirstName = data.clientFirstName || '';
       let clientLastName = data.clientLastName || '';
@@ -241,7 +255,7 @@ export function useEscrows() {
         lenderEmail: data.lenderEmail || '',
         price: data.price || 0,
         netCommission: data.netCommission || 0,
-        acceptanceDate: data.acceptanceDate,
+        acceptanceDate: data.acceptanceDate || new Date().toISOString().split('T')[0],
         coeDate: data.coeDate || new Date().toISOString(),
         notes: data.notes || '',
         status: data.status || 'Open',
@@ -257,15 +271,19 @@ export function useEscrows() {
       try {
         const batch = writeBatch(db);
         newEscrows.forEach((escrow) => {
+          const cleaned = cleanUndefined(escrow);
           const docRef = doc(db, 'users', user.uid, 'escrows', escrow.id);
-          batch.set(docRef, escrow);
+          batch.set(docRef, cleaned);
         });
         await batch.commit();
-      } catch (error) {
+        return { success: true, count: newEscrows.length };
+      } catch (error: any) {
         console.error("Error importing escrows to Firestore:", error);
+        return { success: false, count: 0, error: error.message || String(error) };
       }
     } else {
       setEscrows((prev) => [...newEscrows, ...prev]);
+      return { success: true, count: newEscrows.length };
     }
   };
 

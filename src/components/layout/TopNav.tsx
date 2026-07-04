@@ -7,7 +7,7 @@ interface TopNavProps {
   activeTab: string;
   setActiveTab: (t: string) => void;
   onNewEscrow: () => void;
-  onImportEscrows: (data: any[]) => void;
+  onImportEscrows: (data: any[]) => Promise<any>;
   onOpenAuth: () => void;
 }
 
@@ -21,15 +21,24 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       const csvText = evt.target?.result as string;
       if (csvText) {
         const parsedData = parseCsv(csvText);
         if (parsedData.length > 0) {
-          onImportEscrows(parsedData);
-          alert(`Successfully imported ${parsedData.length} escrows.`);
+          try {
+            const res = await onImportEscrows(parsedData);
+            if (res && res.success === false) {
+              alert(`Failed to import escrows: ${res.error || 'Unknown error occurred.'}`);
+            } else {
+              const count = res && typeof res.count === 'number' ? res.count : parsedData.length;
+              alert(`Successfully imported ${count} escrows.`);
+            }
+          } catch (err: any) {
+            alert(`Error during import: ${err.message || String(err)}`);
+          }
         } else {
-          alert("No valid valid escrows found in the CSV. Please check the format.");
+          alert("No valid escrows found in the CSV. Please check the format.");
         }
       }
       if (fileInputRef.current) {
