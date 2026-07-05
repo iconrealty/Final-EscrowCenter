@@ -188,11 +188,11 @@ export function AddEditModal({
   const contingencyList = CONTINGENCIES.filter(c => ['L1','L2','L3','L4','L5','L6','L7','L8','L9'].includes(c.key));
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-2 sm:p-4">
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]">
-        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e5e5ea] flex items-center justify-between bg-[#fafafa]">
+    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-3 pt-12 pb-6 sm:p-6 overflow-hidden">
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80dvh] sm:max-h-[88vh]">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e5e5ea] flex items-center justify-between bg-[#fafafa] shrink-0">
           <h2 className="font-bold text-base sm:text-lg text-[#1d1d1f]">{escrow ? 'Edit Escrow' : 'New Escrow'}</h2>
-          <button type="button" onClick={onClose} className="text-[#86868b] hover:text-[#1d1d1f] p-1"><X size={20} /></button>
+          <button type="button" onClick={onClose} className="text-[#86868b] hover:text-[#1d1d1f] p-1 cursor-pointer"><X size={20} /></button>
         </div>
         
         <div className="p-6 overflow-y-auto flex-1">

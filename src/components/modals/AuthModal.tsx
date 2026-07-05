@@ -79,10 +79,10 @@ export function AuthModal({ onClose }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white w-full max-w-md rounded-2xl border border-[#e5e5ea] shadow-xl overflow-hidden animate-scale-up">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 pt-12 pb-6 z-50 animate-fade-in overflow-hidden">
+      <div className="bg-white w-full max-w-md rounded-2xl border border-[#e5e5ea] shadow-xl overflow-hidden animate-scale-up max-h-[82dvh] sm:max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center p-5 border-b border-[#e5e5ea] bg-slate-50">
+        <div className="flex justify-between items-center p-5 border-b border-[#e5e5ea] bg-slate-50 shrink-0">
           <div>
             <h2 className="font-bold text-[#1d1d1f] text-base sm:text-lg tracking-tight">
               {isSignUp ? 'Create Cloud Account' : 'Sign In to Sync'}
@@ -93,14 +93,14 @@ export function AuthModal({ onClose }: AuthModalProps) {
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-slate-200 transition-colors text-slate-400 hover:text-slate-600"
+            className="p-1.5 rounded-full hover:bg-slate-200 transition-colors text-slate-400 hover:text-slate-600 cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto flex-1">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 flex gap-2.5 items-start text-red-700 text-xs sm:text-sm">

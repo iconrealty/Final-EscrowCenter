@@ -182,9 +182,9 @@ export function DetailModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]">
-        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e5e5ea] flex justify-between items-start bg-[#fafafa]">
+    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-3 pt-12 pb-6 sm:p-6 overflow-hidden">
+      <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80dvh] sm:max-h-[88vh]">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e5e5ea] flex justify-between items-start bg-[#fafafa] shrink-0">
           <div>
             <h2 className="font-bold text-base sm:text-xl text-[#1B3A5C] mb-1 truncate max-w-[180px] sm:max-w-none" title={escrow.address}>{escrow.address}</h2>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
