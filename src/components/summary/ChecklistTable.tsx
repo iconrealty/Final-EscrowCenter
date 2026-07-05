@@ -11,9 +11,16 @@ interface ChecklistTableProps {
 }
 
 export function ChecklistTable({ escrows, onSelectEscrow, onDeleteEscrow }: ChecklistTableProps) {
-  const sortedEscrows = [...escrows].sort(
-    (a, b) => new Date(a.coeDate || 0).getTime() - new Date(b.coeDate || 0).getTime()
-  );
+  const sortedEscrows = [...escrows].sort((a, b) => {
+    // If the list of escrows are closed, sort descending (newest close date first)
+    // Otherwise sort ascending (nearest coeDate first)
+    const dateA = new Date(a.coeDate || 0).getTime();
+    const dateB = new Date(b.coeDate || 0).getTime();
+    if (a.status === 'Closed' && b.status === 'Closed') {
+      return dateB - dateA;
+    }
+    return dateA - dateB;
+  });
 
   return (
     <div className="bg-[#FFFFFF] rounded-2xl border border-[#e5e5ea] overflow-hidden shadow-sm">

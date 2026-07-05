@@ -34,7 +34,7 @@ function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const filteredEscrows = useMemo(() => {
-    return escrows.filter(e => {
+    const list = escrows.filter(e => {
       if (filter !== 'All' && e.status !== filter) return false;
       
       if (selectedYear !== 'All') {
@@ -49,6 +49,16 @@ function App() {
       }
       return true;
     });
+
+    if (filter === 'Closed') {
+      list.sort((a, b) => {
+        const dateA = a.coeDate ? new Date(a.coeDate).getTime() : 0;
+        const dateB = b.coeDate ? new Date(b.coeDate).getTime() : 0;
+        return dateB - dateA;
+      });
+    }
+
+    return list;
   }, [escrows, filter, search, selectedYear]);
 
   const handleSaveEscrow = (data: any) => {
