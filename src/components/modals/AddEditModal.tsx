@@ -202,7 +202,6 @@ export function AddEditModal({
           <div className="mb-6 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-[#FF7518]" />
                 <span className="text-xs font-bold text-[#1e293b]">Have Sisu Transaction Info?</span>
               </div>
               <button
@@ -210,7 +209,7 @@ export function AddEditModal({
                 onClick={() => setShowSisuPaste(!showSisuPaste)}
                 className="text-xs font-bold text-[#FF7518] hover:text-[#CC5E13] transition-colors focus:outline-none"
               >
-                {showSisuPaste ? 'Cancel' : '📋 Paste Sisu Text to Autofill'}
+                {showSisuPaste ? 'Cancel' : 'Paste Sisu Text to Autofill'}
               </button>
             </div>
             
@@ -235,7 +234,6 @@ export function AddEditModal({
                     onClick={handleSisuParse}
                     className="bg-[#1B3A5C] hover:bg-[#11253C] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5 shadow-sm"
                   >
-                    <Sparkles size={13} />
                     <span>Extract & Autofill</span>
                   </button>
                 </div>
