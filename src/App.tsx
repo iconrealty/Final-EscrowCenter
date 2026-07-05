@@ -6,6 +6,7 @@ import { FilterBar } from './components/escrows/FilterBar';
 import { EscrowCard } from './components/escrows/EscrowCard';
 import { NeedsAttention } from './components/summary/NeedsAttention';
 import { ChecklistTable } from './components/summary/ChecklistTable';
+import { YearlyRepresentationSummary } from './components/summary/YearlyRepresentationSummary';
 import { CalendarView } from './components/calendar/CalendarView';
 import { AddEditModal } from './components/modals/AddEditModal';
 import { DetailModal } from './components/modals/DetailModal';
@@ -23,7 +24,7 @@ function App() {
   const [filter, setFilter] = useState('Open');
   const [search, setSearch] = useState('');
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
-  const [showClosedInSummary, setShowClosedInSummary] = useState(false);
+  const [summaryFilter, setSummaryFilter] = useState<'All' | 'Open' | 'Closed'>('Open');
 
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingEscrow, setEditingEscrow] = useState<Escrow | null>(null);
@@ -146,26 +147,24 @@ function App() {
 
           {activeTab === 'summary' && (
             <div className="max-w-[1600px] mx-auto flex flex-col gap-6">
-              <div className="flex justify-end">
-                <label className="flex items-center gap-2 text-sm font-medium text-[#86868b] cursor-pointer hover:text-[#1d1d1f] transition-colors">
-                  <input 
-                    type="checkbox" 
-                    checked={showClosedInSummary}
-                    onChange={(e) => setShowClosedInSummary(e.target.checked)}
-                    className="w-4 h-4 rounded border-[#e5e5ea] text-[#1B3A5C] focus:ring-[#1B3A5C] cursor-pointer"
-                  />
-                  Show Only Closed Escrows
-                </label>
-              </div>
-              <div className="w-full lg:h-[400px] h-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[400px] h-auto">
                 <NeedsAttention escrows={escrows} onSelectEscrow={(escrow) => setDetailEscrow(escrow)} />
+                <YearlyRepresentationSummary escrows={escrows} />
               </div>
               
               <div className="w-full">
                 <ChecklistTable 
-                  escrows={showClosedInSummary ? escrows.filter(e => e.status === 'Closed') : escrows.filter(e => e.status === 'Open')} 
+                  escrows={
+                    summaryFilter === 'All' 
+                      ? escrows 
+                      : summaryFilter === 'Open' 
+                      ? escrows.filter(e => e.status === 'Open') 
+                      : escrows.filter(e => e.status === 'Closed')
+                  } 
                   onSelectEscrow={(escrow) => setDetailEscrow(escrow)} 
                   onDeleteEscrow={(id) => setConfirmDeleteId(id)}
+                  summaryFilter={summaryFilter}
+                  onFilterChange={setSummaryFilter}
                 />
               </div>
             </div>

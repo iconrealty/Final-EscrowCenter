@@ -8,9 +8,17 @@ interface ChecklistTableProps {
   escrows: Escrow[];
   onSelectEscrow: (escrow: Escrow) => void;
   onDeleteEscrow: (id: string) => void;
+  summaryFilter?: 'All' | 'Open' | 'Closed';
+  onFilterChange?: (filter: 'All' | 'Open' | 'Closed') => void;
 }
 
-export function ChecklistTable({ escrows, onSelectEscrow, onDeleteEscrow }: ChecklistTableProps) {
+export function ChecklistTable({ 
+  escrows, 
+  onSelectEscrow, 
+  onDeleteEscrow,
+  summaryFilter,
+  onFilterChange 
+}: ChecklistTableProps) {
   const sortedEscrows = [...escrows].sort((a, b) => {
     // If the list of escrows are closed, sort descending (newest close date first)
     // Otherwise sort ascending (nearest coeDate first)
@@ -24,14 +32,35 @@ export function ChecklistTable({ escrows, onSelectEscrow, onDeleteEscrow }: Chec
 
   return (
     <div className="bg-[#FFFFFF] rounded-2xl border border-[#e5e5ea] overflow-hidden shadow-sm">
-      <div className="p-4 sm:p-5 border-b border-[#e5e5ea] bg-[#f5f5f7] flex justify-between items-center">
+      <div className="p-4 sm:p-5 border-b border-[#e5e5ea] bg-[#f5f5f7] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="font-bold text-[#1d1d1f] text-sm sm:text-base tracking-tight">Escrow List</h2>
           <p className="text-xs text-[#86868b] mt-0.5">Click any escrow to view details and update tasks</p>
         </div>
-        <span className="text-[10px] sm:text-xs font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-2.5 py-1 rounded-full">
-          {sortedEscrows.length} {sortedEscrows.length === 1 ? 'Escrow' : 'Escrows'}
-        </span>
+        
+        <div className="flex items-center gap-3 self-end sm:self-auto">
+          {summaryFilter && onFilterChange && (
+            <div className="inline-flex bg-neutral-200/50 p-0.5 rounded-full border border-neutral-200/40">
+              {(['Open', 'Closed', 'All'] as const).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => onFilterChange(opt)}
+                  className={`px-3.5 py-1 rounded-full text-[10px] font-extrabold tracking-wider transition-all duration-200 cursor-pointer ${
+                    summaryFilter === opt
+                      ? 'bg-white text-[#1B3A5C] shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
+                      : 'text-[#86868b] hover:text-[#1d1d1f]'
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+          <span className="text-[10px] sm:text-xs font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-2.5 py-1 rounded-full shrink-0">
+            {sortedEscrows.length} {sortedEscrows.length === 1 ? 'Escrow' : 'Escrows'}
+          </span>
+        </div>
       </div>
 
       {sortedEscrows.length === 0 ? (
