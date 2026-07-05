@@ -74,19 +74,40 @@ export function DetailModal({
   onClose, 
   onEdit,
   onDelete,
-  onToggleTask
+  onToggleTask,
+  onUpdateTasks
 }: { 
   escrow: Escrow; 
   onClose: () => void; 
   onEdit: () => void;
   onDelete: () => void;
   onToggleTask: (id: string, key: string) => void;
+  onUpdateTasks: (id: string, tasks: Record<string, boolean>) => void;
 }) {
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   const daysToCoe = differenceInDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
+
+  const hasIncompleteMilestones = MILESTONES.some(m => !escrow.tasks[m.key]);
+  const hasIncompleteContingencies = CONTINGENCIES.some(c => !escrow.tasks[c.key]);
+
+  const handleCompleteAllMilestones = () => {
+    const updatedTasks = { ...escrow.tasks };
+    MILESTONES.forEach(m => {
+      updatedTasks[m.key] = true;
+    });
+    onUpdateTasks(escrow.id, updatedTasks);
+  };
+
+  const handleCompleteAllContingencies = () => {
+    const updatedTasks = { ...escrow.tasks };
+    CONTINGENCIES.forEach(c => {
+      updatedTasks[c.key] = true;
+    });
+    onUpdateTasks(escrow.id, updatedTasks);
+  };
 
   const [templates, setTemplates] = useState<typeof TEMPLATES>(() => {
     const saved = localStorage.getItem('escrow_custom_templates');
@@ -274,7 +295,17 @@ export function DetailModal({
           </div>
 
           <div className="mb-8">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#334155] mb-3 border-b border-[#e5e5ea] pb-2">Milestones</h3>
+            <div className="flex justify-between items-center mb-3 border-b border-[#e5e5ea] pb-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#334155]">Milestones</h3>
+              {hasIncompleteMilestones && (
+                <button 
+                  onClick={handleCompleteAllMilestones}
+                  className="text-xs text-[#1B3A5C] hover:text-[#11253C] font-bold hover:underline transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  Mark All Done
+                </button>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {MILESTONES.map(m => (
                 <MilestoneChip 
@@ -289,7 +320,17 @@ export function DetailModal({
           </div>
 
           <div className="mb-8">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#334155] mb-3 border-b border-[#e5e5ea] pb-2">Contingencies Removed</h3>
+            <div className="flex justify-between items-center mb-3 border-b border-[#e5e5ea] pb-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#334155]">Contingencies Removed</h3>
+              {hasIncompleteContingencies && (
+                <button 
+                  onClick={handleCompleteAllContingencies}
+                  className="text-xs text-[#1B3A5C] hover:text-[#11253C] font-bold hover:underline transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  Mark All Done
+                </button>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {CONTINGENCIES.map(c => (
                 <ContingencyChip 

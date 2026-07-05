@@ -204,6 +204,7 @@ function App() {
           }}
           onDelete={() => setConfirmDeleteId(detailEscrow.id)}
           onToggleTask={toggleTask}
+          onUpdateTasks={(id, tasks) => editEscrow(id, { tasks })}
         />
       )}
 

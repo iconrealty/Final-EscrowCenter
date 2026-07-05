@@ -33,7 +33,7 @@ export function FilterBar({
             className="flex items-center gap-2 bg-white border border-[#e5e5ea] rounded-xl px-4 py-2 shadow-sm hover:border-[#FF7518]/40 transition-all text-xs font-bold text-[#1d1d1f] active:scale-98 cursor-pointer"
           >
             <span className="text-[#86868b] font-medium">Status:</span>
-            <span>{filter === 'All' ? 'All Escrows' : filter === 'Open' ? 'Open Escrows' : 'Closed Escrows'}</span>
+            <span>{filter === 'All' ? 'All Escrows' : filter === 'Open' ? 'Open Escrows' : filter === 'Closed' ? 'Closed Escrows' : 'Canceled Escrows'}</span>
             <ChevronDown size={14} className={`text-[#86868b] transition-transform ${isStatusDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
           
@@ -50,7 +50,8 @@ export function FilterBar({
                   {[
                     { key: 'All', label: 'All Escrows' },
                     { key: 'Open', label: 'Open Escrows' },
-                    { key: 'Closed', label: 'Closed Escrows' }
+                    { key: 'Closed', label: 'Closed Escrows' },
+                    { key: 'Cancelled', label: 'Canceled Escrows' }
                   ].map(opt => (
                     <button
                       key={opt.key}
