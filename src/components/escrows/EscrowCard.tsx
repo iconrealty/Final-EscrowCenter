@@ -39,17 +39,30 @@ export function EscrowCard({
           </span>
           <DaysPill coeDate={escrow.coeDate} status={escrow.status} />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+            escrow.representation === 'Seller'
+              ? 'bg-[#1B3A5C] text-white'
+              : escrow.representation === 'Dual'
+              ? 'bg-[#D97706] text-white'
+              : 'bg-[#059669] text-white'
+          }`}>
+            {escrow.representation || 'Buyer'}
+          </span>
           <StatusBadge status={escrow.status} />
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="p-5 flex-1 flex flex-col gap-4">
-        {/* Address */}
+        {/* Address & Client Name */}
         <div onClick={onViewDetails} className="cursor-pointer group/address">
-          <div className="text-[10px] uppercase tracking-wider text-[#86868b] font-bold mb-1 group-hover/address:text-[#1B3A5C] transition-colors">Address</div>
-          <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#1B3A5C]/80 tracking-tight line-clamp-1 transition-colors" title={escrow.address}>{escrow.address}</h3>
+          <div className="text-[10px] uppercase tracking-wider text-[#86868b] font-bold mb-1 group-hover/address:text-[#1B3A5C] transition-colors" title="Client Name">
+            {escrow.clientFirstName || ''} {escrow.clientLastName || ''}
+          </div>
+          <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#1B3A5C]/80 tracking-tight line-clamp-1 transition-colors" title={escrow.address}>
+            {escrow.address}
+          </h3>
         </div>
 
         {/* Pricing, Code (COE), Commission Grid */}

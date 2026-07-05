@@ -93,7 +93,7 @@ export function AppleFitnessRings({
 
         {/* Center icon or label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-[14px] font-extrabold text-[#1d1d1f] font-mono leading-none">
+          <span className="text-[14px] font-bold text-[#1d1d1f] font-mono leading-none">
             {Math.round(rings[0]?.progress || 0)}%
           </span>
         </div>
@@ -112,15 +112,15 @@ export function AppleFitnessRings({
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider transition-colors">
                   {ring.label}
                 </span>
-                <span className="text-sm font-extrabold font-mono leading-tight" style={{ color: ring.color }}>
-                  {ring.valueText} Completed
+                <span className="text-sm font-bold font-mono leading-tight" style={{ color: ring.color }}>
+                  {ring.valueText}
                 </span>
               </div>
 
               {/* Right text metrics */}
               <div className="text-right flex flex-col items-end">
                 <span 
-                  className="font-mono text-xs font-extrabold"
+                  className="font-mono text-xs font-bold"
                   style={{ color: ring.color }}
                 >
                   {Math.round(ring.progress)}%

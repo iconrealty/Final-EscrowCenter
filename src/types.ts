@@ -23,6 +23,7 @@ export interface Escrow {
   coeDate: string;
   notes: string;
   status: 'Open' | 'Closed' | 'Cancelled';
+  representation?: 'Buyer' | 'Seller' | 'Dual';
   tasks: Record<string, boolean>;
   contingencyDays?: Record<string, number>;
   lastUpdated: string;

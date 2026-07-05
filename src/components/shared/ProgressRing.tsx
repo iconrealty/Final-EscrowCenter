@@ -62,7 +62,7 @@ export function ProgressRing({
         {showPercent && (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span 
-              className="font-extrabold text-[#1d1d1f]"
+              className="font-bold text-[#1d1d1f]"
               style={{ fontSize: `${fontSize}px` }}
             >
               {Math.round(progress)}%
