@@ -10,9 +10,29 @@ import {
   deleteDoc, 
   updateDoc, 
   writeBatch,
-  query,
-  orderBy
+  query
 } from 'firebase/firestore';
+
+const generateSafeId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
+const cleanUndefined = (obj: any): any => {
+  const result: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        result[key] = cleanUndefined(value);
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+  return result;
+};
 
 export function useEscrows() {
   const { user } = useAuth();
@@ -58,7 +78,7 @@ export function useEscrows() {
     // Authenticated mode: subscribe to user's escrows in Firestore
     setFirestoreLoading(true);
     const escrowsRef = collection(db, 'users', user.uid, 'escrows');
-    const q = query(escrowsRef, orderBy('lastUpdated', 'desc'));
+    const q = query(escrowsRef);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const loadedEscrows: Escrow[] = [];
@@ -70,6 +90,14 @@ export function useEscrows() {
           tasks: data.tasks || {}
         } as Escrow);
       });
+
+      // Sort in-memory safely by lastUpdated desc to avoid any Firestore index constraints
+      loadedEscrows.sort((a, b) => {
+        const dateA = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+        const dateB = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+        return dateB - dateA;
+      });
+
       setEscrows(loadedEscrows);
       setFirestoreLoading(false);
     }, (error) => {
@@ -88,7 +116,7 @@ export function useEscrows() {
   }, [escrows, user]);
 
   const addEscrow = async (data: Omit<Escrow, 'id' | 'lastUpdated' | 'tasks'>) => {
-    const newId = crypto.randomUUID();
+    const newId = generateSafeId();
     const newEscrow: Escrow = {
       ...data,
       id: newId,
@@ -100,7 +128,7 @@ export function useEscrows() {
       // Sync to cloud
       try {
         const escrowDocRef = doc(db, 'users', user.uid, 'escrows', newId);
-        await setDoc(escrowDocRef, newEscrow);
+        await setDoc(escrowDocRef, cleanUndefined(newEscrow));
       } catch (error) {
         console.error("Error adding escrow to Firestore:", error);
       }
@@ -123,7 +151,7 @@ export function useEscrows() {
           if (allTasksDone && updated.status !== 'Cancelled') {
             updated.status = 'Closed';
           }
-          await setDoc(escrowDocRef, updated);
+          await setDoc(escrowDocRef, cleanUndefined(updated));
         }
       } catch (error) {
         console.error("Error updating escrow in Firestore:", error);
@@ -180,7 +208,7 @@ export function useEscrows() {
             updated.status = 'Closed';
           }
 
-          await setDoc(escrowDocRef, updated);
+          await setDoc(escrowDocRef, cleanUndefined(updated));
         }
       } catch (error) {
         console.error("Error toggling task in Firestore:", error);
@@ -211,20 +239,6 @@ export function useEscrows() {
   };
 
   const importEscrows = async (importedData: Partial<Escrow>[]) => {
-    const cleanUndefined = (obj: any): any => {
-      const result: any = {};
-      for (const [key, value] of Object.entries(obj)) {
-        if (value !== undefined) {
-          if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-            result[key] = cleanUndefined(value);
-          } else {
-            result[key] = value;
-          }
-        }
-      }
-      return result;
-    };
-
     const newEscrows: Escrow[] = importedData.map(data => {
       let clientFirstName = data.clientFirstName || '';
       let clientLastName = data.clientLastName || '';
@@ -235,7 +249,7 @@ export function useEscrows() {
       }
 
       return {
-        id: crypto.randomUUID(),
+        id: generateSafeId(),
         escrowNumber: data.escrowNumber || '',
         escrowCompany: data.escrowCompany || '',
         address: data.address || 'Unknown Address',

@@ -22,9 +22,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('active');
   const [filter, setFilter] = useState('Open');
   const [search, setSearch] = useState('');
-  const [urgentOnly, setUrgentOnly] = useState(false);
-  const [timeFilterType, setTimeFilterType] = useState<'Year' | 'Month' | 'Week' | 'All Time'>('Year');
-  const [timeFilterValue, setTimeFilterValue] = useState<string>(new Date().getFullYear().toString());
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   const [showClosedInSummary, setShowClosedInSummary] = useState(false);
 
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
@@ -35,23 +33,12 @@ function App() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  const urgentCount = escrows.filter(e => e.status === 'Open' && differenceInDays(parseISO(String(e.coeDate || new Date().toISOString())), new Date()) <= 5).length;
-
   const filteredEscrows = useMemo(() => {
     return escrows.filter(e => {
       if (filter !== 'All' && e.status !== filter) return false;
-      if (urgentOnly && (e.status !== 'Open' || differenceInDays(parseISO(String(e.coeDate || new Date().toISOString())), new Date()) > 5)) return false;
       
-      if (timeFilterType !== 'All Time' && e.coeDate) {
-        if (timeFilterType === 'Year' && !e.coeDate.startsWith(timeFilterValue)) return false;
-        if (timeFilterType === 'Month' && !e.coeDate.startsWith(timeFilterValue)) return false;
-        if (timeFilterType === 'Week' && timeFilterValue) {
-          const date = parseISO(e.coeDate);
-          const week = getISOWeek(date);
-          const year = getISOWeekYear(date);
-          const weekStr = `${year}-W${String(week).padStart(2, '0')}`;
-          if (weekStr !== timeFilterValue) return false;
-        }
+      if (selectedYear !== 'All') {
+        if (!e.coeDate || !e.coeDate.startsWith(selectedYear)) return false;
       }
 
       if (search) {
@@ -62,7 +49,7 @@ function App() {
       }
       return true;
     });
-  }, [escrows, filter, search, urgentOnly, timeFilterType, timeFilterValue]);
+  }, [escrows, filter, search, selectedYear]);
 
   const handleSaveEscrow = (data: any) => {
     console.log("Saving escrow with data:", data);
@@ -99,6 +86,7 @@ function App() {
           }} 
           onImportEscrows={importEscrows}
           onOpenAuth={() => setIsAuthOpen(true)}
+          escrows={escrows}
         />
         
         <StatsBar escrows={escrows} />
@@ -109,10 +97,7 @@ function App() {
               <FilterBar 
                 filter={filter} setFilter={setFilter}
                 search={search} setSearch={setSearch}
-                urgentOnly={urgentOnly} setUrgentOnly={setUrgentOnly}
-                urgentCount={urgentCount}
-                timeFilterType={timeFilterType} setTimeFilterType={setTimeFilterType}
-                timeFilterValue={timeFilterValue} setTimeFilterValue={setTimeFilterValue}
+                selectedYear={selectedYear} setSelectedYear={setSelectedYear}
               />
               
               {filteredEscrows.length > 0 ? (
