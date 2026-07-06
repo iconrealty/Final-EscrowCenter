@@ -197,8 +197,7 @@ export function ClientUpdatesModal({
 
         {/* Content */}
         <div className="p-5 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-4">
-          <div className="flex justify-between items-center pb-2 border-b border-[#e5e5ea]">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#334155]">Select Milestone template</h3>
+          <div className="flex justify-end items-center pb-2 border-b border-[#e5e5ea]">
             <button
               onClick={() => setIsEditingMaster(!isEditingMaster)}
               className={`px-3 py-1 rounded-xl text-[11px] font-bold flex items-center transition-all ${
@@ -232,21 +231,13 @@ export function ClientUpdatesModal({
 
               {/* Recipient Details & Workspace */}
               <div className="bg-slate-50 border border-[#e5e5ea] rounded-2xl p-4 flex flex-col gap-3">
-                <div className="flex justify-between items-center flex-wrap gap-2">
-                  <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">
-                    Message Preview (Ready to Edit / Send)
-                  </span>
-                  {escrow.clientPhone && (
+                {escrow.clientPhone && (
+                  <div className="flex justify-end items-center">
                     <span className="text-[10px] font-mono font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-2.5 py-0.5 rounded-lg">
                       Recipient: {`${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || 'Client'} ({escrow.clientPhone})
                     </span>
-                  )}
-                </div>
-
-                <div className="text-xs font-bold text-[#1B3A5C] bg-[#1B3A5C]/5 border border-[#1B3A5C]/10 rounded-xl px-3 py-2 select-all">
-                  <span className="text-[9px] uppercase text-[#1B3A5C]/60 block mb-0.5">Subject</span>
-                  {getPopulatedSubject(selectedTemplate.subject)}
-                </div>
+                  </div>
+                )}
 
                 <textarea
                   value={editedText}
