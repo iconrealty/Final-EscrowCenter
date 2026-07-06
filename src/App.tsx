@@ -12,6 +12,8 @@ import { AddEditModal } from './components/modals/AddEditModal';
 import { DetailModal } from './components/modals/DetailModal';
 import { ConfirmModal } from './components/modals/ConfirmModal';
 import { AuthModal } from './components/modals/AuthModal';
+import { ClientUpdatesModal } from './components/modals/ClientUpdatesModal';
+
 import { useEscrows } from './hooks/useEscrows';
 import { Escrow } from './types';
 import { differenceInDays, parseISO, getISOWeek, getISOWeekYear } from 'date-fns';
@@ -30,6 +32,8 @@ function App() {
   const [editingEscrow, setEditingEscrow] = useState<Escrow | null>(null);
   
   const [detailEscrow, setDetailEscrow] = useState<Escrow | null>(null);
+  const [clientUpdateEscrow, setClientUpdateEscrow] = useState<Escrow | null>(null);
+
   
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -124,7 +128,9 @@ function App() {
                         setIsAddEditOpen(true);
                       }}
                       onViewDetails={() => setDetailEscrow(escrow)}
+                      onSendUpdate={() => setClientUpdateEscrow(escrow)}
                     />
+
                   ))}
                 </div>
               ) : (
@@ -206,6 +212,14 @@ function App() {
           onUpdateTasks={(id, tasks) => editEscrow(id, { tasks })}
         />
       )}
+
+      {clientUpdateEscrow && (
+        <ClientUpdatesModal 
+          escrow={escrows.find(e => e.id === clientUpdateEscrow.id) || clientUpdateEscrow} 
+          onClose={() => setClientUpdateEscrow(null)}
+        />
+      )}
+
 
       {confirmDeleteId && (
         <ConfirmModal 

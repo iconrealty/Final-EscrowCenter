@@ -10,7 +10,8 @@ export function EscrowCard({
   index,
   onToggleTask,
   onEdit,
-  onViewDetails
+  onViewDetails,
+  onSendUpdate
 }: { 
   key?: string | number;
   escrow: Escrow; 
@@ -18,6 +19,7 @@ export function EscrowCard({
   onToggleTask: (id: string, taskKey: string) => void;
   onEdit: () => void;
   onViewDetails: () => void;
+  onSendUpdate: () => void;
 }) {
   const daysToCoe = differenceInDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
@@ -115,6 +117,20 @@ export function EscrowCard({
             ]}
           />
         </div>
+
+        {/* Client Updates Quick Access Tab */}
+        <div className="mt-4">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onSendUpdate();
+            }}
+            className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
+          >
+            <span>Client Updates</span>
+          </button>
+        </div>
+
       </div>
 
       {/* Footer Actions */}
