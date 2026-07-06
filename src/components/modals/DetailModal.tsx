@@ -295,10 +295,10 @@ export function DetailModal({
                       return (
                         <div key={c.role} className="bg-white border border-[#e5e5ea] rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200">
                           <div className="min-w-0 flex-1">
-                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#1B3A5C]/80 block mb-0.5">{c.role}</span>
-                            <h4 className="text-xs font-extrabold text-[#1d1d1f] truncate" title={c.name}>{c.name}</h4>
-                            <p className="text-[11px] text-[#86868b] mt-1.5 truncate select-all" title={c.phone || undefined}>{c.phone || 'No phone'}</p>
-                            <p className="text-[11px] text-[#86868b] truncate select-all" title={c.email || undefined}>{c.email || 'No email'}</p>
+                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#1B3A5C]/60 block mb-0.5">{c.role}</span>
+                            <h4 className="text-xs font-extrabold text-[#1B3A5C] truncate" title={c.name}>{c.name}</h4>
+                            <p className="text-[11px] text-[#1B3A5C] font-medium mt-1.5 truncate select-all" title={c.phone || undefined}>{c.phone || 'No phone'}</p>
+                            <p className="text-[11px] text-[#1B3A5C] font-medium truncate select-all" title={c.email || undefined}>{c.email || 'No email'}</p>
                           </div>
 
                           <div className="grid grid-cols-3 gap-1.5 mt-4 pt-3 border-t border-[#f5f5f7]">
