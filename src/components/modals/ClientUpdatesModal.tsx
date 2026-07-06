@@ -251,11 +251,10 @@ export function ClientUpdatesModal({
                 <textarea
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
-                  rows={8}
-                  className="w-full bg-white border border-[#e5e5ea] rounded-xl p-3 text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed shadow-inner"
+                  className="w-full bg-white border border-[#e5e5ea] rounded-xl p-3 text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed shadow-inner h-28 sm:h-48 min-h-[100px]"
                 />
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#e5e5ea]">
+                <div className="flex flex-col gap-3 pt-3 border-t border-[#e5e5ea] w-full">
                   <div className="flex flex-col gap-0.5">
                     {!escrow.clientPhone && (
                       <span className="text-[10px] text-[#ef4444] font-bold">⚠️ No client phone saved (add it in edit form)</span>
@@ -265,17 +264,17 @@ export function ClientUpdatesModal({
                     )}
                   </div>
 
-                  <div className="flex gap-2 ml-auto">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:ml-auto">
                     <button
                       onClick={handleCopy}
-                      className="px-4 py-2 bg-white border border-[#e5e5ea] hover:bg-slate-50 text-[#334155] rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+                      className="px-4 py-3 sm:py-2 bg-white border border-[#e5e5ea] hover:bg-slate-50 text-[#334155] rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer text-center w-full sm:w-auto"
                     >
                       {copied ? 'Copied to Clipboard!' : 'Copy Message'}
                     </button>
 
                     <a
                       href={`sms:${escrow.clientPhone ? escrow.clientPhone.replace(/\D/g, '') : ''}?body=${encodeURIComponent(editedText)}`}
-                      className={`px-4 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center gap-1.5 ${
+                      className={`px-4 py-3 sm:py-2 text-white rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 w-full sm:w-auto ${
                         escrow.clientPhone ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
                       }`}
                     >
@@ -285,7 +284,7 @@ export function ClientUpdatesModal({
 
                     <a
                       href={`mailto:${escrow.clientEmail || ''}?subject=${encodeURIComponent(getPopulatedSubject(selectedTemplate.subject))}&body=${encodeURIComponent(editedText)}`}
-                      className={`px-4 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center gap-1.5 ${
+                      className={`px-4 py-3 sm:py-2 text-white rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 w-full sm:w-auto ${
                         escrow.clientEmail ? 'bg-[#FF7518] hover:bg-[#CC5E13] cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
                       }`}
                     >
@@ -368,8 +367,7 @@ export function ClientUpdatesModal({
                 <textarea
                   value={masterText}
                   onChange={(e) => setMasterText(e.target.value)}
-                  rows={6}
-                  className="w-full bg-white border border-[#e5e5ea] rounded-xl p-3 text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed"
+                  className="w-full bg-white border border-[#e5e5ea] rounded-xl p-3 text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed h-24 sm:h-36 min-h-[80px]"
                   placeholder="Type your template body text here..."
                 />
                 <p className="text-[10px] text-[#86868b] mt-1.5 leading-normal">
@@ -378,16 +376,16 @@ export function ClientUpdatesModal({
               </div>
 
               {/* Save & Cancel */}
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#e5e5ea]">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 border-t border-[#e5e5ea] w-full">
                 <button
                   onClick={() => setIsEditingMaster(false)}
-                  className="px-4 py-2 bg-white border border-[#e5e5ea] hover:bg-slate-100 text-[#334155] rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-white border border-[#e5e5ea] hover:bg-slate-100 text-[#334155] rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm cursor-pointer text-center"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveMaster}
-                  className="px-4 py-2 bg-[#1B3A5C] hover:bg-[#11253C] text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-[#1B3A5C] hover:bg-[#11253C] text-white rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer text-center"
                 >
                   Save Changes
                 </button>
