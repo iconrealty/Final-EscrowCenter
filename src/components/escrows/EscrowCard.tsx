@@ -1,7 +1,6 @@
 import React from 'react';
 import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
-import { DaysPill } from '../shared/DaysPill';
 import { AppleFitnessRings } from '../shared/AppleFitnessRings';
 import { differenceInDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 
@@ -39,7 +38,6 @@ export function EscrowCard({
           <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
             Escrow #{escrow.escrowNumber || (typeof index === 'number' ? index + 1 : escrow.id.slice(0, 8).toUpperCase())}
           </span>
-          <DaysPill coeDate={escrow.coeDate} status={escrow.status} />
         </div>
         <div className="flex items-center gap-2.5">
           <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
@@ -57,14 +55,55 @@ export function EscrowCard({
 
       {/* Main Content Area */}
       <div className="p-5 flex-1 flex flex-col gap-4">
-        {/* Address & Client Name */}
-        <div onClick={onViewDetails} className="cursor-pointer group/address">
-          <div className="text-[10px] uppercase tracking-wider text-[#86868b] font-bold mb-1 group-hover/address:text-[#1B3A5C] transition-colors" title="Client Name">
-            {escrow.clientFirstName || ''} {escrow.clientLastName || ''}
+        {/* Address & Client Name with Days to Closing Box */}
+        <div onClick={onViewDetails} className="cursor-pointer group/address flex items-center gap-3.5">
+          {/* Days to Closing Big Number Box */}
+          <div 
+            className={`w-[70px] sm:w-[78px] h-[70px] sm:h-[78px] shrink-0 border rounded-2xl p-2 flex flex-col justify-center items-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.02)] select-none hover:scale-[1.02] hover:shadow-md transition-all active:scale-[0.98] ${
+              escrow.status === 'Closed'
+                ? 'bg-[#16a34a]/5 border-[#16a34a]/20 text-[#16a34a]'
+                : escrow.status === 'Cancelled'
+                ? 'bg-rose-50/50 border-rose-100 text-rose-500'
+                : daysToCoe < 0
+                ? 'bg-rose-50/50 border-rose-100 text-rose-600'
+                : daysToCoe <= 5
+                ? 'bg-rose-50/50 border-rose-200/60 text-[#b91c1c] animate-pulse'
+                : daysToCoe <= 14
+                ? 'bg-[#FF7518]/5 border-[#FF7518]/20 text-[#CC5E13]'
+                : 'bg-[#1B3A5C]/5 border-[#1B3A5C]/15 text-[#1B3A5C]'
+            }`}
+            title="Days remaining to closing"
+          >
+            {escrow.status === 'Closed' ? (
+              <>
+                <span className="text-[18px] sm:text-[20px] font-black leading-none mb-0.5">✓</span>
+                <span className="text-[8px] font-extrabold uppercase tracking-wider opacity-80 leading-none">Closed</span>
+              </>
+            ) : escrow.status === 'Cancelled' ? (
+              <>
+                <span className="text-[18px] sm:text-[20px] font-black leading-none mb-0.5">✕</span>
+                <span className="text-[8px] font-extrabold uppercase tracking-wider opacity-80 leading-none">Canceled</span>
+              </>
+            ) : (
+              <>
+                <span className="text-[20px] sm:text-[24px] font-black font-mono tracking-tight leading-none">
+                  {daysToCoe}
+                </span>
+                <span className="text-[7.5px] sm:text-[8px] font-extrabold uppercase tracking-wider opacity-80 mt-0.5 leading-tight">
+                  {Math.abs(daysToCoe) === 1 ? 'Day' : 'Days'} Left
+                </span>
+              </>
+            )}
           </div>
-          <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#1B3A5C]/80 tracking-tight line-clamp-1 transition-colors" title={escrow.address}>
-            {escrow.address}
-          </h3>
+
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase tracking-wider text-[#86868b] font-bold mb-1 group-hover/address:text-[#1B3A5C] transition-colors" title="Client Name">
+              {escrow.clientFirstName || ''} {escrow.clientLastName || ''}
+            </div>
+            <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#1B3A5C]/80 tracking-tight line-clamp-2 transition-colors" title={escrow.address}>
+              {escrow.address}
+            </h3>
+          </div>
         </div>
 
         {/* Pricing, Code (COE), Commission Grid */}
