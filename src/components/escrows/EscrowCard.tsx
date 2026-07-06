@@ -67,9 +67,9 @@ export function EscrowCard({
                 : daysToCoe < 0
                 ? 'bg-rose-50/50 border-rose-100 text-rose-600'
                 : daysToCoe <= 5
-                ? 'bg-rose-50/50 border-rose-200/60 text-[#b91c1c] animate-pulse'
+                ? 'bg-red-100/60 border-red-200 text-red-700 animate-pulse'
                 : daysToCoe <= 14
-                ? 'bg-[#FF7518]/5 border-[#FF7518]/20 text-[#CC5E13]'
+                ? 'bg-red-50/60 border-red-100 text-red-600'
                 : 'bg-[#1B3A5C]/5 border-[#1B3A5C]/15 text-[#1B3A5C]'
             }`}
             title="Days remaining to closing"
