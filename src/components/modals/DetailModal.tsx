@@ -233,219 +233,131 @@ export function DetailModal({
         </div>
         
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6 sm:mb-8">
-            {/* Client Contact Card */}
-            <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[#1B3A5C] font-bold mb-1">Client</div>
-                <div className="text-xs font-bold text-[#1d1d1f] truncate" title={`${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim()}>
-                  {`${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || '-'}
+          {/* contacts array mapping inside render */}
+          {(() => {
+            const contacts = [
+              {
+                role: 'Client',
+                name: `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || '-',
+                phone: escrow.clientPhone,
+                email: escrow.clientEmail,
+              },
+              {
+                role: 'Agent',
+                name: escrow.agentName || '-',
+                phone: escrow.agentPhone,
+                email: escrow.agentEmail,
+              },
+              {
+                role: 'Lender',
+                name: escrow.lenderName || '-',
+                phone: escrow.lenderPhone,
+                email: escrow.lenderEmail,
+              },
+              {
+                role: 'Escrow Officer',
+                name: escrow.escrowOfficer || '-',
+                phone: escrow.escrowPhone,
+                email: escrow.escrowEmail,
+              },
+            ];
+
+            return (
+              <>
+                {/* Tesla/Apple-style Key Details Panel */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                  <div className="bg-[#f5f5f7] border border-[#e5e5ea] rounded-2xl p-4 shadow-sm hover:bg-slate-50/50 transition-colors">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868b] block mb-1">Sale Price</span>
+                    <span className="text-base sm:text-lg font-bold font-mono text-[#16a34a]">{formatCurrency(escrow.price)}</span>
+                  </div>
+
+                  <div className="bg-[#f5f5f7] border border-[#e5e5ea] rounded-2xl p-4 shadow-sm hover:bg-slate-50/50 transition-colors">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868b] block mb-1">Net Commission</span>
+                    <span className="text-base sm:text-lg font-bold font-mono text-[#FF7518]">{formatCurrency(escrow.netCommission)}</span>
+                  </div>
+
+                  <div className="bg-[#f5f5f7] border border-[#e5e5ea] rounded-2xl p-4 shadow-sm hover:bg-slate-50/50 transition-colors">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868b] block mb-1">Escrow Company</span>
+                    <span className="text-xs sm:text-sm font-bold text-[#1d1d1f] line-clamp-1" title={escrow.escrowCompany}>{escrow.escrowCompany || '-'}</span>
+                  </div>
+
+                  <div className="bg-[#f5f5f7] border border-[#e5e5ea] rounded-2xl p-4 shadow-sm hover:bg-slate-50/50 transition-colors">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868b] block mb-1">Collaborator</span>
+                    <span className="text-xs sm:text-sm font-bold text-[#1d1d1f] line-clamp-1" title={escrow.collaborator}>{escrow.collaborator || '-'}</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex gap-1 mt-3">
-                {escrow.clientPhone ? (
-                  <>
-                    <a
-                      href={`tel:${escrow.clientPhone.replace(/\D/g, '')}`}
-                      className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                      title={`Call Client: ${escrow.clientPhone}`}
-                    >
-                      <Phone size={11} />
-                    </a>
-                    <a
-                      href={`sms:${escrow.clientPhone.replace(/\D/g, '')}`}
-                      className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                      title={`SMS Client: ${escrow.clientPhone}`}
-                    >
-                      <MessageSquare size={11} />
-                    </a>
-                  </>
-                ) : (
-                  <span className="text-[9px] text-gray-400 font-medium self-center px-1">No Phone</span>
-                )}
-                {escrow.clientEmail ? (
-                  <a
-                    href={`mailto:${escrow.clientEmail}`}
-                    className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                    title={`Email Client: ${escrow.clientEmail}`}
-                  >
-                    <Mail size={11} />
-                  </a>
-                ) : (
-                  <span className="text-[9px] text-gray-400 font-medium self-center px-1">No Email</span>
-                )}
-              </div>
-            </div>
 
-            {/* Agent Contact Card */}
-            <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[#1B3A5C] font-bold mb-1">Agent</div>
-                <div className="text-xs font-bold text-[#1d1d1f] truncate" title={escrow.agentName}>
-                  {escrow.agentName || '-'}
+                {/* Key Contacts Section */}
+                <div className="mb-6 sm:mb-8">
+                  <h3 className="text-[11px] font-extrabold uppercase tracking-wider text-[#86868b] mb-3 pb-1 border-b border-[#e5e5ea]">Key Contacts</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {contacts.map((c) => {
+                      return (
+                        <div key={c.role} className="bg-white border border-[#e5e5ea] rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#1B3A5C]/80 block mb-0.5">{c.role}</span>
+                            <h4 className="text-xs font-extrabold text-[#1d1d1f] truncate" title={c.name}>{c.name}</h4>
+                            <p className="text-[11px] text-[#86868b] mt-1.5 truncate select-all" title={c.phone || undefined}>{c.phone || 'No phone'}</p>
+                            <p className="text-[11px] text-[#86868b] truncate select-all" title={c.email || undefined}>{c.email || 'No email'}</p>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-1.5 mt-4 pt-3 border-t border-[#f5f5f7]">
+                            {c.phone && c.phone.trim() !== '' && c.phone !== '-' ? (
+                              <>
+                                <a
+                                  href={`tel:${c.phone.replace(/\D/g, '')}`}
+                                  className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 bg-[#f5f5f7] hover:bg-[#1B3A5C] hover:text-white text-[#1B3A5C] rounded-xl text-[10px] font-bold transition-all border border-transparent hover:scale-[1.03] active:scale-[0.97]"
+                                  title={`Call ${c.role}`}
+                                >
+                                  <Phone size={12} />
+                                  <span className="text-[9px]">Call</span>
+                                </a>
+                                <a
+                                  href={`sms:${c.phone.replace(/\D/g, '')}`}
+                                  className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 bg-[#f5f5f7] hover:bg-[#1B3A5C] hover:text-white text-[#1B3A5C] rounded-xl text-[10px] font-bold transition-all border border-transparent hover:scale-[1.03] active:scale-[0.97]"
+                                  title={`Text ${c.role}`}
+                                >
+                                  <MessageSquare size={12} />
+                                  <span className="text-[9px]">Text</span>
+                                </a>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 bg-[#f5f5f7]/40 text-gray-300 rounded-xl text-[10px] font-bold cursor-not-allowed">
+                                  <Phone size={12} className="opacity-40" />
+                                  <span className="text-[9px] opacity-40">Call</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 bg-[#f5f5f7]/40 text-gray-300 rounded-xl text-[10px] font-bold cursor-not-allowed">
+                                  <MessageSquare size={12} className="opacity-40" />
+                                  <span className="text-[9px] opacity-40">Text</span>
+                                </div>
+                              </>
+                            )}
+
+                            {c.email && c.email.trim() !== '' && c.email !== '-' ? (
+                              <a
+                                href={`mailto:${c.email}`}
+                                className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 bg-[#f5f5f7] hover:bg-[#1B3A5C] hover:text-white text-[#1B3A5C] rounded-xl text-[10px] font-bold transition-all border border-transparent hover:scale-[1.03] active:scale-[0.97]"
+                                title={`Email ${c.role}`}
+                              >
+                                <Mail size={12} />
+                                <span className="text-[9px]">Email</span>
+                              </a>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 bg-[#f5f5f7]/40 text-gray-300 rounded-xl text-[10px] font-bold cursor-not-allowed">
+                                <Mail size={12} className="opacity-40" />
+                                <span className="text-[9px] opacity-40">Email</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex gap-1 mt-3">
-                {escrow.agentPhone ? (
-                  <>
-                    <a
-                      href={`tel:${escrow.agentPhone.replace(/\D/g, '')}`}
-                      className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                      title={`Call Agent: ${escrow.agentPhone}`}
-                    >
-                      <Phone size={11} />
-                    </a>
-                    <a
-                      href={`sms:${escrow.agentPhone.replace(/\D/g, '')}`}
-                      className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                      title={`SMS Agent: ${escrow.agentPhone}`}
-                    >
-                      <MessageSquare size={11} />
-                    </a>
-                  </>
-                ) : (
-                  <span className="text-[9px] text-gray-400 font-medium self-center px-1">No Phone</span>
-                )}
-                {escrow.agentEmail ? (
-                  <a
-                    href={`mailto:${escrow.agentEmail}`}
-                    className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                    title={`Email Agent: ${escrow.agentEmail}`}
-                  >
-                    <Mail size={11} />
-                  </a>
-                ) : (
-                  <span className="text-[9px] text-gray-400 font-medium self-center px-1">No Email</span>
-                )}
-              </div>
-            </div>
-
-            {/* Lender Contact Card */}
-            <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[#1B3A5C] font-bold mb-1">Lender</div>
-                <div className="text-xs font-bold text-[#1d1d1f] truncate" title={escrow.lenderName}>
-                  {escrow.lenderName || '-'}
-                </div>
-              </div>
-              
-              <div className="flex gap-1 mt-3">
-                {escrow.lenderPhone ? (
-                  <>
-                    <a
-                      href={`tel:${escrow.lenderPhone.replace(/\D/g, '')}`}
-                      className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                      title={`Call Lender: ${escrow.lenderPhone}`}
-                    >
-                      <Phone size={11} />
-                    </a>
-                    <a
-                      href={`sms:${escrow.lenderPhone.replace(/\D/g, '')}`}
-                      className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                      title={`SMS Lender: ${escrow.lenderPhone}`}
-                    >
-                      <MessageSquare size={11} />
-                    </a>
-                  </>
-                ) : (
-                  <span className="text-[9px] text-gray-400 font-medium self-center px-1">No Phone</span>
-                )}
-                {escrow.lenderEmail ? (
-                  <a
-                    href={`mailto:${escrow.lenderEmail}`}
-                    className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                    title={`Email Lender: ${escrow.lenderEmail}`}
-                  >
-                    <Mail size={11} />
-                  </a>
-                ) : (
-                  <span className="text-[9px] text-gray-400 font-medium self-center px-1">No Email</span>
-                )}
-              </div>
-            </div>
-
-            {/* Escrow Officer Contact Card */}
-            <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[#1B3A5C] font-bold mb-1">Escrow Officer</div>
-                <div className="text-xs font-bold text-[#1d1d1f] truncate" title={escrow.escrowOfficer}>
-                  {escrow.escrowOfficer || '-'}
-                </div>
-              </div>
-              
-              <div className="flex gap-1 mt-3">
-                {escrow.escrowPhone ? (
-                  <>
-                    <a
-                      href={`tel:${escrow.escrowPhone.replace(/\D/g, '')}`}
-                      className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                      title={`Call Escrow Officer: ${escrow.escrowPhone}`}
-                    >
-                      <Phone size={11} />
-                    </a>
-                    <a
-                      href={`sms:${escrow.escrowPhone.replace(/\D/g, '')}`}
-                      className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                      title={`SMS Escrow Officer: ${escrow.escrowPhone}`}
-                    >
-                      <MessageSquare size={11} />
-                    </a>
-                  </>
-                ) : (
-                  <span className="text-[9px] text-gray-400 font-medium self-center px-1">No Phone</span>
-                )}
-                {escrow.escrowEmail ? (
-                  <a
-                    href={`mailto:${escrow.escrowEmail}`}
-                    className="p-1.5 bg-white border border-[#e5e5ea] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white rounded-lg transition-all shadow-sm flex items-center justify-center grow hover:border-[#1B3A5C]"
-                    title={`Email Escrow Officer: ${escrow.escrowEmail}`}
-                  >
-                    <Mail size={11} />
-                  </a>
-                ) : (
-                  <span className="text-[9px] text-gray-400 font-medium self-center px-1">No Email</span>
-                )}
-              </div>
-            </div>
-
-            {/* Company Info */}
-            <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[#1B3A5C] font-bold mb-1">Escrow Company</div>
-                <div className="text-xs font-bold text-[#1d1d1f] line-clamp-2" title={escrow.escrowCompany}>
-                  {escrow.escrowCompany || '-'}
-                </div>
-              </div>
-            </div>
-
-            {/* Collaborator Info */}
-            <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[#1B3A5C] font-bold mb-1">Collaborator</div>
-                <div className="text-xs font-bold text-[#1d1d1f] line-clamp-2" title={escrow.collaborator}>
-                  {escrow.collaborator || '-'}
-                </div>
-              </div>
-            </div>
-
-            {/* Pricing Info */}
-            <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[#1B3A5C] font-bold mb-1">Sale Price</div>
-                <div className="text-sm font-bold font-mono text-[#16a34a]">{formatCurrency(escrow.price)}</div>
-              </div>
-            </div>
-
-            {/* Net Commission */}
-            <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[#1B3A5C] font-bold mb-1">Net Commission</div>
-                <div className="text-sm font-bold font-mono text-[#FF7518]">{formatCurrency(escrow.netCommission)}</div>
-              </div>
-            </div>
-          </div>
+              </>
+            );
+          })()}
 
           <div className="mb-8">
             <div className="flex justify-between items-center mb-3 border-b border-[#e5e5ea] pb-2">
