@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Escrow } from '../../types';
-import { X, MessageSquare, Mail, Copy, Check } from 'lucide-react';
+import { X, MessageSquare, Mail, Copy, Check, ChevronDown } from 'lucide-react';
 import { parseISO, format } from 'date-fns';
 import { motion } from 'motion/react';
 
@@ -96,6 +96,7 @@ export function ClientUpdatesModal({
   const [selectedTemplateId, setSelectedTemplateId] = useState('opening');
   const [editedText, setEditedText] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // States for Master Customization
   const [isEditingMaster, setIsEditingMaster] = useState(false);
@@ -212,21 +213,57 @@ export function ClientUpdatesModal({
 
           {!isEditingMaster ? (
             <>
-              {/* Horizontal template selection tabs */}
-              <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scrollbar-none shrink-0 select-none">
-                {templates.map(t => (
+              {/* Template Selection Dropdown */}
+              <div className="relative w-full z-30">
+                <label className="text-[10px] font-extrabold uppercase tracking-widest text-[#1B3A5C]/60 block mb-1.5">
+                  Select Update Milestone
+                </label>
+                <div className="relative">
                   <button
-                    key={t.id}
-                    onClick={() => setSelectedTemplateId(t.id)}
-                    className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 border cursor-pointer ${
-                      selectedTemplateId === t.id
-                        ? 'bg-[#1B3A5C] border-[#1B3A5C] text-white shadow-sm'
-                        : 'bg-white border-[#e5e5ea] text-[#334155] hover:bg-slate-50'
-                    }`}
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-white border border-[#e5e5ea] hover:border-[#1B3A5C]/30 rounded-2xl text-sm font-bold text-[#1B3A5C] shadow-sm transition-all cursor-pointer select-none active:scale-[0.99]"
                   >
-                    {t.label}
+                    <span className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      {selectedTemplate.label}
+                    </span>
+                    <ChevronDown size={18} className={`text-slate-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
-                ))}
+
+                  {isDropdownOpen && (
+                    <>
+                      {/* Close dropdown on background click */}
+                      <div 
+                        className="fixed inset-0 z-10" 
+                        onClick={() => setIsDropdownOpen(false)}
+                      />
+                      
+                      {/* Floating dropdown options */}
+                      <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#e5e5ea] rounded-2xl shadow-xl overflow-hidden z-20 max-h-60 overflow-y-auto py-1.5 animate-in fade-in-50 slide-in-from-top-1">
+                        {templates.map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => {
+                              setSelectedTemplateId(t.id);
+                              setIsDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-3.5 text-xs sm:text-sm font-semibold transition-colors flex items-center justify-between cursor-pointer ${
+                              selectedTemplateId === t.id
+                                ? 'bg-[#1B3A5C]/5 text-[#1B3A5C] font-extrabold'
+                                : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span>{t.label}</span>
+                            {selectedTemplateId === t.id && (
+                              <Check size={16} className="text-[#1B3A5C]" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Recipient Details & Workspace */}
