@@ -56,26 +56,26 @@ export function AuthModal({ onClose }: AuthModalProps) {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
+  const handleGoogleSignIn = () => {
     setError(null);
-    try {
-      await signInWithGoogle();
-      onClose();
-    } catch (err: any) {
-      console.error(err);
-      let errMsg = 'An error occurred. Please try again.';
-      if (err.code === 'auth/operation-not-allowed') {
-        errMsg = 'Google Sign-In is not enabled in your Firebase console. Please enable it in Firebase Console -> Authentication -> Sign-in method.';
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        errMsg = 'The sign-in popup was closed before completion.';
-      } else if (err.message) {
-        errMsg = err.message;
-      }
-      setError(errMsg);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    signInWithGoogle()
+      .then(() => {
+        onClose();
+      })
+      .catch((err: any) => {
+        console.error(err);
+        let errMsg = 'An error occurred. Please try again.';
+        if (err.code === 'auth/operation-not-allowed') {
+          errMsg = 'Google Sign-In is not enabled in your Firebase console. Please enable it in Firebase Console -> Authentication -> Sign-in method.';
+        } else if (err.code === 'auth/popup-closed-by-user') {
+          errMsg = 'The sign-in popup was closed before completion.';
+        } else if (err.message) {
+          errMsg = err.message;
+        }
+        setError(errMsg);
+        setLoading(false);
+      });
   };
 
   return (

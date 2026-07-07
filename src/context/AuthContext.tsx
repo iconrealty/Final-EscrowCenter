@@ -7,9 +7,7 @@ import {
   onAuthStateChanged,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult
+  signInWithPopup
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
@@ -29,17 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Handle redirect result if user was redirected back from Google sign-in
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          setUser(result.user);
-        }
-      })
-      .catch((error) => {
-        console.error("Error with Google redirect sign-in:", error);
-      });
-
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -58,19 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
-    
-    // Check if on a mobile browser or Safari on iOS, where popups are blocked/unreliable
-    const ua = navigator.userAgent;
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-    const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
-    
-    if (isMobile || isSafari) {
-      await signInWithRedirect(auth, provider);
-    } else {
-      await signInWithPopup(auth, provider);
-    }
+    return signInWithPopup(auth, provider).then(() => {});
   };
 
   const signOut = async () => {
