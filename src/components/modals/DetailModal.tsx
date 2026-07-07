@@ -206,14 +206,7 @@ export function DetailModal({
           <div className="mb-8">
             <div className="flex justify-between items-center mb-3 border-b border-[#e5e5ea] pb-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#334155]">Milestones</h3>
-              {hasIncompleteMilestones && (
-                <button 
-                  onClick={handleCompleteAllMilestones}
-                  className="text-xs text-[#1B3A5C] hover:text-[#11253C] font-bold hover:underline transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  Mark All Done
-                </button>
-              )}
+              <span className="text-xs text-[#86868b] font-medium italic">View Only</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {MILESTONES.map(m => (
@@ -222,7 +215,7 @@ export function DetailModal({
                   label={m.key}
                   isDone={escrow.tasks[m.key]}
                   isOverdue={!escrow.tasks[m.key] && isUrgent}
-                  onClick={() => onToggleTask(escrow.id, m.key)}
+                  readOnly={true}
                 />
               ))}
             </div>
@@ -231,14 +224,7 @@ export function DetailModal({
           <div className="mb-8">
             <div className="flex justify-between items-center mb-3 border-b border-[#e5e5ea] pb-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#334155]">Contingencies Removed</h3>
-              {hasIncompleteContingencies && (
-                <button 
-                  onClick={handleCompleteAllContingencies}
-                  className="text-xs text-[#1B3A5C] hover:text-[#11253C] font-bold hover:underline transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  Mark All Done
-                </button>
-              )}
+              <span className="text-xs text-[#86868b] font-medium italic">View Only</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {CONTINGENCIES.map(c => (
@@ -248,7 +234,7 @@ export function DetailModal({
                   label={c.label}
                   isDone={escrow.tasks[c.key]}
                   isOverdue={isContingencyUrgent(escrow, c.key)}
-                  onClick={() => onToggleTask(escrow.id, c.key)}
+                  readOnly={true}
                 />
               ))}
             </div>

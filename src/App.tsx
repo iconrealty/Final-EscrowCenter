@@ -13,6 +13,7 @@ import { DetailModal } from './components/modals/DetailModal';
 import { ConfirmModal } from './components/modals/ConfirmModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { ClientUpdatesModal } from './components/modals/ClientUpdatesModal';
+import { MilestonesContingenciesModal } from './components/modals/MilestonesContingenciesModal';
 
 import { useEscrows } from './hooks/useEscrows';
 import { Escrow } from './types';
@@ -33,6 +34,7 @@ function App() {
   
   const [detailEscrow, setDetailEscrow] = useState<Escrow | null>(null);
   const [clientUpdateEscrow, setClientUpdateEscrow] = useState<Escrow | null>(null);
+  const [updateTasksEscrow, setUpdateTasksEscrow] = useState<Escrow | null>(null);
 
   
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -129,6 +131,7 @@ function App() {
                       }}
                       onViewDetails={() => setDetailEscrow(escrow)}
                       onSendUpdate={() => setClientUpdateEscrow(escrow)}
+                      onUpdateTasks={() => setUpdateTasksEscrow(escrow)}
                     />
 
                   ))}
@@ -217,6 +220,15 @@ function App() {
         <ClientUpdatesModal 
           escrow={escrows.find(e => e.id === clientUpdateEscrow.id) || clientUpdateEscrow} 
           onClose={() => setClientUpdateEscrow(null)}
+        />
+      )}
+
+      {updateTasksEscrow && (
+        <MilestonesContingenciesModal 
+          escrow={escrows.find(e => e.id === updateTasksEscrow.id) || updateTasksEscrow} 
+          onClose={() => setUpdateTasksEscrow(null)}
+          onToggleTask={toggleTask}
+          onUpdateTasks={(id, tasks) => editEscrow(id, { tasks })}
         />
       )}
 

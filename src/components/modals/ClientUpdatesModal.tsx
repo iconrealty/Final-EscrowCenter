@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Escrow } from '../../types';
 import { X, MessageSquare, Mail, Copy, Check, ChevronDown } from 'lucide-react';
 import { parseISO, format } from 'date-fns';
@@ -16,6 +16,12 @@ const TEMPLATES = [
     label: 'Earnest Money (EMD) Received',
     subject: 'EMD Received - [Address]',
     text: 'Hi [ClientName], this is to confirm that your Earnest Money Deposit (EMD) has been successfully received by [EscrowOfficer]. That is another major milestone complete! I will keep you posted on the next steps. - [AgentName]'
+  },
+  {
+    id: 'insurance',
+    label: 'Get Insurance',
+    subject: 'Home Insurance Quotes - [Address]',
+    text: 'Hi [ClientName],\n\nNow its time to get quotes on Home insurance, you can try first with your actual insurance company if you need any additional quotes please let me know. - [AgentName]'
   },
   {
     id: 'inspection',
@@ -103,6 +109,9 @@ export function ClientUpdatesModal({
   const [masterSubject, setMasterSubject] = useState('');
   const [masterText, setMasterText] = useState('');
 
+  const subjectInputRef = useRef<HTMLInputElement>(null);
+  const textTextAreaRef = useRef<HTMLTextAreaElement>(null);
+
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId) || templates[0];
 
   const getPopulatedText = (rawText: string) => {
@@ -165,9 +174,33 @@ export function ClientUpdatesModal({
 
   const insertPlaceholder = (tag: string, field: 'subject' | 'text') => {
     if (field === 'subject') {
-      setMasterSubject(prev => prev + tag);
+      const input = subjectInputRef.current;
+      if (input) {
+        const start = input.selectionStart ?? masterSubject.length;
+        const end = input.selectionEnd ?? masterSubject.length;
+        const newText = masterSubject.substring(0, start) + tag + masterSubject.substring(end);
+        setMasterSubject(newText);
+        setTimeout(() => {
+          input.focus();
+          input.setSelectionRange(start + tag.length, start + tag.length);
+        }, 0);
+      } else {
+        setMasterSubject(prev => prev + tag);
+      }
     } else {
-      setMasterText(prev => prev + tag);
+      const textarea = textTextAreaRef.current;
+      if (textarea) {
+        const start = textarea.selectionStart ?? masterText.length;
+        const end = textarea.selectionEnd ?? masterText.length;
+        const newText = masterText.substring(0, start) + tag + masterText.substring(end);
+        setMasterText(newText);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start + tag.length, start + tag.length);
+        }, 0);
+      } else {
+        setMasterText(prev => prev + tag);
+      }
     }
   };
 
@@ -349,6 +382,7 @@ export function ClientUpdatesModal({
                   </button>
                 </div>
                 <input
+                  ref={subjectInputRef}
                   type="text"
                   value={masterSubject}
                   onChange={(e) => setMasterSubject(e.target.value)}
@@ -393,6 +427,7 @@ export function ClientUpdatesModal({
                 </div>
 
                 <textarea
+                  ref={textTextAreaRef}
                   value={masterText}
                   onChange={(e) => setMasterText(e.target.value)}
                   className="w-full bg-white border border-[#e5e5ea] rounded-xl p-3 text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed h-24 sm:h-36 min-h-[80px]"
