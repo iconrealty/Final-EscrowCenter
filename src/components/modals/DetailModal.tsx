@@ -199,35 +199,31 @@ export function DetailModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-1.5 mt-5 pt-4 border-t border-[#f5f5f7]">
+                  <div className="flex justify-center gap-4 mt-5 pt-4 border-t border-[#f5f5f7]">
                     {c.phone && c.phone.trim() !== '' && c.phone !== '-' ? (
                       <>
                         <a
                           href={`tel:${c.phone.replace(/\D/g, '')}`}
-                          className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 bg-[#f5f5f7] hover:bg-[#1d1d1f] hover:text-white text-[#1d1d1f] rounded-xl text-[10px] font-bold transition-all border border-transparent active:scale-[0.95]"
+                          className="w-10 h-10 rounded-full border border-orange-500 flex items-center justify-center text-orange-500 hover:bg-orange-50 transition-all active:scale-[0.95]"
                           title={`Call ${c.role}`}
                         >
-                          <Phone size={12} />
-                          <span className="text-[9px]">Call</span>
+                          <Phone size={18} />
                         </a>
                         <a
                           href={`sms:${c.phone.replace(/\D/g, '')}`}
-                          className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 bg-[#f5f5f7] hover:bg-[#1d1d1f] hover:text-white text-[#1d1d1f] rounded-xl text-[10px] font-bold transition-all border border-transparent active:scale-[0.95]"
+                          className="w-10 h-10 rounded-full border border-orange-500 flex items-center justify-center text-orange-500 hover:bg-orange-50 transition-all active:scale-[0.95]"
                           title={`Text ${c.role}`}
                         >
-                          <MessageSquare size={12} />
-                          <span className="text-[9px]">Text</span>
+                          <MessageSquare size={18} />
                         </a>
                       </>
                     ) : (
                       <>
-                        <div className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 bg-[#f5f5f7]/40 text-[#86868b]/40 rounded-xl text-[10px] font-bold cursor-not-allowed">
-                          <Phone size={12} className="opacity-40" />
-                          <span className="text-[9px] opacity-40">Call</span>
+                        <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-300 cursor-not-allowed">
+                          <Phone size={18} className="opacity-50" />
                         </div>
-                        <div className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 bg-[#f5f5f7]/40 text-[#86868b]/40 rounded-xl text-[10px] font-bold cursor-not-allowed">
-                          <MessageSquare size={12} className="opacity-40" />
-                          <span className="text-[9px] opacity-40">Text</span>
+                        <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-300 cursor-not-allowed">
+                          <MessageSquare size={18} className="opacity-50" />
                         </div>
                       </>
                     )}
@@ -235,16 +231,14 @@ export function DetailModal({
                     {c.email && c.email.trim() !== '' && c.email !== '-' ? (
                       <a
                         href={`mailto:${c.email}`}
-                        className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 bg-[#f5f5f7] hover:bg-[#1d1d1f] hover:text-white text-[#1d1d1f] rounded-xl text-[10px] font-bold transition-all border border-transparent active:scale-[0.95]"
+                        className="w-10 h-10 rounded-full border border-orange-500 flex items-center justify-center text-orange-500 hover:bg-orange-50 transition-all active:scale-[0.95]"
                         title={`Email ${c.role}`}
                       >
-                        <Mail size={12} />
-                        <span className="text-[9px]">Email</span>
+                        <Mail size={18} />
                       </a>
                     ) : (
-                      <div className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 bg-[#f5f5f7]/40 text-[#86868b]/40 rounded-xl text-[10px] font-bold cursor-not-allowed">
-                        <Mail size={12} className="opacity-40" />
-                        <span className="text-[9px] opacity-40">Email</span>
+                      <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-300 cursor-not-allowed">
+                        <Mail size={18} className="opacity-50" />
                       </div>
                     )}
                   </div>
