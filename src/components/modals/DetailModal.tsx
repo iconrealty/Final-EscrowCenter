@@ -53,8 +53,16 @@ export function DetailModal({
   ];
 
   return (
-    <div id="detail-modal-overlay" className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-3 sm:p-6 overflow-hidden backdrop-blur-sm">
-      <div id="detail-modal-container" className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-[#e5e5ea]">
+    <div 
+      id="detail-modal-overlay" 
+      className="fixed inset-0 bg-black/60 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden backdrop-blur-sm cursor-pointer"
+      onClick={onClose}
+    >
+      <div 
+        id="detail-modal-container" 
+        className="bg-white rounded-t-[2rem] sm:rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[85vh] border-t sm:border border-[#e5e5ea] cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Apple-style Header */}
         <div id="detail-modal-header" className="px-6 py-5 border-b border-[#f5f5f7] flex justify-between items-center bg-white shrink-0">
@@ -97,7 +105,7 @@ export function DetailModal({
         </div>
         
         {/* Modal Scrollable Content */}
-        <div id="detail-modal-body" className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-8 bg-[#fafafa]">
+        <div id="detail-modal-body" className="p-4 sm:p-8 overflow-y-auto flex-1 space-y-6 sm:space-y-8 bg-[#fafafa] pb-24 sm:pb-28">
           
           {/* Apple/Tesla-style Bento Grid Overview */}
           <section id="detail-overview">
