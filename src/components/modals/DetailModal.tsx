@@ -174,16 +174,28 @@ export function DetailModal({
                     <span className="text-[9px] font-black uppercase tracking-widest text-[#86868b] block mb-1">
                       {c.role}
                     </span>
-                    <h4 className="text-sm font-black text-[#1d1d1f] truncate" title={c.name}>
+                    <h4 className="text-sm font-semibold text-[#1d1d1f] truncate" title={c.name}>
                       {c.name}
                     </h4>
                     <div className="mt-3 space-y-1">
-                      <p className="text-xs text-[#515154] font-medium truncate select-all" title={c.phone || undefined}>
-                        {c.phone || 'No Phone Number'}
-                      </p>
-                      <p className="text-xs text-[#86868b] font-medium truncate select-all" title={c.email || undefined}>
-                        {c.email || 'No Email Address'}
-                      </p>
+                      {c.phone && c.phone.trim() !== '' && c.phone !== '-' ? (
+                        <p className="text-xs text-sky-500 hover:text-sky-600 font-normal truncate select-all" title={c.phone}>
+                          {c.phone}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-[#86868b] font-medium truncate">
+                          No Phone Number
+                        </p>
+                      )}
+                      {c.email && c.email.trim() !== '' && c.email !== '-' ? (
+                        <p className="text-xs text-sky-500 hover:text-sky-600 font-normal truncate select-all" title={c.email}>
+                          {c.email}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-[#86868b] font-medium truncate">
+                          No Email Address
+                        </p>
+                      )}
                     </div>
                   </div>
 
