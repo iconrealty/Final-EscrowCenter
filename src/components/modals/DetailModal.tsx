@@ -179,7 +179,7 @@ export function DetailModal({
                     </h4>
                     <div className="mt-3 space-y-1">
                       {c.phone && c.phone.trim() !== '' && c.phone !== '-' ? (
-                        <p className="text-xs text-sky-500 hover:text-sky-600 font-normal truncate select-all" title={c.phone}>
+                        <p className="text-xs text-[#0f2d59] hover:text-blue-600 font-normal truncate select-all" title={c.phone}>
                           {c.phone}
                         </p>
                       ) : (
@@ -188,7 +188,7 @@ export function DetailModal({
                         </p>
                       )}
                       {c.email && c.email.trim() !== '' && c.email !== '-' ? (
-                        <p className="text-xs text-sky-500 hover:text-sky-600 font-normal truncate select-all" title={c.email}>
+                        <p className="text-xs text-[#0f2d59] hover:text-blue-600 font-normal truncate select-all" title={c.email}>
                           {c.email}
                         </p>
                       ) : (
