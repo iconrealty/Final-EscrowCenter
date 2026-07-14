@@ -117,7 +117,7 @@ export function MilestonesContingenciesModal({
               {MILESTONES.map(m => (
                 <MilestoneChip 
                   key={m.key}
-                  label={m.key}
+                  label={m.label}
                   isDone={escrow.tasks[m.key]}
                   isOverdue={!escrow.tasks[m.key] && isUrgent}
                   onClick={() => onToggleTask(escrow.id, m.key)}

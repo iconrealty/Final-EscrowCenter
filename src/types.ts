@@ -30,16 +30,16 @@ export interface Escrow {
 }
 
 export const MILESTONES = [
-  { key: 'BRBC', label: 'Client Representation' },
-  { key: 'EMD', label: 'Earnest Money Deposit' },
+  { key: 'BRBC', label: 'BRBC' },
+  { key: 'EMD', label: 'EMD' },
   { key: 'INSP', label: 'Inspection' },
-  { key: 'RR', label: 'Request for Repair' },
-  { key: 'AVID', label: 'Agent Visual Inspection Disclosure' },
+  { key: 'RR', label: 'RR' },
+  { key: 'AVID', label: 'AVID' },
   { key: 'APR', label: 'Appraisal' },
-  { key: 'INS', label: 'Get Insurance' },
+  { key: 'Insurance', label: 'Insurance' },
   { key: 'LFA', label: 'Loan Final Approval' },
   { key: 'SLD', label: 'Escrow / Loan Docs Signed' },
-  { key: 'VP', label: 'Verification of Property' },
+  { key: 'VP', label: 'VP' },
   { key: 'FWD', label: 'Final Wire Deposit' },
   { key: 'REC', label: 'Record / Close' },
 ];

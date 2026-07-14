@@ -60,6 +60,11 @@ export function useEscrows() {
             e.clientFirstName = parts[0] || '';
             e.clientLastName = parts.slice(1).join(' ') || '';
           }
+          if (e.tasks) {
+            if (e.tasks.INS !== undefined && e.tasks.Insurance === undefined) {
+              e.tasks.Insurance = e.tasks.INS;
+            }
+          }
           return e;
         });
 
@@ -84,10 +89,14 @@ export function useEscrows() {
       const loadedEscrows: Escrow[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
+        const tasks = data.tasks || {};
+        if (tasks.INS !== undefined && tasks.Insurance === undefined) {
+          tasks.Insurance = tasks.INS;
+        }
         loadedEscrows.push({
           id: doc.id,
           ...data,
-          tasks: data.tasks || {}
+          tasks
         } as Escrow);
       });
 

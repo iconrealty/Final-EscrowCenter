@@ -12,6 +12,12 @@ const TEMPLATES = [
     text: 'Hi [ClientName], Escrow has officially been opened 🎉\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nEscrow will be sending you wire instructions shortly for the initial deposit (3%). Please follow the instructions carefully. If you have any questions at any time, I’m always available.\n\nInspection: I’m coordinating the inspection, tentatively for Wednesday afternoon. I’ll confirm availability and keep you posted.'
   },
   {
+    id: 'first_escrow_email',
+    label: 'First Escrow Email',
+    subject: 'First Escrow Email - [Address]',
+    text: 'Hi [Esrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the buyer and Transaction Coordinator information.\n\nBuyers\nName: [Buyer Name]\nEmail: [Buyer Email]\nPhone: [Buyer Phone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
+  },
+  {
     id: 'emd',
     label: 'Earnest Money (EMD) Received',
     subject: 'EMD Received - [Address]',
@@ -100,6 +106,13 @@ export function ClientUpdatesModal({
   });
 
   const [selectedTemplateId, setSelectedTemplateId] = useState('opening');
+  const isEscrowOfficerTemplate = selectedTemplateId === 'first_escrow_email';
+  const recipientName = isEscrowOfficerTemplate 
+    ? (escrow.escrowOfficer || 'Escrow Officer') 
+    : `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || 'Client';
+  const recipientPhone = isEscrowOfficerTemplate ? escrow.escrowPhone : escrow.clientPhone;
+  const recipientEmail = isEscrowOfficerTemplate ? escrow.escrowEmail : escrow.clientEmail;
+
   const [editedText, setEditedText] = useState('');
   const [copied, setCopied] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -125,6 +138,11 @@ export function ClientUpdatesModal({
     text = text.replace(/\[Price\]/g, formatCurrency(escrow.price));
     text = text.replace(/\[AgentName\]/g, escrow.agentName || 'your agent');
     text = text.replace(/\[EscrowOfficer\]/g, escrow.escrowOfficer || 'the escrow officer');
+    text = text.replace(/\[Esrow Officer\]/g, escrow.escrowOfficer || 'the escrow officer');
+    text = text.replace(/\[Escrow Officer\]/g, escrow.escrowOfficer || 'the escrow officer');
+    text = text.replace(/\[Buyer Name\]/g, clientFullName || 'Buyer');
+    text = text.replace(/\[Buyer Email\]/g, escrow.clientEmail || 'N/A');
+    text = text.replace(/\[Buyer Phone\]/g, escrow.clientPhone || 'N/A');
     text = text.replace(/\[EscrowCompany\]/g, escrow.escrowCompany || 'the escrow company');
     text = text.replace(/\[Collaborator\]/g, escrow.escrowCompany || escrow.collaborator || 'the escrow company');
     text = text.replace(/\[EscrowEmail\]/g, escrow.escrowEmail || 'N/A');
@@ -301,10 +319,10 @@ export function ClientUpdatesModal({
 
               {/* Recipient Details & Workspace */}
               <div className="bg-slate-50 border border-[#e5e5ea] rounded-2xl p-4 flex flex-col gap-3">
-                {escrow.clientPhone && (
+                {recipientPhone && (
                   <div className="flex justify-end items-center">
                     <span className="text-[10px] font-mono font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-2.5 py-0.5 rounded-lg">
-                      Recipient: {`${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || 'Client'} ({escrow.clientPhone})
+                      Recipient: {recipientName} ({recipientPhone})
                     </span>
                   </div>
                 )}
@@ -317,11 +335,11 @@ export function ClientUpdatesModal({
 
                 <div className="flex flex-col gap-3 pt-3 border-t border-[#e5e5ea] w-full">
                   <div className="flex flex-col gap-0.5">
-                    {!escrow.clientPhone && (
-                      <span className="text-[10px] text-[#ef4444] font-bold">⚠️ No client phone saved (add it in edit form)</span>
+                    {!recipientPhone && (
+                      <span className="text-[10px] text-[#ef4444] font-bold">⚠️ No {isEscrowOfficerTemplate ? 'escrow officer' : 'client'} phone saved (add it in edit form)</span>
                     )}
-                    {!escrow.clientEmail && (
-                      <span className="text-[10px] text-amber-600 font-bold">⚠️ No client email saved</span>
+                    {!recipientEmail && (
+                      <span className="text-[10px] text-amber-600 font-bold">⚠️ No {isEscrowOfficerTemplate ? 'escrow officer' : 'client'} email saved</span>
                     )}
                   </div>
 
@@ -334,23 +352,23 @@ export function ClientUpdatesModal({
                     </button>
 
                     <a
-                      href={`sms:${escrow.clientPhone ? escrow.clientPhone.replace(/\D/g, '') : ''}?body=${encodeURIComponent(editedText)}`}
+                      href={`sms:${recipientPhone ? recipientPhone.replace(/\D/g, '') : ''}?body=${encodeURIComponent(editedText)}`}
                       className={`px-4 py-3 sm:py-2 text-white rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 w-full sm:w-auto ${
-                        escrow.clientPhone ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
+                        recipientPhone ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
                       }`}
                     >
                       <MessageSquare size={13} />
-                      <span>Text Client</span>
+                      <span>Text {isEscrowOfficerTemplate ? 'Escrow Officer' : 'Client'}</span>
                     </a>
 
                     <a
-                      href={`mailto:${escrow.clientEmail || ''}?subject=${encodeURIComponent(getPopulatedSubject(selectedTemplate.subject))}&body=${encodeURIComponent(editedText)}`}
+                      href={`mailto:${recipientEmail || ''}?subject=${encodeURIComponent(getPopulatedSubject(selectedTemplate.subject))}&body=${encodeURIComponent(editedText)}`}
                       className={`px-4 py-3 sm:py-2 text-white rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 w-full sm:w-auto ${
-                        escrow.clientEmail ? 'bg-[#FF7518] hover:bg-[#CC5E13] cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
+                        recipientEmail ? 'bg-[#FF7518] hover:bg-[#CC5E13] cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
                       }`}
                     >
                       <Mail size={13} />
-                      <span>Email Client</span>
+                      <span>Email {isEscrowOfficerTemplate ? 'Escrow Officer' : 'Client'}</span>
                     </a>
                   </div>
                 </div>
@@ -408,6 +426,10 @@ export function ClientUpdatesModal({
                       { tag: '[Price]', label: 'Sale Price' },
                       { tag: '[AgentName]', label: 'Agent Name' },
                       { tag: '[EscrowOfficer]', label: 'Escrow Officer' },
+                      { tag: '[Esrow Officer]', label: 'Escrow Officer (Alt)' },
+                      { tag: '[Buyer Name]', label: 'Buyer Name' },
+                      { tag: '[Buyer Email]', label: 'Buyer Email' },
+                      { tag: '[Buyer Phone]', label: 'Buyer Phone' },
                       { tag: '[EscrowCompany]', label: 'Escrow Company' },
                       { tag: '[Collaborator]', label: 'Collaborator' },
                       { tag: '[EscrowEmail]', label: 'Escrow Email' },
