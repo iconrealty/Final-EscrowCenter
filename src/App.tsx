@@ -4,7 +4,7 @@ import { TopNav } from './components/layout/TopNav';
 import { StatsBar } from './components/layout/StatsBar';
 import { FilterBar } from './components/escrows/FilterBar';
 import { EscrowCard } from './components/escrows/EscrowCard';
-import { NeedsAttention } from './components/summary/NeedsAttention';
+import { SalesSummary } from './components/summary/SalesSummary';
 import { ChecklistTable } from './components/summary/ChecklistTable';
 import { YearlyRepresentationSummary } from './components/summary/YearlyRepresentationSummary';
 import { CalendarView } from './components/calendar/CalendarView';
@@ -157,7 +157,7 @@ function App() {
           {activeTab === 'summary' && (
             <div className="max-w-[1600px] mx-auto flex flex-col gap-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[400px] h-auto">
-                <NeedsAttention escrows={escrows} onSelectEscrow={(escrow) => setDetailEscrow(escrow)} />
+                <SalesSummary escrows={escrows} onSelectEscrow={(escrow) => setDetailEscrow(escrow)} />
                 <YearlyRepresentationSummary escrows={escrows} />
               </div>
               

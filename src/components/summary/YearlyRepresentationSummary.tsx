@@ -80,7 +80,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
       <div className="px-5 py-4 border-b border-[#e5e5ea] bg-[#f5f5f7] flex flex-row sm:items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2">
           <div>
-            <h2 className="font-bold text-[#1d1d1f] text-xs uppercase tracking-wider leading-none">Representation</h2>
+            <h2 className="font-bold text-[#1d1d1f] text-xs uppercase tracking-wider leading-none">Escrows</h2>
             <span className="text-[9px] text-[#86868b] uppercase tracking-widest block mt-1">Role Distribution</span>
           </div>
         </div>
@@ -192,7 +192,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
             </div>
             <div>
               <p className="uppercase text-[10px] tracking-widest font-bold text-neutral-500">No active escrows</p>
-              <p className="text-[11px] text-[#86868b] mt-1 normal-case">There are no representation records registered for {selectedYear}.</p>
+              <p className="text-[11px] text-[#86868b] mt-1 normal-case">There are no escrow records registered for {selectedYear}.</p>
             </div>
           </div>
         )}
