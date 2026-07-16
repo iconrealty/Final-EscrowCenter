@@ -3,6 +3,9 @@ import { Escrow } from '../../types';
 import { X, MessageSquare, Mail, Copy, Check, ChevronDown } from 'lucide-react';
 import { parseISO, format } from 'date-fns';
 import { motion } from 'motion/react';
+import { useAuth } from '../../context/AuthContext';
+import { db } from '../../lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const TEMPLATES = [
   {
@@ -89,6 +92,8 @@ export function ClientUpdatesModal({
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
+  const { user } = useAuth();
+
   const [templates, setTemplates] = useState<typeof TEMPLATES>(() => {
     const saved = localStorage.getItem('escrow_custom_templates');
     if (saved) {
@@ -104,6 +109,32 @@ export function ClientUpdatesModal({
     }
     return TEMPLATES;
   });
+
+  // Load centralized templates from Firestore when logged in
+  useEffect(() => {
+    if (!user) return;
+
+    const loadCloudTemplates = async () => {
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data && Array.isArray(data.customTemplates)) {
+            const cloudTemplates = data.customTemplates;
+            setTemplates(TEMPLATES.map(t => {
+              const custom = cloudTemplates.find((p: any) => p.id === t.id);
+              return custom ? { ...t, text: custom.text, subject: custom.subject || t.subject } : t;
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Error loading centralized templates from Firestore:", err);
+      }
+    };
+
+    loadCloudTemplates();
+  }, [user]);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState('opening');
   const isEscrowOfficerTemplate = selectedTemplateId === 'first_escrow_email';
@@ -176,7 +207,7 @@ export function ClientUpdatesModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSaveMaster = () => {
+  const handleSaveMaster = async () => {
     const updated = templates.map(t => {
       if (t.id === selectedTemplateId) {
         return { ...t, subject: masterSubject, text: masterText };
@@ -185,6 +216,16 @@ export function ClientUpdatesModal({
     });
     setTemplates(updated);
     localStorage.setItem('escrow_custom_templates', JSON.stringify(updated));
+
+    if (user) {
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, { customTemplates: updated }, { merge: true });
+      } catch (err) {
+        console.error("Error saving centralized templates to Firestore:", err);
+      }
+    }
+
     setIsEditingMaster(false);
   };
 
