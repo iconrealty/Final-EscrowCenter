@@ -101,6 +101,7 @@ export function EscrowCard({
           <div className="flex-1 min-w-0">
             <div className="text-[10px] uppercase tracking-wider text-[#86868b] font-bold mb-1 group-hover/address:text-[#1B3A5C] transition-colors" title="Client Name">
               {escrow.clientFirstName || ''} {escrow.clientLastName || ''}
+              {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
             </div>
             <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#1B3A5C]/80 tracking-tight line-clamp-2 transition-colors" title={escrow.address}>
               {escrow.address}

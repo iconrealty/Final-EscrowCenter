@@ -25,6 +25,10 @@ export function AddEditModal({
       clientLastName: '',
       clientPhone: '',
       clientEmail: '',
+      client2FirstName: '',
+      client2LastName: '',
+      client2Phone: '',
+      client2Email: '',
       collaborator: '',
       escrowOfficer: '',
       escrowPhone: '',
@@ -113,6 +117,10 @@ export function AddEditModal({
         clientLastName: escrow.clientLastName || '',
         clientPhone: escrow.clientPhone || '',
         clientEmail: escrow.clientEmail || '',
+        client2FirstName: escrow.client2FirstName || '',
+        client2LastName: escrow.client2LastName || '',
+        client2Phone: escrow.client2Phone || '',
+        client2Email: escrow.client2Email || '',
         collaborator: escrow.collaborator,
         escrowOfficer: escrow.escrowOfficer,
         escrowPhone: escrow.escrowPhone || '',
@@ -274,6 +282,30 @@ export function AddEditModal({
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client Email</label>
               <input type="email" value={formData.clientEmail} placeholder="e.g. client@email.com" onChange={e => setFormData({...formData, clientEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+            </div>
+
+            <div className="md:col-span-2 mt-2">
+              <h3 className="text-sm font-bold text-[#1d1d1f] border-b border-[#e5e5ea] pb-1.5 mb-1">Client Number 2 Details (Optional)</h3>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 First Name</label>
+              <input type="text" value={formData.client2FirstName} onChange={e => setFormData({...formData, client2FirstName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 Last Name</label>
+              <input type="text" value={formData.client2LastName} onChange={e => setFormData({...formData, client2LastName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 Phone</label>
+              <input type="tel" value={formData.client2Phone} placeholder="e.g. 310-555-0200" onChange={e => setFormData({...formData, client2Phone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 Email</label>
+              <input type="email" value={formData.client2Email} placeholder="e.g. client2@email.com" onChange={e => setFormData({...formData, client2Email: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
             </div>
 
             <div className="md:col-span-2 mt-2">

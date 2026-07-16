@@ -324,6 +324,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                         <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
                           <span className="font-semibold truncate">
                             {escrow.clientFirstName} {escrow.clientLastName}
+                            {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
                           </span>
                           <span className="text-slate-300">•</span>
                           <span className="font-mono">{formatItemDate(escrow.coeDate)}</span>
@@ -424,6 +425,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                         <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
                           <span className="font-semibold truncate">
                             {escrow.clientFirstName} {escrow.clientLastName}
+                            {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
                           </span>
                           <span className="text-slate-300">•</span>
                           <span className="font-mono">{formatItemDate(escrow.coeDate)}</span>

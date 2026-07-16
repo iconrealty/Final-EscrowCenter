@@ -7,6 +7,10 @@ export interface Escrow {
   clientLastName: string;
   clientPhone?: string;
   clientEmail?: string;
+  client2FirstName?: string;
+  client2LastName?: string;
+  client2Phone?: string;
+  client2Email?: string;
   collaborator: string;
   escrowOfficer: string;
   escrowPhone?: string;

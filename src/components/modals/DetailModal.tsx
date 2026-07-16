@@ -25,12 +25,20 @@ export function DetailModal({
   const daysToCoe = differenceInDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
 
+  const hasClient2 = !!(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim());
+
   const contacts = [
     {
-      role: 'Client',
+      role: 'Client 1',
       name: `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || '-',
       phone: escrow.clientPhone,
       email: escrow.clientEmail,
+    },
+    {
+      role: 'Client 2',
+      name: `${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`.trim() || '-',
+      phone: escrow.client2Phone,
+      email: escrow.client2Email,
     },
     {
       role: 'Agent',
@@ -60,14 +68,21 @@ export function DetailModal({
     >
       <div 
         id="detail-modal-container" 
-        className="bg-white rounded-t-[2rem] sm:rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[85vh] border-t sm:border border-[#e5e5ea] cursor-default"
+        className="bg-white rounded-t-[2rem] sm:rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[85vh] border-t sm:border border-[#e5e5ea] cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Apple-style Header */}
         <div id="detail-modal-header" className="px-6 py-5 border-b border-[#f5f5f7] flex justify-between items-center bg-white shrink-0">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#86868b] block mb-1">Escrow File Details</span>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#86868b]">Escrow File Details</span>
+              <span className="text-[#86868b] text-[10px]">•</span>
+              <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">
+                {escrow.clientFirstName} {escrow.clientLastName}
+                {hasClient2 && ` & ${escrow.client2FirstName} ${escrow.client2LastName}`}
+              </span>
+            </div>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[#1d1d1f] mb-2 truncate max-w-[240px] sm:max-w-none" title={escrow.address}>
               {escrow.address}
             </h2>
@@ -164,7 +179,7 @@ export function DetailModal({
             <h3 className="text-[11px] font-black uppercase tracking-widest text-[#86868b] mb-4 pb-2 border-b border-[#e5e5ea]">
               Key Contacts
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {contacts.map((c) => (
                 <div 
                   key={c.role} 

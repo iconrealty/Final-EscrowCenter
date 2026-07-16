@@ -109,7 +109,10 @@ export function ClientUpdatesModal({
   const isEscrowOfficerTemplate = selectedTemplateId === 'first_escrow_email';
   const recipientName = isEscrowOfficerTemplate 
     ? (escrow.escrowOfficer || 'Escrow Officer') 
-    : `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || 'Client';
+    : `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() + 
+      ((escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) 
+        ? ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`.trim() 
+        : '') || 'Client';
   const recipientPhone = isEscrowOfficerTemplate ? escrow.escrowPhone : escrow.clientPhone;
   const recipientEmail = isEscrowOfficerTemplate ? escrow.escrowEmail : escrow.clientEmail;
 
@@ -129,7 +132,10 @@ export function ClientUpdatesModal({
 
   const getPopulatedText = (rawText: string) => {
     let text = rawText;
-    const clientFullName = `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim();
+    const clientFullName = `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() + 
+      ((escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) 
+        ? ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`.trim() 
+        : '');
     text = text.replace(/\[ClientName\]/g, clientFullName || 'Client');
     text = text.replace(/\[ClientFirstName\]/g, escrow.clientFirstName || 'Client');
     text = text.replace(/\[ClientLastName\]/g, escrow.clientLastName || '');
