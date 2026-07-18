@@ -89,7 +89,7 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
                   onClick={() => setViewMode(mode)}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-bold capitalize transition-all duration-150 ${
                     viewMode === mode
-                      ? 'bg-white text-[#1B3A5C] shadow-sm'
+                      ? 'bg-black text-white shadow-sm'
                       : 'text-slate-500 hover:text-[#1B3A5C]'
                   }`}
                 >
@@ -109,7 +109,7 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
                 onClick={() => setViewMode(mode)}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold capitalize transition-all duration-150 ${
                   viewMode === mode
-                    ? 'bg-white text-[#1B3A5C] shadow-sm'
+                    ? 'bg-black text-white shadow-sm'
                     : 'text-slate-500 hover:text-[#1B3A5C]'
                 }`}
               >
