@@ -38,19 +38,19 @@ export function COETimeline({ escrows, onSelectEscrow }: { escrows: Escrow[], on
           
           if (isClosed) {
             daysPill = (
-              <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-orange-500/10 text-orange-500 border border-orange-500/30">
+              <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#1B3A5C]/10 text-[#1B3A5C] border border-[#1B3A5C]/30">
                 Closed
               </div>
             );
           } else if (days <= 1) {
             daysPill = (
-              <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#EF9F27] text-[#FFFFFF] border border-[#EF9F27] shadow-sm">
+              <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#1B3A5C] text-[#FFFFFF] border border-[#1B3A5C] shadow-sm">
                 {days < 0 ? 'Overdue' : 'Due'}
               </div>
             );
           } else if (days <= 5) {
             daysPill = (
-              <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#EF9F27]/10 text-[#EF9F27] border border-[#EF9F27]/30 shadow-sm">
+              <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#1B3A5C]/10 text-[#1B3A5C] border border-[#1B3A5C]/30 shadow-sm">
                 {days}d
               </div>
             );
@@ -61,13 +61,13 @@ export function COETimeline({ escrows, onSelectEscrow }: { escrows: Escrow[], on
               key={escrow.id} 
               onClick={() => onSelectEscrow(escrow)}
               className={`group flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
-                isUrgent ? 'bg-[#FFFFFF] shadow-sm hover:shadow-md border-[#EF9F27]/50 hover:border-[#EF9F27] relative overflow-hidden' : 'bg-[#FFFFFF] border-[#e5e5ea] shadow-sm hover:shadow-md hover:border-orange-500/50'
+                isUrgent ? 'bg-[#FFFFFF] shadow-sm hover:shadow-md border-[#1B3A5C]/50 hover:border-[#1B3A5C] relative overflow-hidden' : 'bg-[#FFFFFF] border-[#e5e5ea] shadow-sm hover:shadow-md hover:border-[#1B3A5C]/50'
               } ${isClosed ? 'opacity-60 hover:opacity-100' : ''}`}
             >
               <div className="flex items-center gap-3.5">
                 <Avatar name={`${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || 'Client'} />
                 <div>
-                  <div className="font-bold text-[13px] text-orange-500 group-hover:text-orange-500/80 transition-colors">{escrow.address}</div>
+                  <div className="font-bold text-[13px] text-[#1B3A5C] group-hover:text-[#1B3A5C]/80 transition-colors">{escrow.address}</div>
                   <div className="text-[11px] text-[#86868b] mt-0.5 font-medium">{`${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || '-'}</div>
                 </div>
               </div>
@@ -83,7 +83,7 @@ export function COETimeline({ escrows, onSelectEscrow }: { escrows: Escrow[], on
                       {/* Track Backgrounds */}
                       <circle cx="16" cy="16" r="13" stroke="#1B3A5C" strokeWidth="2.2" fill="transparent" className="opacity-15" />
                       <circle cx="16" cy="16" r="10" stroke="#3B82F6" strokeWidth="2.2" fill="transparent" className="opacity-15" />
-                      <circle cx="16" cy="16" r="7" stroke="#EF9F27" strokeWidth="2.2" fill="transparent" className="opacity-15" />
+                      <circle cx="16" cy="16" r="7" stroke="#1B3A5C" strokeWidth="2.2" fill="transparent" className="opacity-15" />
 
                       {/* Outer Ring - Overall (Dark Navy Blue) */}
                       <circle 
@@ -116,7 +116,7 @@ export function COETimeline({ escrows, onSelectEscrow }: { escrows: Escrow[], on
                         cx="16" 
                         cy="16" 
                         r="7" 
-                        stroke="#EF9F27" 
+                        stroke="#1B3A5C" 
                         strokeWidth="2.2" 
                         fill="transparent" 
                         strokeDasharray="43.98" 

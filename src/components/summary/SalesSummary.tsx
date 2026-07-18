@@ -203,7 +203,6 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
       <div className="px-5 py-3 border-b border-[#e5e5ea] bg-slate-50 flex flex-row items-center justify-between gap-3 shrink-0">
         <div>
           <h2 className="font-bold text-[#1d1d1f] text-xs uppercase tracking-wider leading-none">Sales Summary</h2>
-          <span className="text-[9px] text-[#86868b] uppercase tracking-widest block mt-1">Track Closed Volume</span>
         </div>
 
         {/* Minimal Sub-tabs */}
@@ -215,7 +214,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             }}
             className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
               activeSubTab === 'total'
-                ? 'bg-white text-orange-500 shadow-sm'
+                ? 'bg-white text-[#1B3A5C] shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
             }`}
           >
@@ -228,7 +227,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             }}
             className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
               activeSubTab === 'monthly'
-                ? 'bg-white text-orange-500 shadow-sm'
+                ? 'bg-white text-[#1B3A5C] shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
             }`}
           >
@@ -241,7 +240,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             }}
             className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
               activeSubTab === 'commission'
-                ? 'bg-white text-orange-500 shadow-sm'
+                ? 'bg-white text-[#1B3A5C] shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
             }`}
           >
@@ -263,7 +262,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
-                  className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-orange-500/30 transition-all duration-200 shadow-sm"
+                  className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
                 >
                   <option value="all">All Years</option>
                   {availableYears.map((yr) => (
@@ -318,7 +317,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                       className="group flex items-center p-2.5 rounded-xl border border-transparent hover:border-[#e5e5ea] hover:bg-slate-50 transition-all duration-200 cursor-pointer"
                     >
                       <div className="min-w-0 flex-1 pr-4">
-                        <div className="text-xs font-bold text-orange-500 truncate group-hover:text-orange-500/80">
+                        <div className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
                           {escrow.address}
                         </div>
                         <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
@@ -365,7 +364,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-orange-500/30 transition-all duration-200 shadow-sm"
+                  className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
                 >
                   {availableMonths.map((ym) => (
                     <option key={ym} value={ym}>
@@ -419,7 +418,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                       className="group flex items-center p-2.5 rounded-xl border border-transparent hover:border-[#e5e5ea] hover:bg-slate-50 transition-all duration-200 cursor-pointer"
                     >
                       <div className="min-w-0 flex-1 pr-4">
-                        <div className="text-xs font-bold text-orange-500 truncate group-hover:text-orange-500/80">
+                        <div className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
                           {escrow.address}
                         </div>
                         <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
@@ -476,7 +475,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                   }}
                   className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
                     commissionGroup === 'monthly'
-                      ? 'bg-white text-orange-500 shadow-xs'
+                      ? 'bg-white text-[#1B3A5C] shadow-xs'
                       : 'text-[#86868b] hover:text-[#1d1d1f]'
                   }`}
                 >
@@ -489,7 +488,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                   }}
                   className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
                     commissionGroup === 'yearly'
-                      ? 'bg-white text-orange-500 shadow-xs'
+                      ? 'bg-white text-[#1B3A5C] shadow-xs'
                       : 'text-[#86868b] hover:text-[#1d1d1f]'
                   }`}
                 >
@@ -548,7 +547,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                                 className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-all duration-150 cursor-pointer"
                               >
                                 <div className="min-w-0 flex-1 pr-3">
-                                  <div className="text-[11px] font-semibold text-orange-500 truncate group-hover:text-orange-500/80">
+                                  <div className="text-[11px] font-semibold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
                                     {escrow.address}
                                   </div>
                                   <div className="text-[9px] text-[#86868b] mt-0.5">

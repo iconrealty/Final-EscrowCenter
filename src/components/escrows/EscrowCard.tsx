@@ -46,7 +46,7 @@ export function EscrowCard({
             escrow.representation === 'Seller'
               ? 'bg-[#1B3A5C] text-white'
               : escrow.representation === 'Dual'
-              ? 'bg-[#D97706] text-white'
+              ? 'bg-[#11253C] text-white'
               : 'bg-[#059669] text-white'
           }`}>
             {escrow.representation || 'Buyer'}

@@ -35,7 +35,6 @@ export function ChecklistTable({
       <div className="p-4 sm:p-5 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="font-bold text-[#1d1d1f] text-sm sm:text-base tracking-tight">Escrow List</h2>
-          <p className="text-xs text-[#86868b] mt-0.5">Click any escrow to view details and update tasks</p>
         </div>
         
         <div className="flex items-center gap-3 self-end sm:self-auto">
@@ -48,7 +47,7 @@ export function ChecklistTable({
                   onClick={() => onFilterChange(opt)}
                   className={`px-3.5 py-1 rounded-full text-[10px] font-extrabold tracking-wider transition-all duration-200 cursor-pointer ${
                     summaryFilter === opt
-                      ? 'bg-white text-orange-500 shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
+                      ? 'bg-white text-[#1B3A5C] shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
                       : 'text-[#86868b] hover:text-[#1d1d1f]'
                   }`}
                 >
@@ -57,7 +56,7 @@ export function ChecklistTable({
               ))}
             </div>
           )}
-          <span className="text-[10px] sm:text-xs font-bold text-orange-500 bg-orange-500/10 px-2.5 py-1 rounded-full shrink-0">
+          <span className="text-[10px] sm:text-xs font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-2.5 py-1 rounded-full shrink-0">
             {sortedEscrows.length} {sortedEscrows.length === 1 ? 'Escrow' : 'Escrows'}
           </span>
         </div>
@@ -107,7 +106,7 @@ export function ChecklistTable({
                       <StatusBadge status={escrow.status} />
                     </span>
                   </div>
-                  <h3 className="font-bold text-sm sm:text-base md:text-[14px] text-orange-500 group-hover:text-orange-500/80 transition-colors truncate" title={escrow.address}>
+                  <h3 className="font-bold text-sm sm:text-base md:text-[14px] text-[#1B3A5C] group-hover:text-[#1B3A5C]/80 transition-colors truncate" title={escrow.address}>
                     {escrow.address}
                   </h3>
                 </div>
@@ -136,7 +135,7 @@ export function ChecklistTable({
                   </div>
                   <div className="w-full bg-[#e5e5ea] h-2 rounded-full overflow-hidden">
                     <div
-                      className="bg-orange-500 h-full rounded-full transition-all duration-300"
+                      className="bg-[#1B3A5C] h-full rounded-full transition-all duration-300"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
