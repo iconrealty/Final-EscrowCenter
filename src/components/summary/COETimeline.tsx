@@ -12,7 +12,7 @@ export function COETimeline({ escrows, onSelectEscrow }: { escrows: Escrow[], on
 
   return (
     <div className="bg-[#FFFFFF] rounded-2xl border border-[#e5e5ea] overflow-hidden flex flex-col h-full shadow-sm">
-      <div className="p-5 border-b border-[#e5e5ea] bg-[#f5f5f7]">
+      <div className="p-5 border-b border-[#e5e5ea] bg-slate-50">
         <h2 className="font-bold text-[#1d1d1f] text-sm tracking-tight">Closing Timeline</h2>
         <p className="text-xs text-[#86868b] mt-0.5">Prioritized by urgency & completion</p>
       </div>
@@ -31,14 +31,14 @@ export function COETimeline({ escrows, onSelectEscrow }: { escrows: Escrow[], on
           const pctContingencies = Math.round((completedContingencies / 9) * 100);
 
           let daysPill = (
-            <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#f5f5f7] text-[#86868b] border border-[#e5e5ea]">
+            <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-50 text-[#86868b] border border-[#e5e5ea]">
               {days}d
             </div>
           );
           
           if (isClosed) {
             daysPill = (
-              <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#1B3A5C]/10 text-[#1B3A5C] border border-[#1B3A5C]/30">
+              <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-orange-500/10 text-orange-500 border border-orange-500/30">
                 Closed
               </div>
             );
@@ -61,13 +61,13 @@ export function COETimeline({ escrows, onSelectEscrow }: { escrows: Escrow[], on
               key={escrow.id} 
               onClick={() => onSelectEscrow(escrow)}
               className={`group flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
-                isUrgent ? 'bg-[#FFFFFF] shadow-sm hover:shadow-md border-[#EF9F27]/50 hover:border-[#EF9F27] relative overflow-hidden' : 'bg-[#FFFFFF] border-[#e5e5ea] shadow-sm hover:shadow-md hover:border-[#1B3A5C]/50'
+                isUrgent ? 'bg-[#FFFFFF] shadow-sm hover:shadow-md border-[#EF9F27]/50 hover:border-[#EF9F27] relative overflow-hidden' : 'bg-[#FFFFFF] border-[#e5e5ea] shadow-sm hover:shadow-md hover:border-orange-500/50'
               } ${isClosed ? 'opacity-60 hover:opacity-100' : ''}`}
             >
               <div className="flex items-center gap-3.5">
                 <Avatar name={`${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || 'Client'} />
                 <div>
-                  <div className="font-bold text-[13px] text-[#1B3A5C] group-hover:text-[#1B3A5C]/80 transition-colors">{escrow.address}</div>
+                  <div className="font-bold text-[13px] text-orange-500 group-hover:text-orange-500/80 transition-colors">{escrow.address}</div>
                   <div className="text-[11px] text-[#86868b] mt-0.5 font-medium">{`${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || '-'}</div>
                 </div>
               </div>

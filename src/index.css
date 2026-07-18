@@ -6,11 +6,11 @@
   --color-sidebar-bg: #ffffff;
   --color-navy-card: rgba(0,0,0,0.02);
   --color-nav-border: #e5e5ea;
-  --color-gold-primary: #FF7518;
-  --color-gold-hover: #b34a15;
+  --color-gold-primary: #1B3A5C;
+  --color-gold-hover: #11253C;
   --color-white-cards: #ffffff;
   --color-card-border: #e5e5ea;
-  --color-light-stripe: #fafafa;
+  --color-light-stripe: #f1f5f9;
   --color-muted-gray: #f5f5f7;
   --color-text-primary: #1d1d1f;
   --color-text-secondary: #86868b;
@@ -45,4 +45,3 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
-

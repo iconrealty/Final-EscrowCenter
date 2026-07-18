@@ -200,7 +200,7 @@ export function AddEditModal({
   return (
     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-3 pt-12 pb-6 sm:p-6 overflow-hidden">
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80dvh] sm:max-h-[88vh]">
-        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e5e5ea] flex items-center justify-between bg-[#fafafa] shrink-0">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e5e5ea] flex items-center justify-between bg-slate-50 shrink-0">
           <h2 className="font-bold text-base sm:text-lg text-[#1d1d1f]">{escrow ? 'Edit Escrow' : 'New Escrow'}</h2>
           <button type="button" onClick={onClose} className="text-[#86868b] hover:text-[#1d1d1f] p-1 cursor-pointer"><X size={20} /></button>
         </div>
@@ -215,7 +215,7 @@ export function AddEditModal({
               <button
                 type="button"
                 onClick={() => setShowSisuPaste(!showSisuPaste)}
-                className="text-xs font-bold text-[#FF7518] hover:text-[#CC5E13] transition-colors focus:outline-none"
+                className="text-xs font-bold text-[#1B3A5C] hover:text-[#11253C] transition-colors focus:outline-none"
               >
                 {showSisuPaste ? 'Cancel' : 'Paste Sisu Text to Autofill'}
               </button>
@@ -231,7 +231,7 @@ export function AddEditModal({
                   value={sisuInputText}
                   onChange={e => setSisuInputText(e.target.value)}
                   placeholder="Paste transaction info here (e.g. ID: 6535240...)"
-                  className="w-full border border-[#cbd5e1] bg-white rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-[#FF7518]"
+                  className="w-full border border-[#cbd5e1] bg-white rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-[#1B3A5C]"
                 />
                 {sisuError && (
                   <p className="text-[11px] text-red-500 font-bold mt-1">{sisuError}</p>
@@ -252,12 +252,12 @@ export function AddEditModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-1">
               <label className="block text-xs font-bold text-[#334155] mb-1">Escrow #</label>
-              <input type="text" placeholder="e.g. 98453-PC" value={formData.escrowNumber} onChange={e => setFormData({...formData, escrowNumber: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="text" placeholder="e.g. 98453-PC" value={formData.escrowNumber} onChange={e => setFormData({...formData, escrowNumber: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-[#334155] mb-1">Property Address *</label>
-              <input required type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input required type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
             
             <div className="md:col-span-2 mt-2">
@@ -266,22 +266,22 @@ export function AddEditModal({
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client First Name *</label>
-              <input required type="text" value={formData.clientFirstName} onChange={e => setFormData({...formData, clientFirstName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input required type="text" value={formData.clientFirstName} onChange={e => setFormData({...formData, clientFirstName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client Last Name *</label>
-              <input required type="text" value={formData.clientLastName} onChange={e => setFormData({...formData, clientLastName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input required type="text" value={formData.clientLastName} onChange={e => setFormData({...formData, clientLastName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
             
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client Phone</label>
-              <input type="tel" value={formData.clientPhone} placeholder="e.g. 310-555-0100" onChange={e => setFormData({...formData, clientPhone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="tel" value={formData.clientPhone} placeholder="e.g. 310-555-0100" onChange={e => setFormData({...formData, clientPhone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client Email</label>
-              <input type="email" value={formData.clientEmail} placeholder="e.g. client@email.com" onChange={e => setFormData({...formData, clientEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="email" value={formData.clientEmail} placeholder="e.g. client@email.com" onChange={e => setFormData({...formData, clientEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2 mt-2">
@@ -290,22 +290,22 @@ export function AddEditModal({
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 First Name</label>
-              <input type="text" value={formData.client2FirstName} onChange={e => setFormData({...formData, client2FirstName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="text" value={formData.client2FirstName} onChange={e => setFormData({...formData, client2FirstName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 Last Name</label>
-              <input type="text" value={formData.client2LastName} onChange={e => setFormData({...formData, client2LastName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="text" value={formData.client2LastName} onChange={e => setFormData({...formData, client2LastName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
             
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 Phone</label>
-              <input type="tel" value={formData.client2Phone} placeholder="e.g. 310-555-0200" onChange={e => setFormData({...formData, client2Phone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="tel" value={formData.client2Phone} placeholder="e.g. 310-555-0200" onChange={e => setFormData({...formData, client2Phone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 Email</label>
-              <input type="email" value={formData.client2Email} placeholder="e.g. client2@email.com" onChange={e => setFormData({...formData, client2Email: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="email" value={formData.client2Email} placeholder="e.g. client2@email.com" onChange={e => setFormData({...formData, client2Email: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2 mt-2">
@@ -314,17 +314,17 @@ export function AddEditModal({
             
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Agent Name</label>
-              <input type="text" value={formData.agentName} onChange={e => setFormData({...formData, agentName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="text" value={formData.agentName} onChange={e => setFormData({...formData, agentName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Agent Phone</label>
-              <input type="tel" value={formData.agentPhone} placeholder="e.g. 310-555-0155" onChange={e => setFormData({...formData, agentPhone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="tel" value={formData.agentPhone} placeholder="e.g. 310-555-0155" onChange={e => setFormData({...formData, agentPhone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-[#334155] mb-1">Agent Email</label>
-              <input type="email" value={formData.agentEmail} placeholder="e.g. agent@email.com" onChange={e => setFormData({...formData, agentEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="email" value={formData.agentEmail} placeholder="e.g. agent@email.com" onChange={e => setFormData({...formData, agentEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2 mt-2">
@@ -333,17 +333,17 @@ export function AddEditModal({
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Lender Name</label>
-              <input type="text" value={formData.lenderName} placeholder="e.g. Springfield Savings" onChange={e => setFormData({...formData, lenderName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="text" value={formData.lenderName} placeholder="e.g. Springfield Savings" onChange={e => setFormData({...formData, lenderName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Lender Phone</label>
-              <input type="tel" value={formData.lenderPhone} placeholder="e.g. 555-0100" onChange={e => setFormData({...formData, lenderPhone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="tel" value={formData.lenderPhone} placeholder="e.g. 555-0100" onChange={e => setFormData({...formData, lenderPhone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-[#334155] mb-1">Lender Email</label>
-              <input type="email" value={formData.lenderEmail} placeholder="e.g. mortgage@lender.com" onChange={e => setFormData({...formData, lenderEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="email" value={formData.lenderEmail} placeholder="e.g. mortgage@lender.com" onChange={e => setFormData({...formData, lenderEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2 mt-2">
@@ -352,52 +352,52 @@ export function AddEditModal({
 
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-[#334155] mb-1">Escrow Company</label>
-              <input type="text" placeholder="e.g. Orange County Escrow" value={formData.escrowCompany} onChange={e => setFormData({...formData, escrowCompany: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="text" placeholder="e.g. Orange County Escrow" value={formData.escrowCompany} onChange={e => setFormData({...formData, escrowCompany: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Escrow Officer</label>
-              <input type="text" value={formData.escrowOfficer} onChange={e => setFormData({...formData, escrowOfficer: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="text" value={formData.escrowOfficer} onChange={e => setFormData({...formData, escrowOfficer: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Escrow Phone</label>
-              <input type="tel" value={formData.escrowPhone} onChange={e => setFormData({...formData, escrowPhone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="tel" value={formData.escrowPhone} onChange={e => setFormData({...formData, escrowPhone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-[#334155] mb-1">Escrow Email</label>
-              <input type="email" value={formData.escrowEmail} onChange={e => setFormData({...formData, escrowEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="email" value={formData.escrowEmail} onChange={e => setFormData({...formData, escrowEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Collaborator</label>
-              <input type="text" value={formData.collaborator} onChange={e => setFormData({...formData, collaborator: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="text" value={formData.collaborator} onChange={e => setFormData({...formData, collaborator: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Sale Price ($)</label>
-              <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Net Commission ($)</label>
-              <input type="number" value={formData.netCommission} onChange={e => setFormData({...formData, netCommission: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input type="number" value={formData.netCommission} onChange={e => setFormData({...formData, netCommission: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Acceptance Date *</label>
-              <input required type="date" value={formData.acceptanceDate} onChange={e => handleAcceptanceDateChange(e.target.value)} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input required type="date" value={formData.acceptanceDate} onChange={e => handleAcceptanceDateChange(e.target.value)} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">COE Date *</label>
-              <input required type="date" value={formData.coeDate} onChange={e => setFormData({...formData, coeDate: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <input required type="date" value={formData.coeDate} onChange={e => setFormData({...formData, coeDate: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Status</label>
-              <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]">
+              <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]">
                 <option value="Open">Open</option>
                 <option value="Closed">Closed</option>
                 <option value="Cancelled">Cancelled</option>
@@ -406,7 +406,7 @@ export function AddEditModal({
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Representation</label>
-              <select value={formData.representation} onChange={e => setFormData({...formData, representation: e.target.value as any})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]">
+              <select value={formData.representation} onChange={e => setFormData({...formData, representation: e.target.value as any})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]">
                 <option value="Buyer">Representing Buyer</option>
                 <option value="Seller">Representing Seller</option>
                 <option value="Dual">Representing Dual</option>
@@ -426,7 +426,7 @@ export function AddEditModal({
                       placeholder="e.g. 7"
                       value={formData.contingencyDays[c.key] || ''} 
                       onChange={e => handleDayChange(c.key, e.target.value)} 
-                      className="w-full border border-[#e5e5ea] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF7518]" 
+                      className="w-full border border-[#e5e5ea] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#1B3A5C]" 
                     />
                   </div>
                 ))}
@@ -435,16 +435,16 @@ export function AddEditModal({
 
             <div className="md:col-span-2 mt-2">
               <label className="block text-xs font-bold text-[#334155] mb-1">Notes</label>
-              <textarea rows={3} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF7518]" />
+              <textarea rows={3} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-[#e5e5ea] bg-[#fafafa] flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-bold border border-[#e5e5ea] text-[#86868b] hover:bg-gray-50">
+        <div className="px-6 py-4 border-t border-[#e5e5ea] bg-slate-50 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-bold border border-[#e5e5ea] text-[#86868b] hover:bg-slate-50">
             Cancel
           </button>
-          <button type="submit" className="px-4 py-2 rounded-xl text-sm font-bold bg-[#FF7518] hover:bg-[#CC5E13] text-white active:scale-95 shadow-sm transition-all">
+          <button type="submit" className="px-4 py-2 rounded-xl text-sm font-bold bg-[#1B3A5C] hover:bg-[#11253C] text-white active:scale-95 shadow-sm transition-all">
             Save Escrow
           </button>
         </div>

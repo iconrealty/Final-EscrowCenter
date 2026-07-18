@@ -73,12 +73,12 @@ export function DetailModal({
       >
         
         {/* Apple-style Header */}
-        <div id="detail-modal-header" className="px-6 py-5 border-b border-[#f5f5f7] flex justify-between items-center bg-white shrink-0">
+        <div id="detail-modal-header" className="px-6 py-5 border-b border-[#fafafa] flex justify-between items-center bg-white shrink-0">
           <div>
             <div className="flex items-center gap-1.5 mb-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-[#86868b]">Escrow File Details</span>
               <span className="text-[#86868b] text-[10px]">•</span>
-              <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-[#11253C] uppercase tracking-wider">
                 {escrow.clientFirstName} {escrow.clientLastName}
                 {hasClient2 && ` & ${escrow.client2FirstName} ${escrow.client2LastName}`}
               </span>
@@ -96,7 +96,7 @@ export function DetailModal({
           <div className="flex items-center gap-2 shrink-0">
             <button 
               onClick={onEdit} 
-              className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-[#f5f5f7] rounded-full transition-all cursor-pointer active:scale-95" 
+              className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-slate-50 rounded-full transition-all cursor-pointer active:scale-95" 
               title="Edit Escrow"
             >
               <Pencil size={16} />
@@ -111,7 +111,7 @@ export function DetailModal({
             <div className="w-px h-6 bg-[#e5e5ea] mx-1"></div>
             <button 
               onClick={onClose} 
-              className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-[#f5f5f7] rounded-full transition-all cursor-pointer active:scale-95"
+              className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-slate-50 rounded-full transition-all cursor-pointer active:scale-95"
               title="Close"
             >
               <X size={18} />
@@ -120,7 +120,7 @@ export function DetailModal({
         </div>
         
         {/* Modal Scrollable Content */}
-        <div id="detail-modal-body" className="p-4 sm:p-8 overflow-y-auto flex-1 space-y-6 sm:space-y-8 bg-[#fafafa] pb-24 sm:pb-28">
+        <div id="detail-modal-body" className="p-4 sm:p-8 overflow-y-auto flex-1 space-y-6 sm:space-y-8 bg-slate-50 pb-24 sm:pb-28">
           
           {/* Apple/Tesla-style Bento Grid Overview */}
           <section id="detail-overview">
@@ -141,7 +141,7 @@ export function DetailModal({
                 <div className="mb-2">
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#86868b]">Net Commission</span>
                 </div>
-                <span className="text-xl sm:text-2xl font-black font-mono text-[#CC5E13] tracking-tight">
+                <span className="text-xl sm:text-2xl font-black font-mono text-[#11253C] tracking-tight">
                   {formatCurrency(escrow.netCommission)}
                 </span>
               </div>
@@ -194,7 +194,7 @@ export function DetailModal({
                     </h4>
                     <div className="mt-3 space-y-1">
                       {c.phone && c.phone.trim() !== '' && c.phone !== '-' ? (
-                        <p className="text-xs text-[#0f2d59] hover:text-blue-600 font-normal truncate select-all" title={c.phone}>
+                        <p className="text-xs text-[#0f2d59] hover:text-[#11253C] font-normal truncate select-all" title={c.phone}>
                           {c.phone}
                         </p>
                       ) : (
@@ -203,7 +203,7 @@ export function DetailModal({
                         </p>
                       )}
                       {c.email && c.email.trim() !== '' && c.email !== '-' ? (
-                        <p className="text-xs text-[#0f2d59] hover:text-blue-600 font-normal truncate select-all" title={c.email}>
+                        <p className="text-xs text-[#0f2d59] hover:text-[#11253C] font-normal truncate select-all" title={c.email}>
                           {c.email}
                         </p>
                       ) : (
@@ -214,19 +214,19 @@ export function DetailModal({
                     </div>
                   </div>
 
-                  <div className="flex justify-center gap-4 mt-5 pt-4 border-t border-[#f5f5f7]">
+                  <div className="flex justify-center gap-4 mt-5 pt-4 border-t border-[#fafafa]">
                     {c.phone && c.phone.trim() !== '' && c.phone !== '-' ? (
                       <>
                         <a
                           href={`tel:${c.phone.replace(/\D/g, '')}`}
-                          className="w-10 h-10 rounded-full border border-orange-500 flex items-center justify-center text-orange-500 hover:bg-orange-50 transition-all active:scale-[0.95]"
+                          className="w-10 h-10 rounded-full border border-[#1B3A5C] flex items-center justify-center text-[#1B3A5C] hover:bg-slate-50 transition-all active:scale-[0.95]"
                           title={`Call ${c.role}`}
                         >
                           <Phone size={18} />
                         </a>
                         <a
                           href={`sms:${c.phone.replace(/\D/g, '')}`}
-                          className="w-10 h-10 rounded-full border border-orange-500 flex items-center justify-center text-orange-500 hover:bg-orange-50 transition-all active:scale-[0.95]"
+                          className="w-10 h-10 rounded-full border border-[#1B3A5C] flex items-center justify-center text-[#1B3A5C] hover:bg-slate-50 transition-all active:scale-[0.95]"
                           title={`Text ${c.role}`}
                         >
                           <MessageSquare size={18} />
@@ -246,7 +246,7 @@ export function DetailModal({
                     {c.email && c.email.trim() !== '' && c.email !== '-' ? (
                       <a
                         href={`mailto:${c.email}`}
-                        className="w-10 h-10 rounded-full border border-orange-500 flex items-center justify-center text-orange-500 hover:bg-orange-50 transition-all active:scale-[0.95]"
+                        className="w-10 h-10 rounded-full border border-[#1B3A5C] flex items-center justify-center text-[#1B3A5C] hover:bg-slate-50 transition-all active:scale-[0.95]"
                         title={`Email ${c.role}`}
                       >
                         <Mail size={18} />

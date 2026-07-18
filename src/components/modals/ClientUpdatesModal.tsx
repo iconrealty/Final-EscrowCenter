@@ -279,7 +279,7 @@ export function ClientUpdatesModal({
         className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[88vh]"
       >
         {/* Header */}
-        <div className="px-5 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-start bg-[#fafafa] shrink-0">
+        <div className="px-5 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-start bg-slate-50 shrink-0">
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1B3A5C]/60 block mb-0.5">Quick Client Updates</span>
             <h2 className="font-extrabold text-base sm:text-lg text-[#1B3A5C] truncate max-w-[220px] sm:max-w-none" title={escrow.address}>
@@ -301,7 +301,7 @@ export function ClientUpdatesModal({
               onClick={() => setIsEditingMaster(!isEditingMaster)}
               className={`px-3 py-1 rounded-xl text-[11px] font-bold flex items-center transition-all ${
                 isEditingMaster 
-                  ? 'bg-[#FF7518] text-white' 
+                  ? 'bg-[#1B3A5C] text-white' 
                   : 'bg-slate-100 hover:bg-slate-200 text-[#334155]'
               }`}
             >
@@ -411,7 +411,7 @@ export function ClientUpdatesModal({
                     <a
                       href={`mailto:${recipientEmail || ''}?subject=${encodeURIComponent(getPopulatedSubject(selectedTemplate.subject))}&body=${encodeURIComponent(editedText)}`}
                       className={`px-4 py-3 sm:py-2 text-white rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 w-full sm:w-auto ${
-                        recipientEmail ? 'bg-[#FF7518] hover:bg-[#CC5E13] cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
+                        recipientEmail ? 'bg-[#1B3A5C] hover:bg-[#11253C] cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
                       }`}
                     >
                       <Mail size={13} />
@@ -424,7 +424,7 @@ export function ClientUpdatesModal({
           ) : (
             <div className="bg-slate-50 border border-[#e5e5ea] rounded-2xl p-4 flex flex-col gap-4">
               <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                <h4 className="text-xs font-bold text-[#FF7518]">
+                <h4 className="text-xs font-bold text-[#1B3A5C]">
                   Editing template phrasing: <span className="text-slate-800 font-extrabold">{selectedTemplate.label}</span>
                 </h4>
                 <button

@@ -46,7 +46,7 @@ export function MilestonesContingenciesModal({
     <div id="tasks-modal-overlay" className="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-3 pt-12 pb-6 sm:p-6 overflow-hidden">
       <div id="tasks-modal-container" className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div id="tasks-modal-header" className="px-4 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-start bg-[#fafafa] shrink-0">
+        <div id="tasks-modal-header" className="px-4 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-start bg-slate-50 shrink-0">
           <div>
             <h2 id="tasks-modal-title" className="font-bold text-base sm:text-lg text-[#1B3A5C] mb-0.5 truncate max-w-[280px] sm:max-w-none" title={escrow.address}>
               Update Milestones & Contingencies
@@ -158,7 +158,7 @@ export function MilestonesContingenciesModal({
         </div>
 
         {/* Footer */}
-        <div id="tasks-modal-footer" className="px-4 sm:px-6 py-3.5 border-t border-[#e5e5ea] flex justify-end bg-[#fafafa] shrink-0">
+        <div id="tasks-modal-footer" className="px-4 sm:px-6 py-3.5 border-t border-[#e5e5ea] flex justify-end bg-slate-50 shrink-0">
           <button 
             id="tasks-modal-save-btn"
             onClick={onClose}

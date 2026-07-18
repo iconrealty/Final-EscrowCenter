@@ -11,7 +11,7 @@ export function ProgressBar({ completed, total }: { completed: number; total: nu
   return (
     <div className="flex items-center gap-3">
       <div className="text-xs font-semibold text-[#1d1d1f] w-16">Progress</div>
-      <div className="flex-1 h-2 bg-[#f5f5f7] rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-slate-50 rounded-full overflow-hidden">
         <div 
           className="h-full transition-all duration-500" 
           style={{ width: `${percentage}%`, backgroundColor: color }}

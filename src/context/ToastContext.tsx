@@ -62,7 +62,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
       <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 w-full max-w-sm pointer-events-none px-4 sm:px-0">
         <AnimatePresence>
           {toasts.map((toast) => {
-            let icon = <Info size={18} className="text-blue-500" />;
+            let icon = <Info size={18} className="text-[#1B3A5C]" />;
             let bgColor = 'bg-white border-blue-100';
             let textColor = 'text-slate-800';
             let shadowColor = 'shadow-blue-100/50';

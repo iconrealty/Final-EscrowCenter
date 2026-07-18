@@ -4,7 +4,7 @@ import { differenceInDays, parseISO } from 'date-fns';
 export function DaysPill({ coeDate, status }: { coeDate: string; status: string }) {
   if (status === 'Closed' || status === 'Cancelled') {
     return (
-      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#f5f5f7] text-[#86868b]">
+      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-50 text-[#86868b]">
         {status}
       </span>
     );

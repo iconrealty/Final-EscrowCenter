@@ -30,7 +30,7 @@ export function FilterBar({
               setIsStatusDropdownOpen(!isStatusDropdownOpen);
               setIsYearDropdownOpen(false);
             }}
-            className="flex items-center gap-2 bg-white border border-[#e5e5ea] rounded-xl px-4 py-2 shadow-sm hover:border-[#FF7518]/40 transition-all text-xs font-bold text-[#1d1d1f] active:scale-98 cursor-pointer"
+            className="flex items-center gap-2 bg-white border border-[#e5e5ea] rounded-xl px-4 py-2 shadow-sm hover:border-[#1B3A5C]/40 transition-all text-xs font-bold text-[#1d1d1f] active:scale-98 cursor-pointer"
           >
             <span className="text-[#86868b] font-medium">Status:</span>
             <span>{filter === 'All' ? 'All Escrows' : filter === 'Open' ? 'Open Escrows' : filter === 'Closed' ? 'Closed Escrows' : 'Canceled Escrows'}</span>
@@ -61,7 +61,7 @@ export function FilterBar({
                         setIsStatusDropdownOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
-                        filter === opt.key ? 'text-[#FF7518] bg-[#FFF5EE]' : 'text-[#86868b] hover:bg-slate-50'
+                        filter === opt.key ? 'text-[#1B3A5C] bg-[#f1f5f9]' : 'text-[#86868b] hover:bg-slate-50'
                       }`}
                     >
                       {opt.label}
@@ -81,7 +81,7 @@ export function FilterBar({
               setIsYearDropdownOpen(!isYearDropdownOpen);
               setIsStatusDropdownOpen(false);
             }}
-            className="flex items-center gap-2 bg-white border border-[#e5e5ea] rounded-xl px-4 py-2 shadow-sm hover:border-[#FF7518]/40 transition-all text-xs font-bold text-[#1d1d1f] active:scale-98 cursor-pointer"
+            className="flex items-center gap-2 bg-white border border-[#e5e5ea] rounded-xl px-4 py-2 shadow-sm hover:border-[#1B3A5C]/40 transition-all text-xs font-bold text-[#1d1d1f] active:scale-98 cursor-pointer"
           >
             <span className="text-[#86868b] font-medium">Year:</span>
             <span>{selectedYear === 'All' ? 'All Years' : selectedYear}</span>
@@ -107,7 +107,7 @@ export function FilterBar({
                         setIsYearDropdownOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
-                        selectedYear === y ? 'text-[#FF7518] bg-[#FFF5EE]' : 'text-[#86868b] hover:bg-slate-50'
+                        selectedYear === y ? 'text-[#1B3A5C] bg-[#f1f5f9]' : 'text-[#86868b] hover:bg-slate-50'
                       }`}
                     >
                       {y === 'All' ? 'All Years' : y}
@@ -129,7 +129,7 @@ export function FilterBar({
           placeholder="Search address or client..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-white border border-[#e5e5ea] shadow-sm rounded-xl pl-10 pr-4 py-2 text-xs text-[#1d1d1f] placeholder-[#86868b]/70 focus:outline-none focus:border-[#FF7518]/40 focus:ring-1 focus:ring-[#FF7518]/30 transition-all"
+          className="w-full bg-white border border-[#e5e5ea] shadow-sm rounded-xl pl-10 pr-4 py-2 text-xs text-[#1d1d1f] placeholder-[#86868b]/70 focus:outline-none focus:border-[#1B3A5C]/40 focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all"
         />
       </div>
     </div>

@@ -119,16 +119,16 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <button onClick={prevPeriod} className="p-1.5 sm:p-2 rounded-full hover:bg-[#f5f5f7] text-[#1d1d1f] transition-all border border-transparent hover:border-slate-100 active:scale-95">
+            <button onClick={prevPeriod} className="p-1.5 sm:p-2 rounded-full hover:bg-slate-50 text-[#1d1d1f] transition-all border border-transparent hover:border-slate-100 active:scale-95">
               <ChevronLeft size={18} />
             </button>
             <button 
               onClick={() => setCurrentDate(new Date())} 
-              className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold hover:bg-[#f5f5f7] text-[#1d1d1f] border border-[#e5e5ea] transition-all active:scale-95"
+              className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold hover:bg-slate-50 text-[#1d1d1f] border border-[#e5e5ea] transition-all active:scale-95"
             >
               Today
             </button>
-            <button onClick={nextPeriod} className="p-1.5 sm:p-2 rounded-full hover:bg-[#f5f5f7] text-[#1d1d1f] transition-all border border-transparent hover:border-slate-100 active:scale-95">
+            <button onClick={nextPeriod} className="p-1.5 sm:p-2 rounded-full hover:bg-slate-50 text-[#1d1d1f] transition-all border border-transparent hover:border-slate-100 active:scale-95">
               <ChevronRight size={18} />
             </button>
           </div>
@@ -140,7 +140,7 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
         {/* Month View */}
         {viewMode === 'month' && (
           <div className="flex flex-col h-full">
-            <div className="grid grid-cols-7 border-b border-[#e5e5ea] bg-[#fafafa]">
+            <div className="grid grid-cols-7 border-b border-[#e5e5ea] bg-slate-50">
               {weekDays.map(day => (
                 <div key={day} className="py-2.5 sm:py-3 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#86868b]">
                   <span className="hidden xs:inline">{day}</span>
@@ -163,12 +163,12 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
                   <div 
                     key={day.toString()} 
                     className={`min-h-[80px] sm:min-h-[110px] border-b border-r border-[#e5e5ea] p-1 sm:p-2 transition-colors overflow-y-auto ${
-                      !isCurrentMonth ? 'bg-[#fafafa] text-[#86868b]' : 'bg-white text-[#1d1d1f]'
+                      !isCurrentMonth ? 'bg-slate-50 text-[#86868b]' : 'bg-white text-[#1d1d1f]'
                     } ${i % 7 === 6 ? 'border-r-0' : ''}`}
                   >
                     <div className="flex justify-between items-start mb-1 sm:mb-1.5">
                       <span className={`text-xs sm:text-sm font-semibold w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center rounded-full ${
-                        isToday ? 'bg-[#FF7518] text-white font-bold' : ''
+                        isToday ? 'bg-[#1B3A5C] text-white font-bold' : ''
                       }`}>
                         {format(day, 'd')}
                       </span>
@@ -201,7 +201,7 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
                               ? 'bg-slate-400'
                               : escrow.status === 'Cancelled'
                               ? 'bg-red-500'
-                              : 'bg-orange-500'
+                              : 'bg-[#1B3A5C]'
                           }`} />
                         </div>
                       ))}
@@ -232,11 +232,11 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
                       setCurrentDate(new Date(currentYear, mIdx, 1));
                       setViewMode('month');
                     }}
-                    className="flex items-center justify-between w-full pb-3 mb-4 border-b border-[#e5e5ea] hover:text-[#FF7518] text-[#1B3A5C] transition-colors group/hdr"
+                    className="flex items-center justify-between w-full pb-3 mb-4 border-b border-[#e5e5ea] hover:text-[#1B3A5C] text-[#1B3A5C] transition-colors group/hdr"
                     title={`View ${monthNames[mIdx]} in full Month grid`}
                   >
                     <span className="font-bold text-base sm:text-lg tracking-tight">{monthNames[mIdx]}</span>
-                    <span className="text-[11px] font-bold bg-[#1B3A5C]/10 text-[#1B3A5C] group-hover/hdr:bg-[#FF7518]/10 group-hover/hdr:text-[#FF7518] px-2.5 py-1 rounded-full flex items-center gap-1 transition-colors">
+                    <span className="text-[11px] font-bold bg-[#1B3A5C]/10 text-[#1B3A5C] group-hover/hdr:bg-[#1B3A5C]/10 group-hover/hdr:text-[#1B3A5C] px-2.5 py-1 rounded-full flex items-center gap-1 transition-colors">
                       {monthEscrows.length} {monthEscrows.length === 1 ? 'Closing' : 'Closings'}
                       <ChevronRight size={12} strokeWidth={2.5} />
                     </span>
@@ -307,11 +307,11 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
                     setCurrentDate(new Date(currentYear, mIdx, 1));
                     setViewMode('month');
                   }}
-                  className="bg-white rounded-2xl border border-[#e5e5ea] hover:border-[#FF7518]/30 hover:shadow-md p-4 transition-all duration-200 cursor-pointer flex flex-col h-full min-h-[170px] group/yearcard"
+                  className="bg-white rounded-2xl border border-[#e5e5ea] hover:border-[#1B3A5C]/30 hover:shadow-md p-4 transition-all duration-200 cursor-pointer flex flex-col h-full min-h-[170px] group/yearcard"
                   title={`Click to view details for ${mName}`}
                 >
-                  <div className="flex justify-between items-center pb-2 mb-2 border-b border-[#f5f5f7]">
-                    <span className="font-bold text-sm text-[#1B3A5C] group-hover/yearcard:text-[#FF7518] transition-colors">
+                  <div className="flex justify-between items-center pb-2 mb-2 border-b border-[#fafafa]">
+                    <span className="font-bold text-sm text-[#1B3A5C] group-hover/yearcard:text-[#1B3A5C] transition-colors">
                       {mName}
                     </span>
                     <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
@@ -349,7 +349,7 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
                           </div>
                         ))}
                         {hasMore && (
-                          <div className="text-[9px] text-[#FF7518] font-bold mt-1 text-center group-hover/yearcard:underline">
+                          <div className="text-[9px] text-[#1B3A5C] font-bold mt-1 text-center group-hover/yearcard:underline">
                             + {monthEscrows.length - 3} more closings
                           </div>
                         )}

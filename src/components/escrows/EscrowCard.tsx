@@ -103,14 +103,14 @@ export function EscrowCard({
               {escrow.clientFirstName || ''} {escrow.clientLastName || ''}
               {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
             </div>
-            <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#1B3A5C]/80 tracking-tight line-clamp-2 transition-colors" title={escrow.address}>
+            <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#11253C]/80 tracking-tight line-clamp-2 transition-colors" title={escrow.address}>
               {escrow.address}
             </h3>
           </div>
         </div>
 
         {/* Pricing, Code (COE), Commission Grid */}
-        <div className="grid grid-cols-3 gap-3 bg-[#fafafa] p-3 rounded-xl border border-[#e5e5ea]">
+        <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-[#e5e5ea]">
           <div>
             <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5">Price</div>
             <div className="font-mono text-xs sm:text-sm md:text-base font-bold text-[#16a34a]">{formatCurrency(escrow.price)}</div>
@@ -123,7 +123,7 @@ export function EscrowCard({
           </div>
           <div>
             <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5">Commission</div>
-            <div className="font-mono text-xs sm:text-sm md:text-base font-bold text-[#FF7518]">{formatCurrency(escrow.netCommission)}</div>
+            <div className="font-mono text-xs sm:text-sm md:text-base font-bold text-[#1B3A5C]">{formatCurrency(escrow.netCommission)}</div>
           </div>
         </div>
 
@@ -185,7 +185,7 @@ export function EscrowCard({
       </div>
 
       {/* Footer Actions */}
-      <div className="px-4 py-3 flex justify-between items-center bg-[#fafafa] border-t border-[#e5e5ea]">
+      <div className="px-4 py-3 flex justify-between items-center bg-slate-50 border-t border-[#e5e5ea]">
         <div className="text-[10px] italic text-[#86868b]">
           Last updated: {escrow.lastUpdated ? formatDistanceToNow(parseISO(String(escrow.lastUpdated)), { addSuffix: true }) : 'Unknown'}
         </div>

@@ -14,23 +14,23 @@ export function StatsBar({ escrows }: { escrows: Escrow[] }) {
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   return (
-    <div className="bg-[#f5f5f7] px-4 py-3 sm:px-6 sm:py-4 border-b border-[#e5e5ea]">
+    <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-b border-[#e5e5ea]">
       {/* Phone Interface: Closed Comm & Pending Comm on top, other stats underneath */}
       <div className="sm:hidden flex flex-col gap-3">
         {/* Top row: Closed Comm & Pending Comm */}
         <div className="grid grid-cols-2 gap-3">
           {/* Closed Commission Card */}
           <div className="h-[76px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-4 flex flex-col justify-center min-w-0">
-            <div className="text-[9px] uppercase tracking-[0.9px] text-[#1E3A8A] font-bold mb-1 truncate">Closed Comm</div>
-            <div className="text-base font-bold font-mono text-[#FF7518] tracking-tight leading-none truncate">
+            <div className="text-[9px] uppercase tracking-[0.9px] text-[#1B3A5C] mb-1 truncate">Closed Comm</div>
+            <div className="text-base font-mono text-[#1B3A5C] tracking-tight leading-none truncate">
               {formatCurrency(closedCommission)}
             </div>
           </div>
 
           {/* Pending Commission Card */}
           <div className="h-[76px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-4 flex flex-col justify-center min-w-0">
-            <div className="text-[9px] uppercase tracking-[0.9px] text-[#1E3A8A] font-bold mb-1 truncate">Pending Comm</div>
-            <div className="text-base font-bold font-mono text-[#FF7518] tracking-tight leading-none truncate">
+            <div className="text-[9px] uppercase tracking-[0.9px] text-[#1B3A5C] mb-1 truncate">Pending Comm</div>
+            <div className="text-base font-mono text-[#1B3A5C] tracking-tight leading-none truncate">
               {formatCurrency(pendingCommission)}
             </div>
           </div>
@@ -40,14 +40,14 @@ export function StatsBar({ escrows }: { escrows: Escrow[] }) {
         <div className="grid grid-cols-2 gap-3">
           {/* Open Escrows */}
           <div className="h-[64px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl flex flex-col items-center justify-center min-w-0">
-            <div className="text-[9px] uppercase tracking-[0.5px] text-[#1E3A8A] font-bold text-center leading-none">Open</div>
-            <div className="text-lg font-bold font-mono text-[#FF7518] mt-1.5 leading-none">{openCount}</div>
+            <div className="text-[9px] uppercase tracking-[0.5px] text-[#1B3A5C] text-center leading-none">Open</div>
+            <div className="text-lg font-mono text-[#1B3A5C] mt-1.5 leading-none">{openCount}</div>
           </div>
 
           {/* Closed */}
           <div className="h-[64px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl flex flex-col items-center justify-center min-w-0">
-            <div className="text-[9px] uppercase tracking-[0.5px] text-[#1E3A8A] font-bold text-center leading-none">Closed</div>
-            <div className="text-lg font-bold font-mono text-[#FF7518] mt-1.5 leading-none">{closedYtd}</div>
+            <div className="text-[9px] uppercase tracking-[0.5px] text-[#1B3A5C] text-center leading-none">Closed</div>
+            <div className="text-lg font-mono text-[#1B3A5C] mt-1.5 leading-none">{closedYtd}</div>
           </div>
         </div>
       </div>
@@ -56,30 +56,30 @@ export function StatsBar({ escrows }: { escrows: Escrow[] }) {
       <div className="hidden sm:flex items-center justify-start gap-4 overflow-x-auto scrollbar-none">
         {/* Closed Commission Card */}
         <div className="h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-6 flex flex-col justify-center shrink-0">
-          <div className="text-[9px] uppercase tracking-[0.9px] text-[#1E3A8A] font-bold mb-1 truncate">Closed Comm</div>
-          <div className="text-xl xl:text-2xl font-bold font-mono text-[#FF7518] tracking-tight leading-none">
+          <div className="text-[9px] uppercase tracking-[0.9px] text-[#1B3A5C] mb-1 truncate">Closed Comm</div>
+          <div className="text-xl xl:text-2xl font-mono text-[#1B3A5C] tracking-tight leading-none">
             {formatCurrency(closedCommission)}
           </div>
         </div>
 
         {/* Pending Commission Card */}
         <div className="h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-6 flex flex-col justify-center shrink-0">
-          <div className="text-[9px] uppercase tracking-[0.9px] text-[#1E3A8A] font-bold mb-1 truncate">Pending Comm</div>
-          <div className="text-xl xl:text-2xl font-bold font-mono text-[#FF7518] tracking-tight leading-none">
+          <div className="text-[9px] uppercase tracking-[0.9px] text-[#1B3A5C] mb-1 truncate">Pending Comm</div>
+          <div className="text-xl xl:text-2xl font-mono text-[#1B3A5C] tracking-tight leading-none">
             {formatCurrency(pendingCommission)}
           </div>
         </div>
         
         {/* Open Escrows - Wider Badge/Tab */}
         <div className="w-[110px] h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl flex flex-col items-center justify-center shrink-0">
-          <div className="text-[9px] uppercase tracking-[0.5px] text-[#1E3A8A] font-bold text-center leading-none">Open</div>
-          <div className="text-2xl font-bold font-mono text-[#FF7518] mt-2 leading-none">{openCount}</div>
+          <div className="text-[9px] uppercase tracking-[0.5px] text-[#1B3A5C] text-center leading-none">Open</div>
+          <div className="text-2xl font-mono text-[#1B3A5C] mt-2 leading-none">{openCount}</div>
         </div>
 
         {/* Closed - Wider Badge/Tab */}
         <div className="w-[110px] h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl flex flex-col items-center justify-center shrink-0">
-          <div className="text-[9px] uppercase tracking-[0.5px] text-[#1E3A8A] font-bold text-center leading-none">Closed</div>
-          <div className="text-2xl font-bold font-mono text-[#FF7518] mt-2 leading-none">{closedYtd}</div>
+          <div className="text-[9px] uppercase tracking-[0.5px] text-[#1B3A5C] text-center leading-none">Closed</div>
+          <div className="text-2xl font-mono text-[#1B3A5C] mt-2 leading-none">{closedYtd}</div>
         </div>
       </div>
     </div>

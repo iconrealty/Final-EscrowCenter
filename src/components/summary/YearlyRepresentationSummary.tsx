@@ -77,7 +77,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
   return (
     <div className="bg-white rounded-2xl border border-[#e5e5ea] overflow-hidden flex flex-col h-full shadow-sm">
       {/* Tesla / Apple Inspired Minimalist Header */}
-      <div className="px-5 py-4 border-b border-[#e5e5ea] bg-[#f5f5f7] flex flex-row sm:items-center justify-between gap-3 shrink-0">
+      <div className="px-5 py-4 border-b border-[#e5e5ea] bg-slate-50 flex flex-row sm:items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2">
           <div>
             <h2 className="font-bold text-[#1d1d1f] text-xs uppercase tracking-wider leading-none">Escrows</h2>
@@ -90,7 +90,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-xs font-bold px-4 py-1.5 pr-9 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
+            className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-xs font-bold px-4 py-1.5 pr-9 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-orange-500/30 transition-all duration-200 shadow-sm"
           >
             {availableYears.map((year) => (
               <option key={year} value={year}>
@@ -121,7 +121,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
               </div>
               <div className="text-right">
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Active Selection</span>
-                <span className="text-sm font-bold text-[#1B3A5C] tracking-wide">{selectedYear}</span>
+                <span className="text-sm font-bold text-orange-500 tracking-wide">{selectedYear}</span>
               </div>
             </div>
 
@@ -135,7 +135,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
                     <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Buyer Rep</span>
                   </div>
                   <div className="font-mono text-neutral-500 font-bold">
-                    {stats.buyer} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(stats.buyerPercent)}%)</span>
+                    {stats.buyer} <span className="text-[10px] text-orange-500 font-semibold">({Math.round(stats.buyerPercent)}%)</span>
                   </div>
                 </div>
                 <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
@@ -150,17 +150,17 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
+                    <span className="w-2 h-2 rounded-full bg-orange-500" />
                     <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Seller Rep</span>
                   </div>
                   <div className="font-mono text-neutral-500 font-bold">
-                    {stats.seller} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(stats.sellerPercent)}%)</span>
+                    {stats.seller} <span className="text-[10px] text-orange-500 font-semibold">({Math.round(stats.sellerPercent)}%)</span>
                   </div>
                 </div>
                 <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
                   <div 
                     style={{ width: `${stats.sellerPercent}%` }} 
-                    className="bg-[#1B3A5C] h-full rounded-full transition-all duration-500" 
+                    className="bg-orange-500 h-full rounded-full transition-all duration-500" 
                   />
                 </div>
               </div>
@@ -173,7 +173,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
                     <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Dual Rep</span>
                   </div>
                   <div className="font-mono text-neutral-500 font-bold">
-                    {stats.dual} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(stats.dualPercent)}%)</span>
+                    {stats.dual} <span className="text-[10px] text-orange-500 font-semibold">({Math.round(stats.dualPercent)}%)</span>
                   </div>
                 </div>
                 <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
