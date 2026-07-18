@@ -76,8 +76,6 @@ export function DetailModal({
         <div id="detail-modal-header" className="px-6 py-5 border-b border-[#fafafa] flex justify-between items-center bg-white shrink-0">
           <div>
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#86868b]">Escrow File Details</span>
-              <span className="text-[#86868b] text-[10px]">•</span>
               <span className="text-[10px] font-bold text-[#11253C] uppercase tracking-wider">
                 {escrow.clientFirstName} {escrow.clientLastName}
                 {hasClient2 && ` & ${escrow.client2FirstName} ${escrow.client2LastName}`}
