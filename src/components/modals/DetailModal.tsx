@@ -83,7 +83,7 @@ export function DetailModal({
                 {hasClient2 && ` & ${escrow.client2FirstName} ${escrow.client2LastName}`}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[#1d1d1f] mb-2 truncate max-w-[240px] sm:max-w-none" title={escrow.address}>
+            <h2 className="text-xl sm:text-2xl font-normal tracking-tight text-[#1d1d1f] mb-2 truncate max-w-[240px] sm:max-w-none" title={escrow.address}>
               {escrow.address}
             </h2>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -122,51 +122,43 @@ export function DetailModal({
         {/* Modal Scrollable Content */}
         <div id="detail-modal-body" className="p-4 sm:p-8 overflow-y-auto flex-1 space-y-6 sm:space-y-8 bg-slate-50 pb-24 sm:pb-28">
           
-          {/* Apple/Tesla-style Bento Grid Overview */}
-          <section id="detail-overview">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Apple/Tesla-style Minimalist Overview */}
+          <section id="detail-overview" className="pb-6 border-b border-[#e5e5ea]">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
               
-              {/* Sale Price Card */}
-              <div className="bg-white border border-[#e5e5ea] rounded-2xl p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300">
-                <div className="mb-2">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#86868b]">Sale Price</span>
-                </div>
-                <span className="text-xl sm:text-2xl font-black font-mono text-[#111827] tracking-tight">
+              {/* Sale Price */}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Sale Price</span>
+                <span className="text-lg sm:text-xl font-normal text-[#1d1d1f]">
                   {formatCurrency(escrow.price)}
                 </span>
               </div>
 
-              {/* Net Commission Card */}
-              <div className="bg-white border border-[#e5e5ea] rounded-2xl p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300">
-                <div className="mb-2">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#86868b]">Net Commission</span>
-                </div>
-                <span className="text-xl sm:text-2xl font-black font-mono text-[#11253C] tracking-tight">
+              {/* Net Commission */}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Net Commission</span>
+                <span className="text-lg sm:text-xl font-normal text-[#1d1d1f]">
                   {formatCurrency(escrow.netCommission)}
                 </span>
               </div>
 
-              {/* Escrow Card */}
-              <div className="bg-white border border-[#e5e5ea] rounded-2xl p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300">
-                <div className="mb-2">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#86868b]">Escrow</span>
-                </div>
-                <span className="text-sm font-black text-[#1d1d1f] block truncate" title={escrow.escrowCompany || 'None Assigned'}>
+              {/* Escrow */}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Escrow</span>
+                <span className="text-sm sm:text-base font-normal text-[#1d1d1f] truncate" title={escrow.escrowCompany || 'None Assigned'}>
                   {escrow.escrowCompany || 'None Assigned'}
                 </span>
                 {escrow.escrowNumber && (
-                  <span className="text-xs font-mono font-medium text-slate-500 block mt-1">
+                  <span className="text-xs text-[#86868b] mt-0.5">
                     File #{escrow.escrowNumber}
                   </span>
                 )}
               </div>
 
-              {/* Collaborator Card */}
-              <div className="bg-white border border-[#e5e5ea] rounded-2xl p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300">
-                <div className="mb-2">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#86868b]">Collaborator</span>
-                </div>
-                <span className="text-sm font-black text-[#1d1d1f] block truncate" title={escrow.collaborator || 'Direct Transaction'}>
+              {/* Collaborator */}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Collaborator</span>
+                <span className="text-sm sm:text-base font-normal text-[#1d1d1f] truncate" title={escrow.collaborator || 'Direct Transaction'}>
                   {escrow.collaborator || 'Direct Transaction'}
                 </span>
               </div>
