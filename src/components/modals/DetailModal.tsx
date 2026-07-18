@@ -60,6 +60,11 @@ export function DetailModal({
     },
   ];
 
+  const activeContacts = contacts.filter(c => {
+    if (c.role === 'Client 2' && !hasClient2) return false;
+    return true;
+  });
+
   return (
     <div 
       id="detail-modal-overlay" 
@@ -166,89 +171,80 @@ export function DetailModal({
 
           {/* Key Contacts Section */}
           <section id="detail-contacts">
-            <h3 className="text-[11px] font-black uppercase tracking-widest text-[#86868b] mb-4 pb-2 border-b border-[#e5e5ea]">
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-[#86868b] mb-4 pb-2 border-b border-[#e5e5ea]">
               Key Contacts
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {contacts.map((c) => (
-                <div 
-                  key={c.role} 
-                  className="bg-white border border-[#e5e5ea] rounded-2xl p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300"
-                >
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#86868b] block mb-1">
-                      {c.role}
-                    </span>
-                    <h4 className="text-sm font-semibold text-[#1d1d1f] truncate" title={c.name}>
-                      {c.name}
-                    </h4>
-                    <div className="mt-3 space-y-1">
-                      {c.phone && c.phone.trim() !== '' && c.phone !== '-' ? (
-                        <p className="text-xs text-[#0f2d59] hover:text-[#11253C] font-normal truncate select-all" title={c.phone}>
-                          {c.phone}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-[#86868b] font-medium truncate">
-                          No Phone Number
-                        </p>
-                      )}
-                      {c.email && c.email.trim() !== '' && c.email !== '-' ? (
-                        <p className="text-xs text-[#0f2d59] hover:text-[#11253C] font-normal truncate select-all" title={c.email}>
-                          {c.email}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-[#86868b] font-medium truncate">
-                          No Email Address
-                        </p>
-                      )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+              {activeContacts.map((c) => {
+                const hasPhone = c.phone && c.phone.trim() !== '' && c.phone !== '-';
+                const hasEmail = c.email && c.email.trim() !== '' && c.email !== '-';
+                return (
+                  <div 
+                    key={c.role} 
+                    className="flex items-start justify-between py-3 border-b border-[#fafafa] bg-white sm:bg-transparent p-4 sm:p-0 rounded-2xl sm:rounded-none shadow-sm sm:shadow-none border sm:border-0 border-[#e5e5ea]"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[9px] font-semibold uppercase tracking-widest text-[#86868b] block mb-0.5">
+                        {c.role}
+                      </span>
+                      <h4 className="text-sm font-medium text-[#1d1d1f] truncate" title={c.name}>
+                        {c.name}
+                      </h4>
+                      <div className="mt-1 space-y-0.5">
+                        {hasPhone ? (
+                          <p className="text-xs text-[#515154] font-normal select-all">
+                            {c.phone}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-[#c1c1c4] italic font-normal">
+                            No Phone Number
+                          </p>
+                        )}
+                        {hasEmail ? (
+                          <p className="text-xs text-[#515154] font-normal select-all truncate" title={c.email}>
+                            {c.email}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-[#c1c1c4] italic font-normal">
+                            No Email Address
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0 self-center">
+                      {hasPhone ? (
+                        <>
+                          <a
+                            href={`tel:${c.phone!.replace(/\D/g, '')}`}
+                            className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-white sm:hover:bg-slate-100 rounded-full transition-all active:scale-[0.95]"
+                            title={`Call ${c.role}`}
+                          >
+                            <Phone size={14} />
+                          </a>
+                          <a
+                            href={`sms:${c.phone!.replace(/\D/g, '')}`}
+                            className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-white sm:hover:bg-slate-100 rounded-full transition-all active:scale-[0.95]"
+                            title={`Text ${c.role}`}
+                          >
+                            <MessageSquare size={14} />
+                          </a>
+                        </>
+                      ) : null}
+
+                      {hasEmail ? (
+                        <a
+                          href={`mailto:${c.email}`}
+                          className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-white sm:hover:bg-slate-100 rounded-full transition-all active:scale-[0.95]"
+                          title={`Email ${c.role}`}
+                        >
+                          <Mail size={14} />
+                        </a>
+                      ) : null}
                     </div>
                   </div>
-
-                  <div className="flex justify-center gap-4 mt-5 pt-4 border-t border-[#fafafa]">
-                    {c.phone && c.phone.trim() !== '' && c.phone !== '-' ? (
-                      <>
-                        <a
-                          href={`tel:${c.phone.replace(/\D/g, '')}`}
-                          className="w-10 h-10 rounded-full border border-[#1B3A5C] flex items-center justify-center text-[#1B3A5C] hover:bg-slate-50 transition-all active:scale-[0.95]"
-                          title={`Call ${c.role}`}
-                        >
-                          <Phone size={18} />
-                        </a>
-                        <a
-                          href={`sms:${c.phone.replace(/\D/g, '')}`}
-                          className="w-10 h-10 rounded-full border border-[#1B3A5C] flex items-center justify-center text-[#1B3A5C] hover:bg-slate-50 transition-all active:scale-[0.95]"
-                          title={`Text ${c.role}`}
-                        >
-                          <MessageSquare size={18} />
-                        </a>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-300 cursor-not-allowed">
-                          <Phone size={18} className="opacity-50" />
-                        </div>
-                        <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-300 cursor-not-allowed">
-                          <MessageSquare size={18} className="opacity-50" />
-                        </div>
-                      </>
-                    )}
-
-                    {c.email && c.email.trim() !== '' && c.email !== '-' ? (
-                      <a
-                        href={`mailto:${c.email}`}
-                        className="w-10 h-10 rounded-full border border-[#1B3A5C] flex items-center justify-center text-[#1B3A5C] hover:bg-slate-50 transition-all active:scale-[0.95]"
-                        title={`Email ${c.role}`}
-                      >
-                        <Mail size={18} />
-                      </a>
-                    ) : (
-                      <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-300 cursor-not-allowed">
-                        <Mail size={18} className="opacity-50" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
 
