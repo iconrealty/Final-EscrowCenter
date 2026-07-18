@@ -214,7 +214,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             }}
             className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
               activeSubTab === 'total'
-                ? 'bg-white text-[#1B3A5C] shadow-sm'
+                ? 'bg-black text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
             }`}
           >
@@ -227,7 +227,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             }}
             className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
               activeSubTab === 'monthly'
-                ? 'bg-white text-[#1B3A5C] shadow-sm'
+                ? 'bg-black text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
             }`}
           >
@@ -240,7 +240,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             }}
             className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
               activeSubTab === 'commission'
-                ? 'bg-white text-[#1B3A5C] shadow-sm'
+                ? 'bg-black text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
             }`}
           >
@@ -475,7 +475,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                   }}
                   className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
                     commissionGroup === 'monthly'
-                      ? 'bg-white text-[#1B3A5C] shadow-xs'
+                      ? 'bg-black text-white shadow-xs'
                       : 'text-[#86868b] hover:text-[#1d1d1f]'
                   }`}
                 >
@@ -488,7 +488,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                   }}
                   className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
                     commissionGroup === 'yearly'
-                      ? 'bg-white text-[#1B3A5C] shadow-xs'
+                      ? 'bg-black text-white shadow-xs'
                       : 'text-[#86868b] hover:text-[#1d1d1f]'
                   }`}
                 >

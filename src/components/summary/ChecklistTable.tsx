@@ -47,7 +47,7 @@ export function ChecklistTable({
                   onClick={() => onFilterChange(opt)}
                   className={`px-3.5 py-1 rounded-full text-[10px] font-extrabold tracking-wider transition-all duration-200 cursor-pointer ${
                     summaryFilter === opt
-                      ? 'bg-white text-[#1B3A5C] shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
+                      ? 'bg-black text-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
                       : 'text-[#86868b] hover:text-[#1d1d1f]'
                   }`}
                 >
