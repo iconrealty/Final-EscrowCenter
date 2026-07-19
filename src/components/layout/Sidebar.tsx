@@ -3,7 +3,7 @@ import { LayoutDashboard, Home, Calendar } from 'lucide-react';
 
 export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (t: string) => void }) {
   const icons = [
-    { id: 'active', icon: Home, label: 'Active Escrows' },
+    { id: 'active', icon: Home, label: 'Home' },
     { id: 'summary', icon: LayoutDashboard, label: 'Summary' },
     { id: 'calendar', icon: Calendar, label: 'Calendar' },
   ];

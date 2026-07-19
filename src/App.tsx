@@ -249,7 +249,7 @@ function App() {
       {/* Mobile Bottom Navigation Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-[#e5e5ea] flex justify-around items-center z-50 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] pb-safe">
         {[
-          { id: 'active', icon: Home, label: 'Active' },
+          { id: 'active', icon: Home, label: 'Home' },
           { id: 'summary', icon: LayoutDashboard, label: 'Summary' },
           { id: 'calendar', icon: Calendar, label: 'Calendar' },
         ].map((item) => {

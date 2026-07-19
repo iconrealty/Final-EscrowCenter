@@ -3,12 +3,17 @@ import { Escrow, ALL_TASKS } from '../types';
 export const CSV_HEADERS = [
   'Escrow #',
   'Status',
+  'Representation',
   'Address',
   'Client Name',
   'Client First Name',
   'Client Last Name',
   'Client Phone',
   'Client Email',
+  'Client 2 First Name',
+  'Client 2 Last Name',
+  'Client 2 Phone',
+  'Client 2 Email',
   'Agent Name',
   'Agent Email',
   'Agent Phone',
@@ -24,7 +29,9 @@ export const CSV_HEADERS = [
   'Escrow Company',
   'Acceptance Date',
   'Close of Escrow',
-  'Sale Price'
+  'Sale Price',
+  'Net Commission',
+  'Notes'
 ];
 
 function parseDateToIso(dateStr: string): string {
@@ -55,37 +62,49 @@ function parseDateToIso(dateStr: string): string {
 export function generateCsvTemplate(): string {
   const exampleRows = [
     [
-      '"98453-PC"',
-      '"Closed"',
-      '"1206 Louise St, Santa Ana, CA 92703"',
-      '"Patrick Curley"',
-      '"Patrick"',
-      '"Curley"',
-      '""',
-      '""',
-      '"Paul Muner"',
-      '""',
-      '""',
-      '""',
-      '""',
-      '""',
-      '""',
-      '""',
-      '""',
-      '""',
-      '""',
-      '""',
-      '"Escrow Logix, Inc."',
-      '""',
-      '"06/05/2026"',
-      '"$840,000.00"'
+      '"98453-PC"', // Escrow #
+      '"Closed"', // Status
+      '"Buyer"', // Representation
+      '"1206 Louise St, Santa Ana, CA 92703"', // Address
+      '"Patrick Curley"', // Client Name
+      '"Patrick"', // Client First Name
+      '"Curley"', // Client Last Name
+      '""', // Client Phone
+      '""', // Client Email
+      '""', // Client 2 First Name
+      '""', // Client 2 Last Name
+      '""', // Client 2 Phone
+      '""', // Client 2 Email
+      '"Paul Muner"', // Agent Name
+      '""', // Agent Email
+      '""', // Agent Phone
+      '""', // Co-Agent Name
+      '""', // Co-Agent Email
+      '""', // Co-Agent Phone
+      '""', // Lender Name
+      '""', // Lender Email
+      '""', // Lender Phone
+      '""', // Escrow Officer Name
+      '""', // Escrow Officer Email
+      '""', // Escrow Officer Phone
+      '"Escrow Logix, Inc."', // Escrow Company
+      '"05/05/2026"', // Acceptance Date
+      '"06/05/2026"', // Close of Escrow
+      '"$840,000.00"', // Sale Price
+      '"$25,200.00"', // Net Commission
+      '"Notes for Escrow Logix"' // Notes
     ],
     [
       '"47294-CC"',
-      '"Pending"',
+      '"Open"',
+      '"Seller"',
       '"12592 Montecito Rd #9, Seal Beach, CA 90740"',
       '"Carlos Campa"',
       '"Carlos"',
+      '"Campa"',
+      '""',
+      '""',
+      '"Maria"',
       '"Campa"',
       '""',
       '""',
@@ -102,9 +121,11 @@ export function generateCsvTemplate(): string {
       '""',
       '""',
       '"Cloud Escrow"',
-      '""',
-      '""',
-      '"$585,000.00"'
+      '"06/01/2026"',
+      '"07/15/2026"',
+      '"$585,000.00"',
+      '"$14,625.00"',
+      '""'
     ]
   ];
   return CSV_HEADERS.join(',') + '\n' + exampleRows.map(row => row.join(',')).join('\n') + '\n';
@@ -146,12 +167,17 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
     const row = [
       escapeCsv(e.escrowNumber || ''),
       escapeCsv(e.status || 'Open'),
+      escapeCsv(e.representation || ''),
       escapeCsv(e.address || ''),
       escapeCsv(clientName),
       escapeCsv(e.clientFirstName || ''),
       escapeCsv(e.clientLastName || ''),
       escapeCsv(e.clientPhone || ''),
       escapeCsv(e.clientEmail || ''),
+      escapeCsv(e.client2FirstName || ''),
+      escapeCsv(e.client2LastName || ''),
+      escapeCsv(e.client2Phone || ''),
+      escapeCsv(e.client2Email || ''),
       escapeCsv(e.agentName || ''),
       escapeCsv(e.agentEmail || ''),
       escapeCsv(e.agentPhone || ''),
@@ -167,7 +193,9 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       escapeCsv(e.escrowCompany || ''),
       escapeCsv(e.acceptanceDate || ''),
       escapeCsv(e.coeDate || ''),
-      escapeCsv(e.price ? `$${e.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00')
+      escapeCsv(e.price ? `$${e.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'),
+      escapeCsv(e.netCommission ? `$${e.netCommission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'),
+      escapeCsv(e.notes || '')
     ];
 
     csvRows.push(row.join(','));
@@ -292,6 +320,13 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
     const rawAcceptance = getVal(['acceptance date', 'acceptance']);
     const rawCoe = getVal(['close of escrow', 'coe', 'close date']);
 
+    // Representation mapping
+    const rawRep = getVal(['representation', 'rep']);
+    let representation: 'Buyer' | 'Seller' | 'Dual' | undefined = undefined;
+    if (rawRep.toLowerCase().includes('buyer')) representation = 'Buyer';
+    else if (rawRep.toLowerCase().includes('seller')) representation = 'Seller';
+    else if (rawRep.toLowerCase().includes('dual')) representation = 'Dual';
+
     // Map fields
     const escrow: Partial<Escrow> = {
       escrowNumber: getVal(['escrow #', 'escrow number', 'escrow no', 'escrowno', 'escrow_no', 'escrow_number']),
@@ -301,6 +336,10 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       clientLastName,
       clientPhone: getVal(['client phone']),
       clientEmail: getVal(['client email']),
+      client2FirstName: getVal(['client 2 first name', 'client2 first name']),
+      client2LastName: getVal(['client 2 last name', 'client2 last name']),
+      client2Phone: getVal(['client 2 phone', 'client2 phone']),
+      client2Email: getVal(['client 2 email', 'client2 email']),
       agentName: getVal(['agent name']),
       agentEmail: getVal(['agent email']),
       agentPhone: getVal(['agent phone']),
@@ -316,6 +355,7 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       acceptanceDate: rawAcceptance ? parseDateToIso(rawAcceptance) : new Date().toISOString().split('T')[0],
       coeDate: rawCoe ? parseDateToIso(rawCoe) : new Date().toISOString().split('T')[0],
       status: parsedStatus,
+      representation,
       notes
     };
     

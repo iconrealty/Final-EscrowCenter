@@ -77,7 +77,7 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
             onClick={() => setActiveTab('active')}
             className={`text-sm font-medium transition-colors ${activeTab === 'active' ? 'text-[#1d1d1f]' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
           >
-            Active Escrows
+            Home
           </button>
           <button 
             onClick={() => setActiveTab('summary')}
