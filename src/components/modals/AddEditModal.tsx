@@ -41,6 +41,7 @@ export function AddEditModal({
       lenderEmail: '',
       price: '',
       netCommission: '',
+      commissionPercent: '',
       acceptanceDate: format(today, 'yyyy-MM-dd'),
       coeDate: format(oneMonthLater, 'yyyy-MM-dd'),
       status: 'Open',
@@ -90,6 +91,7 @@ export function AddEditModal({
       collaborator: parsed.collaborator || prev.collaborator,
       price: parsed.price ? parsed.price.toString() : prev.price,
       netCommission: parsed.netCommission ? parsed.netCommission.toString() : prev.netCommission,
+      commissionPercent: parsed.commissionPercent ? parsed.commissionPercent.toString() : prev.commissionPercent,
       acceptanceDate: parsed.acceptanceDate || prev.acceptanceDate,
       coeDate: parsed.coeDate || prev.coeDate,
       status: parsed.status || prev.status,
@@ -133,6 +135,7 @@ export function AddEditModal({
         lenderEmail: escrow.lenderEmail || '',
         price: escrow.price.toString(),
         netCommission: escrow.netCommission.toString(),
+        commissionPercent: escrow.commissionPercent?.toString() || '',
         acceptanceDate: escrow.acceptanceDate || new Date().toISOString().split('T')[0],
         coeDate: escrow.coeDate,
         status: escrow.status,
@@ -157,6 +160,7 @@ export function AddEditModal({
       ...formData,
       price: Number(formData.price) || 0,
       netCommission: Number(formData.netCommission) || 0,
+      commissionPercent: formData.commissionPercent ? Number(formData.commissionPercent) : undefined,
       contingencyDays: parsedDays
     });
   };
@@ -378,6 +382,11 @@ export function AddEditModal({
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Sale Price ($)</label>
               <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Commission (%)</label>
+              <input type="number" step="0.01" value={formData.commissionPercent} onChange={e => setFormData({...formData, commissionPercent: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Escrow } from '../../types';
-import { X, Pencil, Trash2, MessageSquare, Mail, Phone } from 'lucide-react';
+import { X, Pencil, Trash2, MessageSquare, Mail, Phone, ExternalLink } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInDays, parseISO, format } from 'date-fns';
+import { generateCognitoUrl } from '../../utils/cognitoUtils';
 
 export function DetailModal({ 
   escrow, 
@@ -97,6 +98,17 @@ export function DetailModal({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <button 
+              onClick={() => {
+                const url = generateCognitoUrl(escrow);
+                window.open(url, '_blank');
+              }} 
+              className="px-3 py-1.5 text-xs font-bold text-[#1B3A5C] bg-[#1B3A5C]/5 hover:bg-[#1B3A5C]/10 rounded-full transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 mr-2"
+              title="Open TC Cognito Form"
+            >
+              <ExternalLink size={14} />
+              <span className="hidden sm:inline">TC Form</span>
+            </button>
             <button 
               onClick={onEdit} 
               className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-slate-50 rounded-full transition-all cursor-pointer active:scale-95" 

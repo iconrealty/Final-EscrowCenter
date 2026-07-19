@@ -23,6 +23,7 @@ export interface Escrow {
   lenderEmail?: string;
   price: number;
   netCommission: number;
+  commissionPercent?: number;
   acceptanceDate?: string;
   coeDate: string;
   notes: string;
