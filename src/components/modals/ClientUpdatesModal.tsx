@@ -27,6 +27,12 @@ const TEMPLATES = [
     text: 'Hi [Esrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the buyer and Transaction Coordinator information.\n\nBuyers\nName: [Buyer Name]\nEmail: [Buyer Email]\nPhone: [Buyer Phone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
   },
   {
+    id: 'request_open_escrow_listing',
+    label: 'Request to Open Escrow(Listing)',
+    subject: 'Request to Open Escrow: [Address]',
+    text: 'Hi [Esrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nSellers\nName: [ClientName]\nEmail: [Buyer Email]\nPhone: [Buyer Phone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
+  },
+  {
     id: 'emd',
     label: 'Earnest Money (EMD) Received',
     subject: 'EMD Received - [Address]',
@@ -143,7 +149,7 @@ export function ClientUpdatesModal({
   }, [user]);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState('opening');
-  const isEscrowOfficerTemplate = selectedTemplateId === 'first_escrow_email';
+  const isEscrowOfficerTemplate = selectedTemplateId === 'first_escrow_email' || selectedTemplateId === 'request_open_escrow_listing';
   const recipientName = isEscrowOfficerTemplate 
     ? (escrow.escrowOfficer || 'Escrow Officer') 
     : `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() + 
@@ -190,6 +196,24 @@ export function ClientUpdatesModal({
     text = text.replace(/\[Collaborator\]/g, escrow.escrowCompany || escrow.collaborator || 'the escrow company');
     text = text.replace(/\[EscrowEmail\]/g, escrow.escrowEmail || 'N/A');
     text = text.replace(/\[EscrowPhone\]/g, escrow.escrowPhone || 'N/A');
+
+    // Commission placeholder
+    const commissionStr = escrow.netCommission 
+      ? (escrow.commissionPercent ? `${escrow.commissionPercent}% (${formatCurrency(escrow.netCommission)})` : formatCurrency(escrow.netCommission))
+      : (escrow.commissionPercent ? `${escrow.commissionPercent}%` : 'N/A');
+    text = text.replace(/\[Commission\]/g, commissionStr);
+    text = text.replace(/\[commission\]/g, commissionStr);
+
+    // Agent Phone placeholder
+    text = text.replace(/\[AgentPhone\]/g, escrow.agentPhone || 'N/A');
+    text = text.replace(/\[Agent Phone\]/g, escrow.agentPhone || 'N/A');
+    text = text.replace(/\[Agent phone\]/g, escrow.agentPhone || 'N/A');
+
+    // Agent Email placeholder
+    text = text.replace(/\[AgentEmail\]/g, escrow.agentEmail || 'N/A');
+    text = text.replace(/\[Agent Email\]/g, escrow.agentEmail || 'N/A');
+    text = text.replace(/\[Agent email\]/g, escrow.agentEmail || 'N/A');
+
     return text;
   };
 
@@ -486,7 +510,10 @@ export function ClientUpdatesModal({
                       { tag: '[EscrowCompany]', label: 'Escrow Company' },
                       { tag: '[Collaborator]', label: 'Collaborator' },
                       { tag: '[EscrowEmail]', label: 'Escrow Email' },
-                      { tag: '[EscrowPhone]', label: 'Escrow Phone' }
+                      { tag: '[EscrowPhone]', label: 'Escrow Phone' },
+                      { tag: '[Commission]', label: 'Commission' },
+                      { tag: '[AgentPhone]', label: 'Agent Phone' },
+                      { tag: '[AgentEmail]', label: 'Agent Email' }
                     ].map(p => (
                       <button
                         key={p.tag}
