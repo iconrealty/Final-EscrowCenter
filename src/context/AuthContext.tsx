@@ -42,6 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     if (cred.user) {
       await updateProfile(cred.user, { displayName: name });
+      await cred.user.reload();
+      setUser(auth.currentUser);
     }
   };
 

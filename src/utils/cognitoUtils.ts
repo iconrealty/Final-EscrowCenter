@@ -1,6 +1,20 @@
 import { Escrow } from '../types';
+import { parseISO, format } from 'date-fns';
 
-export function generateCognitoUrl(escrow: Escrow): string {
+function formatDateForCognito(dateStr?: string): string {
+  if (!dateStr) return '';
+  try {
+    const date = parseISO(dateStr);
+    if (!isNaN(date.getTime())) {
+      return format(date, 'MM/dd/yyyy');
+    }
+  } catch (e) {
+    console.error('Error formatting date for Cognito:', e);
+  }
+  return dateStr;
+}
+
+export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string | null, email?: string | null } | null): string {
   const baseUrl = 'https://www.cognitoforms.com/IconRealtyPartners/NewEscrow';
   
   const client1FirstName = escrow.clientFirstName || '';
@@ -11,15 +25,40 @@ export function generateCognitoUrl(escrow: Escrow): string {
   const agentFirstName = escrow.agentName ? escrow.agentName.split(' ')[0] : '';
   const agentLastName = escrow.agentName ? escrow.agentName.split(' ').slice(1).join(' ') : '';
 
+  let currentUserName = (user?.displayName || "").trim();
+  let currentUserEmail = (user?.email || "").trim();
+
+  // If logged-in user has no displayName or email, try to get them from the escrow's primary agent
+  if (!currentUserName && escrow.agentName) {
+    currentUserName = escrow.agentName.trim();
+  }
+  if (!currentUserEmail && escrow.agentEmail) {
+    currentUserEmail = escrow.agentEmail.trim();
+  }
+
+  // Absolute final fallback
+  if (!currentUserName) {
+    currentUserName = "Paul Muner";
+  }
+  if (!currentUserEmail) {
+    currentUserEmail = "paulmuner@gmail.com";
+  }
+
+  const currentUserFirstName = currentUserName.split(' ')[0] || "";
+  const currentUserLastName = currentUserName.split(' ').slice(1).join(' ') || "";
+
+  const formattedUnderContract = formatDateForCognito(escrow.acceptanceDate);
+  const formattedForecastedClose = formatDateForCognito(escrow.coeDate);
+
   // Try to match Cognito Form expected field names based on the user's form prompt.
   // Note: Cognito Forms usually strips spaces and special characters for field names.
   // We use objects for Name and Address fields since Cognito Forms uses complex fields for these.
   const entryData: any = {
     "YourName": {
-      "First": "Paul",
-      "Last": "Muner"
+      "First": currentUserFirstName,
+      "Last": currentUserLastName
     },
-    "YourEmail": "paulmuner@gmail.com",
+    "YourEmail": currentUserEmail,
     "TransactionType": escrow.representation || "Buyer",
     "ClientName": {
       "First": client1FirstName,
@@ -62,8 +101,13 @@ export function generateCognitoUrl(escrow: Escrow): string {
     },
     "OtherAgentPhoneNumber": escrow.agentPhone || "",
     "OtherAgentEmail": escrow.agentEmail || "",
-    "UnderContractDate": escrow.acceptanceDate ? new Date(escrow.acceptanceDate).toLocaleDateString() : "",
-    "ForecastedCloseDate": escrow.coeDate ? new Date(escrow.coeDate).toLocaleDateString() : "",
+    "UnderContractDate": formattedUnderContract,
+    "UnderContract": formattedUnderContract,
+    "ContractDate": formattedUnderContract,
+    "ForecastedCloseDate": formattedForecastedClose,
+    "ForecastedClose": formattedForecastedClose,
+    "CloseDate": formattedForecastedClose,
+    "COEDate": formattedForecastedClose,
     "LenderUsed": escrow.lenderName || "",
     "LenderPhoneNumber": escrow.lenderPhone || "",
     "LenderEmail": escrow.lenderEmail || "",

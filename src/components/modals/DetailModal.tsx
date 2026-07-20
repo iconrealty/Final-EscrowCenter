@@ -4,6 +4,7 @@ import { X, Pencil, Trash2, MessageSquare, Mail, Phone, ExternalLink } from 'luc
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
+import { useAuth } from '../../context/AuthContext';
 
 export function DetailModal({ 
   escrow, 
@@ -20,11 +21,18 @@ export function DetailModal({
   onToggleTask: (id: string, key: string) => void;
   onUpdateTasks: (id: string, tasks: Record<string, boolean>) => void;
 }) {
+  const { user } = useAuth();
+
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   const daysToCoe = differenceInDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
+
+  const hasCommissionPercent = escrow.commissionPercent !== undefined && escrow.commissionPercent !== null && !isNaN(Number(escrow.commissionPercent));
+  const grossCommission = hasCommissionPercent
+    ? escrow.price * (Number(escrow.commissionPercent) / 100)
+    : 0;
 
   const hasClient2 = !!(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim());
 
@@ -100,7 +108,7 @@ export function DetailModal({
           <div className="flex items-center gap-2 shrink-0">
             <button 
               onClick={() => {
-                const url = generateCognitoUrl(escrow);
+                const url = generateCognitoUrl(escrow, user);
                 window.open(url, '_blank');
               }} 
               className="px-3 py-1.5 text-xs font-bold text-[#1B3A5C] bg-[#1B3A5C]/5 hover:bg-[#1B3A5C]/10 rounded-full transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 mr-2"
@@ -139,13 +147,23 @@ export function DetailModal({
           
           {/* Apple/Tesla-style Minimalist Overview */}
           <section id="detail-overview" className="pb-6 border-b border-[#e5e5ea]">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8">
               
               {/* Sale Price */}
               <div className="flex flex-col">
                 <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Sale Price</span>
                 <span className="text-lg sm:text-xl font-normal text-[#1d1d1f]">
                   {formatCurrency(escrow.price)}
+                </span>
+              </div>
+
+              {/* Gross Commission */}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">
+                  Gross Commission {hasCommissionPercent ? `(${escrow.commissionPercent}%)` : ''}
+                </span>
+                <span className="text-lg sm:text-xl font-normal text-[#1d1d1f]">
+                  {hasCommissionPercent ? formatCurrency(grossCommission) : '-'}
                 </span>
               </div>
 
