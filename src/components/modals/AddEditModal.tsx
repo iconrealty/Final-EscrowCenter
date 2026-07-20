@@ -263,6 +263,49 @@ export function AddEditModal({
               <label className="block text-xs font-bold text-[#334155] mb-1">Property Address *</label>
               <input required type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Representation</label>
+              <select value={formData.representation} onChange={e => setFormData({...formData, representation: e.target.value as any})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]">
+                <option value="Buyer">Representing Buyer</option>
+                <option value="Seller">Representing Seller</option>
+                <option value="Dual">Representing Dual</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Status</label>
+              <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]">
+                <option value="Open">Open</option>
+                <option value="Closed">Closed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Acceptance Date *</label>
+              <input required type="date" value={formData.acceptanceDate} onChange={e => handleAcceptanceDateChange(e.target.value)} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">COE Date *</label>
+              <input required type="date" value={formData.coeDate} onChange={e => setFormData({...formData, coeDate: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Sale Price ($)</label>
+              <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Commission (%)</label>
+              <input type="number" step="0.01" value={formData.commissionPercent} onChange={e => setFormData({...formData, commissionPercent: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-[#334155] mb-1">Net Commission ($)</label>
+              <input type="number" value={formData.netCommission} onChange={e => setFormData({...formData, netCommission: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
             
             <div className="md:col-span-2 mt-2">
               <h3 className="text-sm font-bold text-[#1d1d1f] border-b border-[#e5e5ea] pb-1.5 mb-1">Client Details</h3>
@@ -374,52 +417,9 @@ export function AddEditModal({
               <input type="email" value={formData.escrowEmail} onChange={e => setFormData({...formData, escrowEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-xs font-bold text-[#334155] mb-1">Collaborator</label>
               <input type="text" value={formData.collaborator} onChange={e => setFormData({...formData, collaborator: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">Sale Price ($)</label>
-              <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">Commission (%)</label>
-              <input type="number" step="0.01" value={formData.commissionPercent} onChange={e => setFormData({...formData, commissionPercent: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">Net Commission ($)</label>
-              <input type="number" value={formData.netCommission} onChange={e => setFormData({...formData, netCommission: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">Acceptance Date *</label>
-              <input required type="date" value={formData.acceptanceDate} onChange={e => handleAcceptanceDateChange(e.target.value)} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">COE Date *</label>
-              <input required type="date" value={formData.coeDate} onChange={e => setFormData({...formData, coeDate: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">Status</label>
-              <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]">
-                <option value="Open">Open</option>
-                <option value="Closed">Closed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">Representation</label>
-              <select value={formData.representation} onChange={e => setFormData({...formData, representation: e.target.value as any})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]">
-                <option value="Buyer">Representing Buyer</option>
-                <option value="Seller">Representing Seller</option>
-                <option value="Dual">Representing Dual</option>
-              </select>
             </div>
 
             <div className="md:col-span-2 mt-4">
