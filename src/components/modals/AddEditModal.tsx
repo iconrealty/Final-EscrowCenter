@@ -48,7 +48,7 @@ export function AddEditModal({
       representation: 'Buyer' as 'Buyer' | 'Seller' | 'Dual',
       notes: '',
       contingencyDays: {
-        'L1': '7', 'L2': '7', 'L3': '7', 'L4': '7', 'L5': '7', 'L6': '7', 'L7': '7', 'L8': '7', 'L9': '7'
+        'L1': '14', 'L2': '10', 'L3': '7', 'L4': '7', 'L5': '7', 'L6': '7', 'L7': '7', 'L8': '7', 'L9': '7'
       } as Record<string, string>
     };
   });
@@ -423,22 +423,37 @@ export function AddEditModal({
             </div>
 
             <div className="md:col-span-2 mt-4">
-              <h3 className="text-sm font-bold text-[#1d1d1f] mb-3 border-b border-[#e5e5ea] pb-2">Contingency Days</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {contingencyList.map(c => (
-                  <div key={c.key}>
-                    <label className="block text-[10px] font-bold text-[#334155] mb-1 uppercase tracking-wider" title={c.label}>
-                      {c.key} - {c.label} Days
-                    </label>
-                    <input 
-                      type="number" 
-                      placeholder="e.g. 7"
-                      value={formData.contingencyDays[c.key] || ''} 
-                      onChange={e => handleDayChange(c.key, e.target.value)} 
-                      className="w-full border border-[#e5e5ea] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#1B3A5C]" 
-                    />
-                  </div>
-                ))}
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#86868b] mb-3 border-b border-[#e5e5ea] pb-1.5 flex items-center justify-between">
+                <span>Contingency Days</span>
+                <span className="text-[10px] text-slate-400 lowercase font-normal italic">click to edit days</span>
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {contingencyList.map(c => {
+                  const isLoan = c.key === 'L1';
+                  const isAppraisal = c.key === 'L2';
+                  const dotColor = isLoan ? 'bg-[#1B3A5C]' : isAppraisal ? 'bg-indigo-500' : 'bg-amber-500';
+                  
+                  return (
+                    <div 
+                      key={c.key} 
+                      className="flex items-center gap-2 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-full pl-3 pr-2 py-1 transition-all"
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                      <span className="text-xs font-medium text-[#48484a]">{c.key} - {c.label}</span>
+                      <div className="flex items-center bg-white border border-[#e5e5ea] rounded-md px-1 py-0.5 ml-1 shadow-sm focus-within:border-[#1B3A5C]">
+                        <input 
+                          type="number" 
+                          value={formData.contingencyDays[c.key] || ''} 
+                          onChange={e => handleDayChange(c.key, e.target.value)} 
+                          className="w-10 text-center font-bold text-xs text-[#1d1d1f] focus:outline-none bg-transparent" 
+                          placeholder="0"
+                          min="0"
+                        />
+                        <span className="text-[10px] text-slate-400 pr-1 select-none">d</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

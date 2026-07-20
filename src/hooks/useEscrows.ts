@@ -283,7 +283,7 @@ export function useEscrows() {
         notes: data.notes || '',
         status: data.status || 'Open',
         contingencyDays: data.contingencyDays || {
-          'L1': 7, 'L2': 7, 'L3': 7, 'L4': 7, 'L5': 7, 'L6': 7, 'L7': 7, 'L8': 7, 'L9': 7
+          'L1': 14, 'L2': 10, 'L3': 7, 'L4': 7, 'L5': 7, 'L6': 7, 'L7': 7, 'L8': 7, 'L9': 7
         },
         tasks: ALL_TASKS.reduce((acc, task) => ({ ...acc, [task.key]: false }), {}),
         lastUpdated: new Date().toISOString(),
