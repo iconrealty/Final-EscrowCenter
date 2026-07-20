@@ -112,10 +112,10 @@ export function DetailModal({
                 window.open(url, '_blank');
               }} 
               className="px-3 py-1.5 text-xs font-bold text-[#1B3A5C] bg-[#1B3A5C]/5 hover:bg-[#1B3A5C]/10 rounded-full transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 mr-2"
-              title="Open TC Cognito Form"
+              title="Open Cognito Form"
             >
               <ExternalLink size={14} />
-              <span className="hidden sm:inline">TC Form</span>
+              <span className="hidden sm:inline">Cognito Form</span>
             </button>
             <button 
               onClick={onEdit} 
