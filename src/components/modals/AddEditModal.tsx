@@ -44,6 +44,7 @@ export function AddEditModal({
       commissionPercent: '',
       acceptanceDate: format(today, 'yyyy-MM-dd'),
       coeDate: format(oneMonthLater, 'yyyy-MM-dd'),
+      contingencyStartDate: format(today, 'yyyy-MM-dd'),
       status: 'Open',
       representation: 'Buyer' as 'Buyer' | 'Seller' | 'Dual',
       notes: '',
@@ -93,6 +94,7 @@ export function AddEditModal({
       netCommission: parsed.netCommission ? parsed.netCommission.toString() : prev.netCommission,
       commissionPercent: parsed.commissionPercent ? parsed.commissionPercent.toString() : prev.commissionPercent,
       acceptanceDate: parsed.acceptanceDate || prev.acceptanceDate,
+      contingencyStartDate: parsed.acceptanceDate || prev.acceptanceDate,
       coeDate: parsed.coeDate || prev.coeDate,
       status: parsed.status || prev.status,
       notes: parsed.notes ? (prev.notes ? `${prev.notes}\n\n${parsed.notes}` : parsed.notes) : prev.notes,
@@ -137,6 +139,7 @@ export function AddEditModal({
         netCommission: escrow.netCommission.toString(),
         commissionPercent: escrow.commissionPercent?.toString() || '',
         acceptanceDate: escrow.acceptanceDate || new Date().toISOString().split('T')[0],
+        contingencyStartDate: escrow.contingencyStartDate || escrow.acceptanceDate || new Date().toISOString().split('T')[0],
         coeDate: escrow.coeDate,
         status: escrow.status,
         representation: escrow.representation || 'Buyer',
@@ -184,6 +187,7 @@ export function AddEditModal({
       return {
         ...prev,
         acceptanceDate: newAcceptance,
+        contingencyStartDate: prev.contingencyStartDate === prev.acceptanceDate ? newAcceptance : prev.contingencyStartDate,
         coeDate: newCoe
       };
     });
@@ -427,6 +431,18 @@ export function AddEditModal({
                 <span>Contingency Days</span>
                 <span className="text-[10px] text-slate-400 lowercase font-normal italic">click to edit days</span>
               </h3>
+              
+              <div className="mb-4">
+                <label className="block text-xs font-bold text-[#334155] mb-1">Contingencies Start Date</label>
+                <input 
+                  type="date" 
+                  value={formData.contingencyStartDate || formData.acceptanceDate} 
+                  onChange={e => setFormData({...formData, contingencyStartDate: e.target.value})} 
+                  className="w-full sm:w-1/2 border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" 
+                />
+                <p className="text-[10px] text-slate-500 mt-1">By default, this is the acceptance date.</p>
+              </div>
+
               <div className="flex flex-wrap gap-2">
                 {contingencyList.map(c => {
                   const isLoan = c.key === 'L1';

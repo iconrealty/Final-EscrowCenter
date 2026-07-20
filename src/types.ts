@@ -31,6 +31,7 @@ export interface Escrow {
   representation?: 'Buyer' | 'Seller' | 'Dual';
   tasks: Record<string, boolean>;
   contingencyDays?: Record<string, number>;
+  contingencyStartDate?: string;
   lastUpdated: string;
 }
 
@@ -77,8 +78,9 @@ export function isContingencyUrgent(escrow: Escrow, taskKey: string): boolean {
 
 export function getContingencyDaysLeft(escrow: Escrow, taskKey: string): number | null {
   const days = escrow.contingencyDays?.[taskKey];
-  if (days === undefined || !escrow.acceptanceDate) return null;
+  const startDateStr = escrow.contingencyStartDate || escrow.acceptanceDate;
+  if (days === undefined || !startDateStr) return null;
 
-  const deadline = addDays(parseISO(escrow.acceptanceDate), days);
+  const deadline = addDays(parseISO(startDateStr), days);
   return differenceInDays(deadline, new Date());
 }
