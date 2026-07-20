@@ -21,6 +21,12 @@ export function MilestoneChip({
   if (isDone) {
     btnClasses += "bg-[#1B3A5C] border-[#1B3A5C] text-white shadow-sm";
     dotClasses += "bg-white";
+  } else if (isOverdue) {
+    btnClasses += "bg-amber-50 border-amber-200 text-amber-700 shadow-sm";
+    if (!readOnly) {
+      btnClasses += " hover:border-amber-400 hover:text-amber-800 hover:bg-amber-100/50 cursor-pointer";
+    }
+    dotClasses += "bg-amber-500 animate-pulse";
   } else {
     btnClasses += "bg-white border-[#e5e5ea] text-[#86868b]";
     if (!readOnly) {
