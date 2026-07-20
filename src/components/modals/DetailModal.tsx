@@ -294,7 +294,7 @@ export function DetailModal({
                 let statusColorClass = '';
                 if (isCompleted) {
                   statusText = 'Completed';
-                  statusColorClass = 'text-green-600 bg-green-50 border-green-100';
+                  statusColorClass = 'text-white bg-emerald-700 border-emerald-800 font-bold';
                 } else if (daysLeft !== null) {
                   if (daysLeft > 1) {
                     statusText = `${daysLeft} days left`;
@@ -323,7 +323,7 @@ export function DetailModal({
                     className="flex items-center justify-between p-3 bg-white border border-[#e5e5ea] rounded-xl shadow-sm transition-all hover:border-slate-300"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${isCompleted ? 'bg-green-500' : isOverdue ? 'bg-rose-500 animate-pulse' : isUrgent ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`} />
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${isCompleted ? 'bg-emerald-700' : isOverdue ? 'bg-rose-500 animate-pulse' : isUrgent ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`} />
                       <span className="text-xs font-semibold text-[#1d1d1f] truncate" title={`${c.key} - ${c.label}`}>
                         {c.key} - {c.label}
                       </span>
