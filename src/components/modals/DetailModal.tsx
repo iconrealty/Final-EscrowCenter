@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Escrow } from '../../types';
+import { Escrow, CONTINGENCIES, getContingencyDaysLeft } from '../../types';
 import { X, Pencil, Trash2, MessageSquare, Mail, Phone, ExternalLink } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInDays, parseISO, format } from 'date-fns';
@@ -272,6 +272,65 @@ export function DetailModal({
                         </a>
                       ) : null}
                     </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Contingencies Status Section */}
+          <section id="detail-contingencies">
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-[#86868b] mb-4 pb-2 border-b border-[#e5e5ea]">
+              Contingencies Status
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {CONTINGENCIES.map((c) => {
+                const isCompleted = !!escrow.tasks[c.key];
+                const daysLeft = getContingencyDaysLeft(escrow, c.key);
+                const isOverdue = !isCompleted && daysLeft !== null && daysLeft < 0;
+                const isUrgent = !isCompleted && daysLeft !== null && daysLeft <= 2 && daysLeft >= 0;
+
+                let statusText = '';
+                let statusColorClass = '';
+                if (isCompleted) {
+                  statusText = 'Completed';
+                  statusColorClass = 'text-green-600 bg-green-50 border-green-100';
+                } else if (daysLeft !== null) {
+                  if (daysLeft > 1) {
+                    statusText = `${daysLeft} days left`;
+                    statusColorClass = isUrgent ? 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold' : 'text-slate-600 bg-slate-100/50 border-slate-200';
+                  } else if (daysLeft === 1) {
+                    statusText = `1 day left`;
+                    statusColorClass = 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold';
+                  } else if (daysLeft === 0) {
+                    statusText = `Due today`;
+                    statusColorClass = 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold';
+                  } else if (daysLeft === -1) {
+                    statusText = `1 day overdue`;
+                    statusColorClass = 'text-rose-600 bg-rose-50 border-rose-100 font-bold animate-pulse';
+                  } else {
+                    statusText = `${Math.abs(daysLeft)} days overdue`;
+                    statusColorClass = 'text-rose-600 bg-rose-50 border-rose-100 font-bold animate-pulse';
+                  }
+                } else {
+                  statusText = 'Pending';
+                  statusColorClass = 'text-slate-400 bg-slate-50 border-slate-100';
+                }
+
+                return (
+                  <div 
+                    key={c.key}
+                    className="flex items-center justify-between p-3 bg-white border border-[#e5e5ea] rounded-xl shadow-sm transition-all hover:border-slate-300"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${isCompleted ? 'bg-green-500' : isOverdue ? 'bg-rose-500 animate-pulse' : isUrgent ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`} />
+                      <span className="text-xs font-semibold text-[#1d1d1f] truncate" title={`${c.key} - ${c.label}`}>
+                        {c.key} - {c.label}
+                      </span>
+                    </div>
+                    <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border ${statusColorClass} shrink-0`}>
+                      {statusText}
+                    </span>
                   </div>
                 );
               })}
