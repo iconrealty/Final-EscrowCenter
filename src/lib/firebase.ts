@@ -3,12 +3,12 @@ import { getAuth } from 'firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  projectId: "gen-lang-client-0365610015",
-  appId: "1:1011537026315:web:9a8e51b2b2e4bfa0c6960e",
-  apiKey: "AIzaSyCe8CkRp8W2EaYLsUxpdioSqsfL4_MXtuY",
-  authDomain: "gen-lang-client-0365610015.firebaseapp.com",
-  storageBucket: "gen-lang-client-0365610015.firebasestorage.app",
-  messagingSenderId: "1011537026315",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "gen-lang-client-0365610015",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1011537026315:web:9a8e51b2b2e4bfa0c6960e",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCe8CkRp8W2EaYLsUxpdioSqsfL4_MXtuY",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "gen-lang-client-0365610015.firebaseapp.com",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "gen-lang-client-0365610015.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1011537026315",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -16,5 +16,5 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-}, "ai-studio-clouddeploy-e9c692e4-b2ca-4b82-8b61-737b68536430");
+}, import.meta.env.VITE_FIREBASE_PROJECT_ID ? "(default)" : "ai-studio-clouddeploy-e9c692e4-b2ca-4b82-8b61-737b68536430");
 
