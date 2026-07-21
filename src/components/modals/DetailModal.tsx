@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Escrow, CONTINGENCIES, getContingencyDaysLeft } from '../../types';
 import { X, Pencil, Trash2, MessageSquare, Mail, Phone, ExternalLink } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
-import { differenceInDays, parseISO, format } from 'date-fns';
+import { differenceInCalendarDays, parseISO, format } from 'date-fns';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
 import { useAuth } from '../../context/AuthContext';
+import { DocumentsSection } from './DocumentsSection';
 
 export function DetailModal({ 
   escrow, 
@@ -12,7 +13,8 @@ export function DetailModal({
   onEdit,
   onDelete,
   onToggleTask,
-  onUpdateTasks
+  onUpdateTasks,
+  onUpdateEscrow
 }: { 
   escrow: Escrow; 
   onClose: () => void; 
@@ -20,13 +22,14 @@ export function DetailModal({
   onDelete: () => void;
   onToggleTask: (id: string, key: string) => void;
   onUpdateTasks: (id: string, tasks: Record<string, boolean>) => void;
+  onUpdateEscrow: (id: string, data: Partial<Escrow>) => void;
 }) {
   const { user } = useAuth();
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
-  const daysToCoe = differenceInDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
+  const daysToCoe = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
 
   const hasCommissionPercent = escrow.commissionPercent !== undefined && escrow.commissionPercent !== null && !isNaN(Number(escrow.commissionPercent));
@@ -348,6 +351,12 @@ export function DetailModal({
               </div>
             </section>
           )}
+
+          {/* Documents Section */}
+          <DocumentsSection 
+            escrow={escrow}
+            onUpdate={(data) => onUpdateEscrow(escrow.id, data)}
+          />
 
         </div>
       </div>

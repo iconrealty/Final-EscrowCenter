@@ -17,3 +17,4 @@ export const auth = getAuth(app);
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
 }, "ai-studio-clouddeploy-e9c692e4-b2ca-4b82-8b61-737b68536430");
+

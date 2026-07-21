@@ -1,5 +1,5 @@
 import React from 'react';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 
 export function DaysPill({ coeDate, status }: { coeDate: string; status: string }) {
   if (status === 'Closed' || status === 'Cancelled') {
@@ -10,7 +10,7 @@ export function DaysPill({ coeDate, status }: { coeDate: string; status: string 
     );
   }
 
-  const days = differenceInDays(parseISO(String(coeDate || new Date().toISOString())), new Date());
+  const days = differenceInCalendarDays(parseISO(String(coeDate || new Date().toISOString())), new Date());
   
   let bg = '';
   let text = '';

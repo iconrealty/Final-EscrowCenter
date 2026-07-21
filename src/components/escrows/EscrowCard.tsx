@@ -2,7 +2,7 @@ import React from 'react';
 import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
 import { AppleFitnessRings } from '../shared/AppleFitnessRings';
-import { differenceInDays, parseISO, formatDistanceToNow, format } from 'date-fns';
+import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 
 export function EscrowCard({ 
   escrow, 
@@ -22,7 +22,7 @@ export function EscrowCard({
   onSendUpdate: () => void;
   onUpdateTasks: () => void;
 }) {
-  const daysToCoe = differenceInDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
+  const daysToCoe = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
   
   const completedTasks = ALL_TASKS.filter(t => escrow.tasks[t.key]).length;

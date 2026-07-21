@@ -30,6 +30,7 @@ export const CSV_HEADERS = [
   'Acceptance Date',
   'Close of Escrow',
   'Sale Price',
+  'Commission Percent',
   'Net Commission',
   'Notes'
 ];
@@ -91,6 +92,7 @@ export function generateCsvTemplate(): string {
       '"05/05/2026"', // Acceptance Date
       '"06/05/2026"', // Close of Escrow
       '"$840,000.00"', // Sale Price
+      '"3.0"', // Commission Percent
       '"$25,200.00"', // Net Commission
       '"Notes for Escrow Logix"' // Notes
     ],
@@ -124,6 +126,7 @@ export function generateCsvTemplate(): string {
       '"06/01/2026"',
       '"07/15/2026"',
       '"$585,000.00"',
+      '"2.5"',
       '"$14,625.00"',
       '""'
     ]
@@ -194,6 +197,7 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       escapeCsv(e.acceptanceDate || ''),
       escapeCsv(e.coeDate || ''),
       escapeCsv(e.price ? `$${e.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'),
+      escapeCsv(e.commissionPercent !== undefined ? e.commissionPercent : ''),
       escapeCsv(e.netCommission ? `$${e.netCommission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'),
       escapeCsv(e.notes || '')
     ];
@@ -351,6 +355,7 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       escrowEmail: getVal(['escrow officer email', 'escrow email']),
       collaborator: getVal(['co-agent name', 'co-agent', 'collaborator']),
       price: Number(String(getVal(['sale price', 'price', 'amount']) || '').replace(/[^0-9.]/g, '')) || 0,
+      commissionPercent: getVal(['commission percent', 'commission %', 'commission_percent']) ? Number(String(getVal(['commission percent', 'commission %', 'commission_percent'])).replace(/[^0-9.]/g, '')) : undefined,
       netCommission: Number(String(getVal(['net commission', 'commission']) || '').replace(/[^0-9.]/g, '')) || 0,
       acceptanceDate: rawAcceptance ? parseDateToIso(rawAcceptance) : new Date().toISOString().split('T')[0],
       coeDate: rawCoe ? parseDateToIso(rawCoe) : new Date().toISOString().split('T')[0],
@@ -452,6 +457,8 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
   const rawGCI = getVal(['gci', 'net commission', 'commission', 'gross agent(s) paid income']);
   const netCommission = Number(String(rawGCI || '').replace(/[^0-9.]/g, '')) || 0;
 
+  const commissionPercent = getVal(['commission percent', 'commission %', 'commission_percent']) ? Number(String(getVal(['commission percent', 'commission %', 'commission_percent'])).replace(/[^0-9.]/g, '')) : undefined;
+
   // Additional fields to include in Notes
   const noteLines: string[] = [];
   const sisuNotes = getVal(['notes', 'comments', 'description']);
@@ -501,6 +508,7 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     escrowEmail: getVal(['escrow officer email', 'escrow email', 'escrow_email']),
     collaborator: getVal(['co-agent name', 'co-agent', 'collaborator']),
     price,
+    commissionPercent,
     netCommission,
     acceptanceDate,
     coeDate,

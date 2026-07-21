@@ -1,7 +1,7 @@
 import React from 'react';
 import { Escrow, ALL_TASKS } from '../../types';
 import { Trash2, Calendar, User, CheckCircle2, ChevronRight } from 'lucide-react';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInCalendarDays } from 'date-fns';
 import { StatusBadge } from '../shared/StatusBadge';
 
 interface ChecklistTableProps {

@@ -3,7 +3,7 @@ import { Escrow, MILESTONES, CONTINGENCIES, isContingencyUrgent, getContingencyD
 import { X, Check } from 'lucide-react';
 import { MilestoneChip } from '../escrows/MilestoneChip';
 import { ContingencyChip } from '../escrows/ContingencyChip';
-import { differenceInDays, parseISO, format } from 'date-fns';
+import { differenceInCalendarDays, parseISO, format } from 'date-fns';
 
 export function MilestonesContingenciesModal({ 
   escrow, 
@@ -16,7 +16,7 @@ export function MilestonesContingenciesModal({
   onToggleTask: (id: string, taskKey: string) => void;
   onUpdateTasks: (id: string, tasks: Record<string, boolean>) => void;
 }) {
-  const daysToCoe = differenceInDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
+  const daysToCoe = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
 
   const completedTasks = ALL_TASKS.filter(t => escrow.tasks[t.key]).length;

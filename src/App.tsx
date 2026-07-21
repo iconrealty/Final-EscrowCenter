@@ -17,7 +17,7 @@ import { MilestonesContingenciesModal } from './components/modals/MilestonesCont
 
 import { useEscrows } from './hooks/useEscrows';
 import { Escrow } from './types';
-import { differenceInDays, parseISO, getISOWeek, getISOWeekYear } from 'date-fns';
+import { differenceInCalendarDays, parseISO, getISOWeek, getISOWeekYear } from 'date-fns';
 import { Home, LayoutDashboard, Calendar } from 'lucide-react';
 
 function App() {
@@ -213,6 +213,7 @@ function App() {
           onDelete={() => setConfirmDeleteId(detailEscrow.id)}
           onToggleTask={toggleTask}
           onUpdateTasks={(id, tasks) => editEscrow(id, { tasks })}
+          onUpdateEscrow={(id, data) => editEscrow(id, data)}
         />
       )}
 

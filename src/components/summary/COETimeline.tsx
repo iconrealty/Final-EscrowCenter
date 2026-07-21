@@ -1,7 +1,7 @@
 import React from 'react';
 import { Escrow, ALL_TASKS, MILESTONES, CONTINGENCIES } from '../../types';
 import { Avatar } from '../shared/Avatar';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 
 export function COETimeline({ escrows, onSelectEscrow }: { escrows: Escrow[], onSelectEscrow: (escrow: Escrow) => void }) {
   const sorted = [...escrows].sort((a, b) => {
@@ -18,7 +18,7 @@ export function COETimeline({ escrows, onSelectEscrow }: { escrows: Escrow[], on
       </div>
       <div className="overflow-y-auto flex-1 p-4 flex flex-col gap-3">
         {sorted.map(escrow => {
-          const days = differenceInDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
+          const days = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
           const isUrgent = days <= 5 && escrow.status === 'Open';
           const isClosed = escrow.status !== 'Open';
           const completed = ALL_TASKS.filter(t => escrow.tasks[t.key]).length;

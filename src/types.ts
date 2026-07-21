@@ -1,3 +1,12 @@
+export interface EscrowDocument {
+  id: string;
+  name: string;
+  url: string;
+  uploadedAt: string;
+  size?: number;
+  type?: string;
+}
+
 export interface Escrow {
   id: string;
   escrowNumber?: string;
@@ -32,6 +41,7 @@ export interface Escrow {
   tasks: Record<string, boolean>;
   contingencyDays?: Record<string, number>;
   contingencyStartDate?: string;
+  documents?: EscrowDocument[];
   lastUpdated: string;
 }
 
@@ -64,7 +74,7 @@ export const CONTINGENCIES = [
 
 export const ALL_TASKS = [...MILESTONES, ...CONTINGENCIES];
 
-import { addDays, differenceInDays, parseISO } from 'date-fns';
+import { addDays, differenceInCalendarDays, parseISO } from 'date-fns';
 
 export function isContingencyUrgent(escrow: Escrow, taskKey: string): boolean {
   if (escrow.status !== 'Open') return false;
@@ -82,5 +92,5 @@ export function getContingencyDaysLeft(escrow: Escrow, taskKey: string): number 
   if (days === undefined || !startDateStr) return null;
 
   const deadline = addDays(parseISO(startDateStr), days);
-  return differenceInDays(deadline, new Date());
+  return differenceInCalendarDays(deadline, new Date());
 }
