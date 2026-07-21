@@ -18,5 +18,5 @@ export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-}, import.meta.env.VITE_FIREBASE_PROJECT_ID ? "(default)" : "ai-studio-clouddeploy-e9c692e4-b2ca-4b82-8b61-737b68536430");
+}, import.meta.env.VITE_FIREBASE_DATABASE_ID || "ai-studio-clouddeploy-e9c692e4-b2ca-4b82-8b61-737b68536430");
 
