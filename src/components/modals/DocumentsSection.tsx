@@ -11,6 +11,7 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
   const [progress, setProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<EscrowDocument | null>(null);
+  const [useGoogleViewer, setUseGoogleViewer] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateSafeId = () => {
@@ -304,12 +305,38 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
+                {isPdf(previewDoc) && (
+                  <div className="hidden xs:flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700 text-[11px] mr-1">
+                    <button
+                      onClick={() => setUseGoogleViewer(true)}
+                      className={`px-2 py-1 rounded-md transition-all ${
+                        useGoogleViewer
+                          ? 'bg-blue-600 text-white font-medium shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                      title="Google Viewer supports multi-page scrolling on mobile"
+                    >
+                      Multi-Page
+                    </button>
+                    <button
+                      onClick={() => setUseGoogleViewer(false)}
+                      className={`px-2 py-1 rounded-md transition-all ${
+                        !useGoogleViewer
+                          ? 'bg-blue-600 text-white font-medium shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                      title="Direct PDF file"
+                    >
+                      Direct
+                    </button>
+                  </div>
+                )}
                 <a
                   href={previewDoc.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg transition-colors border border-slate-700"
-                  title="Open in new window / tab"
+                  title="Open full document in new tab"
                 >
                   <ExternalLink size={14} />
                   <span className="hidden sm:inline">Open New Tab</span>
@@ -346,11 +373,19 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
                   />
                 </div>
               ) : isPdf(previewDoc) ? (
-                <iframe 
-                  src={previewDoc.url} 
-                  title={previewDoc.name} 
-                  className="w-full h-full rounded-lg border border-slate-200 bg-white shadow-sm"
-                />
+                useGoogleViewer ? (
+                  <iframe 
+                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewDoc.url)}&embedded=true`} 
+                    title={previewDoc.name} 
+                    className="w-full h-full rounded-lg border border-slate-200 bg-white shadow-sm"
+                  />
+                ) : (
+                  <iframe 
+                    src={previewDoc.url} 
+                    title={previewDoc.name} 
+                    className="w-full h-full rounded-lg border border-slate-200 bg-white shadow-sm"
+                  />
+                )
               ) : (
                 <iframe 
                   src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewDoc.url)}&embedded=true`} 
