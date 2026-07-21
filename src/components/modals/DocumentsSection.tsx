@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { Escrow, EscrowDocument } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { FileText, Upload, Trash2, Download, Loader2 } from 'lucide-react';
+import { storage } from '../../lib/firebase';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 
 export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdate: (data: Partial<Escrow>) => void }) {
   const { user } = useAuth();
@@ -22,30 +24,49 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
   };
 
   const uploadFile = (file: File) => {
+    if (!user) return;
+    
     setUploading(true);
     setProgress(0);
+    
+    const docId = generateSafeId();
+    const storageRef = ref(storage, `users/${user.uid}/escrows/${escrow.id}/documents/${docId}_${file.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-    // Simulate upload delay for UI
-    setTimeout(() => {
-      const docId = generateSafeId();
-      const newDoc: EscrowDocument = {
-        id: docId,
-        name: file.name,
-        url: '#', // Cannot store actual file in managed Firebase
-        uploadedAt: new Date().toISOString(),
-        size: file.size,
-        type: file.type,
-      };
-
-      const existingDocs = escrow.documents || [];
-      onUpdate({ documents: [...existingDocs, newDoc] });
-      
-      setUploading(false);
-      setProgress(0);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      
-      alert("Note: File contents are not persistently saved because the managed database only supports text data, not file hosting. Only the document name and metadata have been saved for demonstration.");
-    }, 1500);
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setProgress(p);
+      },
+      (error) => {
+        console.error("Upload failed:", error);
+        setUploading(false);
+        setProgress(0);
+        alert("Failed to upload file. Please check your storage rules.");
+      },
+      async () => {
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          const newDoc: EscrowDocument = {
+            id: docId,
+            name: file.name,
+            url: downloadURL,
+            uploadedAt: new Date().toISOString(),
+            size: file.size,
+            type: file.type,
+          };
+          const existingDocs = escrow.documents || [];
+          onUpdate({ documents: [...existingDocs, newDoc] });
+        } catch (err) {
+           console.error("Error getting download URL", err);
+        } finally {
+          setUploading(false);
+          setProgress(0);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+      }
+    );
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,8 +101,17 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
     }
   };
 
-  const handleDelete = async (docId: string, url: string) => {
+  const handleDelete = async (docId: string, url: string, name: string) => {
     if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    if (user && url && url !== '#') {
+      try {
+        const storageRef = ref(storage, `users/${user.uid}/escrows/${escrow.id}/documents/${docId}_${name}`);
+        await deleteObject(storageRef);
+      } catch (err) {
+        console.error("Error deleting from storage:", err);
+      }
+    }
     
     const existingDocs = escrow.documents || [];
     onUpdate({ documents: existingDocs.filter(d => d.id !== docId) });
@@ -178,7 +208,7 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
                   <Download size={14} />
                 </a>
                 <button
-                  onClick={() => handleDelete(doc.id, doc.url)}
+                  onClick={() => handleDelete(doc.id, doc.url, doc.name)}
                   className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                   title="Delete"
                 >

@@ -218,53 +218,64 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
   }
 }
 
-export function parseCsvLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
+export function parseCsvData(csvText: string): string[][] {
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentVal = '';
   let inQuotes = false;
   
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
+  // Strip UTF-8 Byte Order Mark (BOM) if present
+  let cleanCsv = csvText;
+  if (cleanCsv.startsWith('\ufeff')) {
+    cleanCsv = cleanCsv.slice(1);
+  }
+
+  for (let i = 0; i < cleanCsv.length; i++) {
+    const char = cleanCsv[i];
+    const nextChar = cleanCsv[i + 1];
+
     if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
+      if (inQuotes && nextChar === '"') {
+        currentVal += '"';
         i++; // skip next quote
       } else {
         inQuotes = !inQuotes;
       }
     } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
+      currentRow.push(currentVal.trim());
+      currentVal = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') {
+        i++; // skip \n
+      }
+      currentRow.push(currentVal.trim());
+      if (currentRow.some(v => /[a-zA-Z0-9]/.test(v))) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentVal = '';
     } else {
-      current += char;
+      currentVal += char;
     }
   }
-  result.push(current.trim());
-  return result;
+  
+  currentRow.push(currentVal.trim());
+  if (currentRow.some(v => /[a-zA-Z0-9]/.test(v))) {
+    rows.push(currentRow);
+  }
+  
+  return rows;
 }
 
 export function parseCsv(csvText: string): Partial<Escrow>[] {
-  // Strip UTF-8 Byte Order Mark (BOM) if present
-  let cleanCsvText = csvText;
-  if (cleanCsvText.startsWith('\ufeff')) {
-    cleanCsvText = cleanCsvText.slice(1);
-  }
+  const rows = parseCsvData(csvText);
+  if (rows.length <= 1) return []; // Only headers or empty
 
-  // Normalize line endings
-  const normalizedCsv = cleanCsvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const lines = normalizedCsv.split('\n').filter(l => {
-    const trimmed = l.trim();
-    if (trimmed.length === 0) return false;
-    return /[a-zA-Z0-9]/.test(trimmed);
-  });
-  
-  if (lines.length <= 1) return []; // Only headers or empty
-
-  const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase());
+  const headers = rows[0].map(h => h.toLowerCase());
   const results: Partial<Escrow>[] = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCsvLine(lines[i]);
+  for (let i = 1; i < rows.length; i++) {
+    const values = rows[i];
     
     const row: Record<string, string> = {};
     headers.forEach((h, idx) => {
