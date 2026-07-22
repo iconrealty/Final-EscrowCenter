@@ -26,10 +26,12 @@ interface ProcessedAnniversary {
   coeYear: number;
   coeMonth: number; // 0-11
   coeDay: number; // 1-31
-  yearsClosed: number;
-  nextAnniversaryDate: Date;
+  yearsThisYear: number;
+  yearsAtNext: number;
+  daysDiffThisYear: number;
   daysUntilNext: number;
   isToday: boolean;
+  isPassedThisYear: boolean;
   isThisMonth: boolean;
   isWithin30Days: boolean;
   isMilestone: boolean;
@@ -71,26 +73,30 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
 
       const coeDateObj = new Date(coeYear, coeMonth, coeDay);
 
-      let thisYearAnniversary = new Date(currentYear, coeMonth, coeDay);
-      
+      const thisYearAnniversary = new Date(currentYear, coeMonth, coeDay);
       const todayStart = new Date(currentYear, currentMonth, currentDay);
-      let diffMs = thisYearAnniversary.getTime() - todayStart.getTime();
-      let diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      
+      const diffMs = thisYearAnniversary.getTime() - todayStart.getTime();
+      const daysDiffThisYear = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+      const yearsThisYear = Math.max(1, currentYear - coeYear);
 
       let nextAnniversaryDate = thisYearAnniversary;
-      let yearsClosed = currentYear - coeYear;
+      let daysUntilNext = daysDiffThisYear;
+      let yearsAtNext = yearsThisYear;
 
-      if (diffDays < 0) {
+      if (daysDiffThisYear < 0) {
         nextAnniversaryDate = new Date(currentYear + 1, coeMonth, coeDay);
         const nextDiffMs = nextAnniversaryDate.getTime() - todayStart.getTime();
-        diffDays = Math.round(nextDiffMs / (1000 * 60 * 60 * 24));
-        yearsClosed += 1;
+        daysUntilNext = Math.round(nextDiffMs / (1000 * 60 * 60 * 24));
+        yearsAtNext = yearsThisYear + 1;
       }
 
-      const isToday = diffDays === 0;
+      const isToday = daysDiffThisYear === 0;
+      const isPassedThisYear = daysDiffThisYear < 0;
       const isThisMonth = coeMonth === currentMonth;
-      const isWithin30Days = diffDays >= 0 && diffDays <= 30;
-      const isMilestone = yearsClosed === 1 || yearsClosed === 3 || yearsClosed === 5 || yearsClosed === 10 || (yearsClosed > 0 && yearsClosed % 5 === 0);
+      const isWithin30Days = daysDiffThisYear >= 0 && daysDiffThisYear <= 30;
+      const isMilestone = yearsThisYear === 1 || yearsThisYear === 3 || yearsThisYear === 5 || yearsThisYear === 10 || (yearsThisYear > 0 && yearsThisYear % 5 === 0);
 
       const formattedAnniversaryDate = `${MONTH_NAMES[coeMonth]} ${coeDay}`;
 
@@ -100,10 +106,12 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
         coeYear,
         coeMonth,
         coeDay,
-        yearsClosed: Math.max(1, yearsClosed),
-        nextAnniversaryDate,
-        daysUntilNext: diffDays,
+        yearsThisYear,
+        yearsAtNext,
+        daysDiffThisYear,
+        daysUntilNext,
         isToday,
+        isPassedThisYear,
         isThisMonth,
         isWithin30Days,
         isMilestone,
@@ -143,12 +151,16 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
 
     if (filterMode === 'upcoming30') {
       list = list.filter(item => item.isWithin30Days);
+      return list.sort((a, b) => a.daysDiffThisYear - b.daysDiffThisYear);
     } else if (filterMode === 'thisMonth') {
       list = list.filter(item => item.coeMonth === currentMonth);
+      return list.sort((a, b) => a.coeDay - b.coeDay);
     } else if (filterMode === 'byMonth') {
       list = list.filter(item => item.coeMonth === selectedMonth);
+      return list.sort((a, b) => a.coeDay - b.coeDay);
     } else if (filterMode === 'milestones') {
       list = list.filter(item => item.isMilestone);
+      return list.sort((a, b) => a.daysUntilNext - b.daysUntilNext);
     }
 
     return list.sort((a, b) => a.daysUntilNext - b.daysUntilNext);
@@ -274,9 +286,12 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
           {filteredList.map((item) => {
             const {
               escrow,
-              yearsClosed,
+              yearsThisYear,
+              daysDiffThisYear,
               daysUntilNext,
               isToday,
+              isPassedThisYear,
+              isThisMonth,
               isMilestone,
               formattedAnniversaryDate,
               coeYear,
@@ -290,13 +305,25 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
               ? `${escrow.client2FirstName} ${escrow.client2LastName || ''}`
               : null;
 
+            let relativeTimeText = '';
+            if (isToday) {
+              relativeTimeText = 'Today';
+            } else if (daysDiffThisYear > 0) {
+              relativeTimeText = daysDiffThisYear === 1 ? 'In 1 day' : `In ${daysDiffThisYear} days`;
+            } else if (filterMode === 'thisMonth' || isThisMonth) {
+              const passedDays = Math.abs(daysDiffThisYear);
+              relativeTimeText = passedDays === 1 ? 'Passed 1 day ago' : `Passed ${passedDays} days ago`;
+            } else {
+              relativeTimeText = daysUntilNext === 1 ? 'In 1 day' : `In ${daysUntilNext} days`;
+            }
+
             return (
               <div
                 key={escrow.id}
                 className={`bg-white border rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between transition-all duration-200 hover:shadow-lg relative overflow-hidden group ${
                   isToday
                     ? 'border-amber-400 ring-2 ring-amber-400/30'
-                    : isMilestone
+                    : isMilestone && !isPassedThisYear
                     ? 'border-emerald-200 bg-gradient-to-b from-emerald-50/20 to-white'
                     : 'border-[#e5e5ea]'
                 }`}
@@ -308,24 +335,25 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                       <PartyPopper size={14} />
                       <span>TODAY IS THE ANNIVERSARY!</span>
                     </span>
+                  ) : isPassedThisYear && (filterMode === 'thisMonth' || isThisMonth) ? (
+                    <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-bold">
+                      <Clock size={13} className="text-slate-400" />
+                      <span>{getOrdinal(yearsThisYear)} Anniversary (Passed)</span>
+                    </span>
                   ) : isMilestone ? (
                     <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg text-xs font-bold">
                       <Award size={14} className="text-emerald-600" />
-                      <span>{getOrdinal(yearsClosed)} Year Milestone</span>
+                      <span>{getOrdinal(yearsThisYear)} Year Milestone</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold">
                       <Clock size={13} className="text-slate-500" />
-                      <span>{getOrdinal(yearsClosed)} Anniversary</span>
+                      <span>{getOrdinal(yearsThisYear)} Anniversary</span>
                     </span>
                   )}
 
-                  <span className="text-xs font-bold text-slate-500 shrink-0">
-                    {daysUntilNext === 0
-                      ? 'Today'
-                      : daysUntilNext === 1
-                      ? 'In 1 day'
-                      : `In ${daysUntilNext} days`}
+                  <span className={`text-xs font-bold shrink-0 ${isPassedThisYear && (filterMode === 'thisMonth' || isThisMonth) ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {relativeTimeText}
                   </span>
                 </div>
 
@@ -393,7 +421,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                     onClick={() =>
                       setWishModalEscrow({
                         escrow,
-                        years: yearsClosed,
+                        years: yearsThisYear,
                         dateFormatted: formattedAnniversaryDate,
                       })
                     }
