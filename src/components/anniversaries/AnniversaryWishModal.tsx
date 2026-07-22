@@ -149,15 +149,37 @@ export function AnniversaryWishModal({
     setIsEditingMaster(false);
   };
 
+  const logQuickContact = (method: 'Text' | 'Email' | 'Phone' | 'In Person' | 'Card/Gift', customNotes?: string) => {
+    if (!onUpdateEscrow) return;
+    const existingLog = (escrow.anniversaryInteractions || []).some(
+      i => i.yearCount === yearsCount || (i.date && i.date.startsWith(new Date().toISOString().split('T')[0]))
+    );
+    if (!existingLog) {
+      const newInteraction: AnniversaryInteraction = {
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
+        date: new Date().toISOString().split('T')[0],
+        yearCount: yearsCount,
+        notes: customNotes || `Sent ${method} anniversary wish to client.`,
+        method: method,
+        createdAt: new Date().toISOString()
+      };
+      onUpdateEscrow(escrow.id, {
+        anniversaryInteractions: [newInteraction, ...(escrow.anniversaryInteractions || [])]
+      });
+    }
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText(message);
     setCopied(true);
-    showSuccess('Anniversary message copied to clipboard!');
+    logQuickContact(templateType === 'sms' ? 'Text' : 'Email');
+    showSuccess('Copied to clipboard & marked as responded!');
     setTimeout(() => setCopied(false), 2500);
   };
 
   const handleEmailLaunch = () => {
     if (!escrow.clientEmail) return;
+    logQuickContact('Email');
     const subject = encodeURIComponent(`Happy ${anniversaryTitle}! 🏠🎉`);
     const body = encodeURIComponent(message.replace(/Subject:.*\n\n/, ''));
     window.location.href = `mailto:${escrow.clientEmail}?subject=${subject}&body=${body}`;
@@ -497,7 +519,7 @@ export function AnniversaryWishModal({
                   <div key={item.id} className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs flex flex-col gap-1">
                     <div className="flex items-center justify-between text-[#86868b]">
                       <span className="font-bold text-[#1d1d1f] flex items-center gap-1.5">
-                        <CheckCircle2 size={13} className="text-emerald-600" />
+                        <CheckCircle2 size={13} className="text-[#059669]" />
                         <span>Contacted via {item.method} ({item.yearCount ? `${yearsOrdinalStr(item.yearCount)} Anniv.` : 'Anniversary'})</span>
                       </span>
                       <span className="text-[10px] font-semibold">{item.date}</span>
@@ -525,10 +547,20 @@ export function AnniversaryWishModal({
             Close
           </button>
           <button
+            onClick={() => {
+              logQuickContact('Phone', 'Responded / Contacted client for anniversary');
+              showSuccess('Marked anniversary as responded!');
+            }}
+            className="bg-[#059669] hover:bg-[#047857] text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
+          >
+            <CheckCircle2 size={14} />
+            <span>Mark as Responded</span>
+          </button>
+          <button
             onClick={handleCopy}
             className="bg-[#1B3A5C] hover:bg-[#11253C] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
           >
-            {copied ? 'Copied to Clipboard!' : 'Copy Message'}
+            {copied ? 'Copied & Marked Responded!' : 'Copy Message'}
           </button>
         </div>
       </div>

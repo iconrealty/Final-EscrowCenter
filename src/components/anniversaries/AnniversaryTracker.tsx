@@ -35,6 +35,7 @@ interface ProcessedAnniversary {
   isThisMonth: boolean;
   isWithin30Days: boolean;
   isMilestone: boolean;
+  hasResponded: boolean;
   formattedAnniversaryDate: string;
 }
 
@@ -45,7 +46,7 @@ const MONTH_NAMES = [
 
 export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: AnniversaryTrackerProps) {
   const [search, setSearch] = useState('');
-  const [filterMode, setFilterMode] = useState<'upcoming30' | 'thisMonth' | 'byMonth' | 'milestones' | 'all'>('upcoming30');
+  const [filterMode, setFilterMode] = useState<'upcoming30' | 'thisMonth' | 'byMonth' | 'milestones' | 'responded' | 'all'>('upcoming30');
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string } | null>(null);
 
@@ -98,6 +99,17 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
       const isWithin30Days = daysDiffThisYear >= 0 && daysDiffThisYear <= 30;
       const isMilestone = yearsThisYear === 1 || yearsThisYear === 3 || yearsThisYear === 5 || yearsThisYear === 10 || (yearsThisYear > 0 && yearsThisYear % 5 === 0);
 
+      // Check if user has responded / logged a contact for this anniversary
+      const hasResponded = Boolean(
+        escrow.anniversaryInteractions &&
+        escrow.anniversaryInteractions.length > 0 &&
+        escrow.anniversaryInteractions.some(i => 
+          i.yearCount === yearsThisYear || 
+          i.yearCount === yearsAtNext || 
+          (i.date && i.date.startsWith(currentYear.toString()))
+        )
+      );
+
       const formattedAnniversaryDate = `${MONTH_NAMES[coeMonth]} ${coeDay}`;
 
       return {
@@ -115,6 +127,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
         isThisMonth,
         isWithin30Days,
         isMilestone,
+        hasResponded,
         formattedAnniversaryDate,
       };
     });
@@ -126,12 +139,14 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
     const thisMonthCount = processedAnniversaries.filter(a => a.coeMonth === currentMonth).length;
     const upcoming30Count = processedAnniversaries.filter(a => a.isWithin30Days).length;
     const milestonesCount = processedAnniversaries.filter(a => a.isMilestone && a.isWithin30Days).length;
+    const respondedCount = processedAnniversaries.filter(a => a.hasResponded).length;
 
     return {
       totalClients,
       thisMonthCount,
       upcoming30Count,
       milestonesCount,
+      respondedCount,
     };
   }, [processedAnniversaries, currentMonth]);
 
@@ -161,6 +176,9 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
     } else if (filterMode === 'milestones') {
       list = list.filter(item => item.isMilestone);
       return list.sort((a, b) => a.daysUntilNext - b.daysUntilNext);
+    } else if (filterMode === 'responded') {
+      list = list.filter(item => item.hasResponded);
+      return list.sort((a, b) => a.daysUntilNext - b.daysUntilNext);
     }
 
     return list.sort((a, b) => a.daysUntilNext - b.daysUntilNext);
@@ -184,13 +202,17 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
 
         {/* Mini stat pills */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-5 py-3 text-center min-w-[110px]">
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
             <p className="text-2xl sm:text-3xl font-black text-[#1B3A5C]">{stats.upcoming30Count}</p>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Next 30 Days</p>
           </div>
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-5 py-3 text-center min-w-[110px]">
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
             <p className="text-2xl sm:text-3xl font-black text-amber-600">{stats.thisMonthCount}</p>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{MONTH_NAMES[currentMonth]}</p>
+          </div>
+          <div className="bg-[#059669]/10 border border-[#059669]/20 rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
+            <p className="text-2xl sm:text-3xl font-black text-[#059669]">{stats.respondedCount}</p>
+            <p className="text-[10px] font-bold text-[#059669] uppercase tracking-wider mt-0.5">Responded</p>
           </div>
         </div>
       </div>
@@ -220,6 +242,17 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
             This Month ({MONTH_NAMES[currentMonth]})
           </button>
           <button
+            onClick={() => setFilterMode('responded')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+              filterMode === 'responded'
+                ? 'bg-[#059669] text-white border-[#059669] shadow-sm'
+                : 'bg-[#059669]/10 text-[#059669] border-[#059669]/30 hover:bg-[#059669]/20'
+            }`}
+          >
+            <CheckCircle2 size={13} className={filterMode === 'responded' ? 'text-white' : 'text-[#059669]'} />
+            <span>Responded ({stats.respondedCount})</span>
+          </button>
+          <button
             onClick={() => setFilterMode('byMonth')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
               filterMode === 'byMonth'
@@ -237,7 +270,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
             }`}
           >
-            Milestone Years
+            Milestones
           </button>
           <button
             onClick={() => setFilterMode('all')}
@@ -293,6 +326,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
               isPassedThisYear,
               isThisMonth,
               isMilestone,
+              hasResponded,
               formattedAnniversaryDate,
               coeYear,
             } = item;
@@ -320,17 +354,24 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
             return (
               <div
                 key={escrow.id}
-                className={`bg-white border rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between transition-all duration-200 hover:shadow-lg relative overflow-hidden group ${
-                  isToday
+                className={`bg-white border rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between transition-all duration-300 hover:shadow-lg relative overflow-hidden group ${
+                  hasResponded
+                    ? 'border-[#059669] bg-gradient-to-b from-[#059669]/10 via-[#059669]/5 to-white ring-2 ring-[#059669]/20'
+                    : isToday
                     ? 'border-amber-400 ring-2 ring-amber-400/30'
                     : isMilestone && !isPassedThisYear
-                    ? 'border-emerald-200 bg-gradient-to-b from-emerald-50/20 to-white'
+                    ? 'border-[#059669]/30 bg-gradient-to-b from-[#059669]/5 to-white'
                     : 'border-[#e5e5ea]'
                 }`}
               >
                 {/* Top Badge Banner */}
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  {isToday ? (
+                  {hasResponded ? (
+                    <span className="inline-flex items-center gap-1.5 bg-[#059669] text-white px-2.5 py-1 rounded-lg text-xs font-extrabold shadow-sm">
+                      <CheckCircle2 size={14} />
+                      <span>RESPONDED & LOGGED ✓</span>
+                    </span>
+                  ) : isToday ? (
                     <span className="inline-flex items-center gap-1.5 bg-amber-500 text-white px-2.5 py-1 rounded-lg text-xs font-extrabold shadow-sm animate-pulse">
                       <PartyPopper size={14} />
                       <span>TODAY IS THE ANNIVERSARY!</span>
@@ -341,8 +382,8 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                       <span>{getOrdinal(yearsThisYear)} Anniversary (Passed)</span>
                     </span>
                   ) : isMilestone ? (
-                    <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg text-xs font-bold">
-                      <Award size={14} className="text-emerald-600" />
+                    <span className="inline-flex items-center gap-1.5 bg-[#059669]/10 text-[#059669] border border-[#059669]/30 px-2.5 py-1 rounded-lg text-xs font-bold">
+                      <Award size={14} className="text-[#059669]" />
                       <span>{getOrdinal(yearsThisYear)} Year Milestone</span>
                     </span>
                   ) : (
@@ -352,8 +393,8 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                     </span>
                   )}
 
-                  <span className={`text-xs font-bold shrink-0 ${isPassedThisYear && (filterMode === 'thisMonth' || isThisMonth) ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {relativeTimeText}
+                  <span className={`text-xs font-bold shrink-0 ${hasResponded ? 'text-[#059669] font-extrabold' : isPassedThisYear && (filterMode === 'thisMonth' || isThisMonth) ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {hasResponded ? 'Completed ✓' : relativeTimeText}
                   </span>
                 </div>
 
@@ -400,14 +441,14 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
 
                   {/* Logged interaction preview */}
                   {escrow.anniversaryInteractions && escrow.anniversaryInteractions.length > 0 && (
-                    <div className="mt-3 bg-emerald-50/80 border border-emerald-200/80 rounded-xl p-2.5 text-xs flex items-start gap-2">
-                      <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                    <div className="mt-3 bg-[#059669]/10 border border-[#059669]/30 rounded-xl p-2.5 text-xs flex items-start gap-2 shadow-xs">
+                      <CheckCircle2 size={14} className="text-[#059669] shrink-0 mt-0.5" />
                       <div className="overflow-hidden">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-900">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#059669]">
                           <span>Contacted ({escrow.anniversaryInteractions[0].date})</span>
-                          <span className="text-emerald-700 font-normal">• {escrow.anniversaryInteractions[0].method}</span>
+                          <span className="text-[#059669] font-semibold">• {escrow.anniversaryInteractions[0].method}</span>
                         </div>
-                        <p className="text-emerald-950 text-xs font-medium mt-0.5 line-clamp-2 leading-relaxed">
+                        <p className="text-slate-800 text-xs font-medium mt-0.5 line-clamp-2 leading-relaxed">
                           "{escrow.anniversaryInteractions[0].notes}"
                         </p>
                       </div>
@@ -425,10 +466,14 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                         dateFormatted: formattedAnniversaryDate,
                       })
                     }
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-[#1B3A5C] hover:bg-[#11253C] text-white py-2.5 px-3 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer ${
+                      hasResponded
+                        ? 'bg-[#059669] hover:bg-[#047857] text-white'
+                        : 'bg-[#1B3A5C] hover:bg-[#11253C] text-white'
+                    }`}
                   >
-                    <Send size={13} />
-                    <span>Send Wish / Log Call</span>
+                    {hasResponded ? <CheckCircle2 size={14} /> : <Send size={13} />}
+                    <span>{hasResponded ? 'Responded ✓ (View/Log)' : 'Send Wish / Log Call'}</span>
                   </button>
 
                   <button
