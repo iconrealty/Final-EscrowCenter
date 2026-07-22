@@ -67,9 +67,8 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
     <div className="h-[56px] bg-white border-b border-[#e5e5ea] flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
       <div className="flex items-center gap-4 sm:gap-8 min-w-0">
         <div className="flex items-center gap-2 shrink-0">
-          <h1 className="text-[#1B3A5C] text-xs sm:text-sm tracking-wide truncate max-w-[160px] xs:max-w-none flex items-center gap-1.5">
+          <h1 className="text-[#1B3A5C] text-xs sm:text-sm tracking-wide truncate flex items-center gap-1.5">
             <span className="text-xl sm:text-2xl font-black tracking-tight">MuNR<span className="text-2xl sm:text-3xl font-black select-none -ml-px">.</span></span>
-            <span className="font-bold">Escrow Center</span>
           </h1>
         </div>
         
