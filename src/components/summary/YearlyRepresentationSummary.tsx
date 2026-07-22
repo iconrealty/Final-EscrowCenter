@@ -15,6 +15,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
     yearsSet.add(currentYearStr); // Ensure current year is always available
 
     escrows.forEach((escrow) => {
+      if (escrow.status === 'Cancelled') return;
       let year = '';
       if (escrow.coeDate && escrow.coeDate.length >= 4) {
         const parsedYear = escrow.coeDate.substring(0, 4);
@@ -31,9 +32,11 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
   // Default selected year is set to the present year
   const [selectedYear, setSelectedYear] = useState<string>(currentYearStr);
 
-  // Filter escrows based on selection
+  // Filter escrows based on selection (excluding Cancelled)
   const filteredEscrows = useMemo(() => {
-    return escrows.filter((escrow) => {
+    const nonCancelled = escrows.filter((e) => e.status !== 'Cancelled');
+    if (selectedYear === 'all') return nonCancelled;
+    return nonCancelled.filter((escrow) => {
       let year = '';
       if (escrow.coeDate && escrow.coeDate.length >= 4) {
         year = escrow.coeDate.substring(0, 4);
@@ -91,6 +94,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
             onChange={(e) => setSelectedYear(e.target.value)}
             className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-xs font-bold px-4 py-1.5 pr-9 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
           >
+            <option value="all">All Time</option>
             {availableYears.map((year) => (
               <option key={year} value={year}>
                 Year {year}
@@ -110,7 +114,9 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
             {/* Elegant Hero Stats Bar */}
             <div className="flex items-end justify-between border-b border-neutral-100 pb-4">
               <div>
-                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Yearly Volume</span>
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">
+                  {selectedYear === 'all' ? 'All Time Volume' : 'Yearly Volume'}
+                </span>
                 <span className="text-3xl font-extrabold text-[#1d1d1f] font-mono tracking-tight leading-none">
                   {stats.total}
                 </span>
@@ -120,7 +126,9 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
               </div>
               <div className="text-right">
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Active Selection</span>
-                <span className="text-sm font-bold text-[#1B3A5C] tracking-wide">{selectedYear}</span>
+                <span className="text-sm font-bold text-[#1B3A5C] tracking-wide">
+                  {selectedYear === 'all' ? 'All Time' : selectedYear}
+                </span>
               </div>
             </div>
 

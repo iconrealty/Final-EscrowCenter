@@ -42,7 +42,11 @@ function App() {
 
   const filteredEscrows = useMemo(() => {
     const list = escrows.filter(e => {
-      if (filter !== 'All' && e.status !== filter) return false;
+      if (filter === 'All') {
+        if (e.status === 'Cancelled') return false;
+      } else if (e.status !== filter) {
+        return false;
+      }
       
       if (selectedYear !== 'All') {
         if (!e.coeDate || !e.coeDate.startsWith(selectedYear)) return false;
@@ -57,13 +61,19 @@ function App() {
       return true;
     });
 
-    if (filter === 'Closed') {
-      list.sort((a, b) => {
-        const dateA = a.coeDate ? new Date(a.coeDate).getTime() : 0;
-        const dateB = b.coeDate ? new Date(b.coeDate).getTime() : 0;
-        return dateB - dateA;
-      });
-    }
+    // Organize escrows by COE date (January first)
+    const parseCoeTime = (coeDate?: string): number => {
+      if (!coeDate) return 0;
+      const str = coeDate.trim();
+      if (/\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+        const [m, d, y] = str.split('/');
+        return new Date(Number(y), Number(m) - 1, Number(d)).getTime();
+      }
+      const t = new Date(str).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+
+    list.sort((a, b) => parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate));
 
     return list;
   }, [escrows, filter, search, selectedYear]);
@@ -165,7 +175,7 @@ function App() {
                 <ChecklistTable 
                   escrows={
                     summaryFilter === 'All' 
-                      ? escrows 
+                      ? escrows.filter(e => e.status !== 'Cancelled')
                       : summaryFilter === 'Open' 
                       ? escrows.filter(e => e.status === 'Open') 
                       : escrows.filter(e => e.status === 'Closed')

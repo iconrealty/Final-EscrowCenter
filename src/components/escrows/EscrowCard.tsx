@@ -36,10 +36,17 @@ export function EscrowCard({
     <div className="bg-white rounded-2xl border border-[#e5e5ea] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col">
       {/* Upper Area: Escrow Number, Days Left and Actions */}
       <div className="px-4 py-3.5 flex justify-between items-center bg-slate-50/50 border-b border-[#e5e5ea]">
-        <div className="flex items-center gap-2.5">
-          <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-            Escrow #{escrow.escrowNumber || (typeof index === 'number' ? index + 1 : escrow.id.slice(0, 8).toUpperCase())}
-          </span>
+        <div className="flex items-center gap-2">
+          {typeof index === 'number' && (
+            <span className="font-mono text-xs font-extrabold text-white bg-[#1B3A5C] px-2 py-0.5 rounded-md shadow-xs shrink-0">
+              #{index + 1}
+            </span>
+          )}
+          {escrow.escrowNumber && (
+            <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md shrink-0">
+              Escrow #{escrow.escrowNumber}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2.5">
           <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${

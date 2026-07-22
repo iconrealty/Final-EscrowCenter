@@ -72,11 +72,23 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   }, [closedEscrows]);
 
   // Filter closed escrows by selected year if not "all"
-  const filteredClosedEscrows = useMemo(() => {
-    if (selectedYear === 'all') {
-      return closedEscrows;
+  const parseCoeTime = (coeDate?: string): number => {
+    if (!coeDate) return 0;
+    const str = coeDate.trim();
+    if (/\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+      const [m, d, y] = str.split('/');
+      return new Date(Number(y), Number(m) - 1, Number(d)).getTime();
     }
-    return closedEscrows.filter((e) => e.coeDate && e.coeDate.startsWith(selectedYear));
+    const t = new Date(str).getTime();
+    return isNaN(t) ? 0 : t;
+  };
+
+  const filteredClosedEscrows = useMemo(() => {
+    let list = selectedYear === 'all'
+      ? closedEscrows
+      : closedEscrows.filter((e) => e.coeDate && e.coeDate.includes(selectedYear));
+
+    return [...list].sort((a, b) => parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate));
   }, [closedEscrows, selectedYear]);
 
   // Selected month state for the standard monthly tab
@@ -96,7 +108,10 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
 
   // Calculate Monthly Sales Stats for standard monthly tab
   const monthlyEscrows = useMemo(() => {
-    return closedEscrows.filter((e) => e.coeDate && e.coeDate.startsWith(selectedMonth));
+    let list = selectedMonth === 'all'
+      ? closedEscrows
+      : closedEscrows.filter((e) => e.coeDate && e.coeDate.startsWith(selectedMonth));
+    return [...list].sort((a, b) => parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate));
   }, [closedEscrows, selectedMonth]);
 
   const monthlyStats = useMemo(() => {
@@ -171,6 +186,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   };
 
   const formatMonthName = (ym: string) => {
+    if (ym === 'all') return 'All Time';
     try {
       const [year, month] = ym.split('-');
       const date = new Date(Number(year), Number(month) - 1, 1);
@@ -264,7 +280,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                   onChange={(e) => setSelectedYear(e.target.value)}
                   className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
                 >
-                  <option value="all">All Years</option>
+                  <option value="all">All Time</option>
                   {availableYears.map((yr) => (
                     <option key={yr} value={yr}>
                       {yr}
@@ -301,7 +317,8 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
 
             {/* List Header */}
             <div className="flex items-center text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
-              <span className="flex-1">Properties Closed in {selectedYear === 'all' ? 'All Years' : selectedYear} ({filteredClosedEscrows.length})</span>
+              <span className="w-8 text-center shrink-0">#</span>
+              <span className="flex-1">Properties Closed in {selectedYear === 'all' ? 'All Time' : selectedYear} ({filteredClosedEscrows.length})</span>
               <span className="w-24 text-right shrink-0">Price</span>
               <span className="w-24 text-right shrink-0 ml-4">Commission</span>
             </div>
@@ -310,12 +327,17 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             <div className="flex-1 overflow-y-auto pr-1">
               {filteredClosedEscrows.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  {filteredClosedEscrows.map((escrow) => (
+                  {filteredClosedEscrows.map((escrow, index) => (
                     <div
                       key={escrow.id}
                       onClick={() => onSelectEscrow(escrow)}
                       className="group flex items-center p-2.5 rounded-xl border border-transparent hover:border-[#e5e5ea] hover:bg-slate-50 transition-all duration-200 cursor-pointer"
                     >
+                      <div className="w-8 text-center shrink-0 mr-1">
+                        <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1 rounded bg-[#1B3A5C] text-white text-[10px] font-mono font-bold">
+                          #{index + 1}
+                        </span>
+                      </div>
                       <div className="min-w-0 flex-1 pr-4">
                         <div className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
                           {escrow.address}
@@ -366,6 +388,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                   onChange={(e) => setSelectedMonth(e.target.value)}
                   className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
                 >
+                  <option value="all">All Time</option>
                   {availableMonths.map((ym) => (
                     <option key={ym} value={ym}>
                       {formatMonthName(ym)}
@@ -402,6 +425,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
 
             {/* List Header */}
             <div className="flex items-center text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
+              <span className="w-8 text-center shrink-0">#</span>
               <span className="flex-1">Closed in {formatMonthName(selectedMonth)} ({monthlyEscrows.length})</span>
               <span className="w-24 text-right shrink-0">Price</span>
               <span className="w-24 text-right shrink-0 ml-4">Commission</span>
@@ -411,12 +435,17 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             <div className="flex-1 overflow-y-auto pr-1">
               {monthlyEscrows.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  {monthlyEscrows.map((escrow) => (
+                  {monthlyEscrows.map((escrow, index) => (
                     <div
                       key={escrow.id}
                       onClick={() => onSelectEscrow(escrow)}
                       className="group flex items-center p-2.5 rounded-xl border border-transparent hover:border-[#e5e5ea] hover:bg-slate-50 transition-all duration-200 cursor-pointer"
                     >
+                      <div className="w-8 text-center shrink-0 mr-1">
+                        <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1 rounded bg-[#1B3A5C] text-white text-[10px] font-mono font-bold">
+                          #{index + 1}
+                        </span>
+                      </div>
                       <div className="min-w-0 flex-1 pr-4">
                         <div className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
                           {escrow.address}
