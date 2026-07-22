@@ -232,7 +232,7 @@ export function AddEditModal({
             {showSisuPaste && (
               <div className="mt-3">
                 <p className="text-[11px] text-[#64748b] mb-2 leading-relaxed">
-                  Copy the full transaction details from Sisu.co on your phone or browser, paste it below, and we'll instantly extract and fill all the matching fields.
+                  Copy the full transaction details from Sisu.co
                 </p>
                 <textarea
                   rows={4}
