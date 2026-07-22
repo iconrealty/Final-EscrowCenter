@@ -46,7 +46,7 @@ const MONTH_NAMES = [
 
 export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: AnniversaryTrackerProps) {
   const [search, setSearch] = useState('');
-  const [filterMode, setFilterMode] = useState<'upcoming30' | 'thisMonth' | 'byMonth' | 'milestones' | 'responded' | 'all'>('upcoming30');
+  const [filterMode, setFilterMode] = useState<'upcoming30' | 'thisMonth' | 'byMonth' | 'milestones' | 'responded' | 'all'>('thisMonth');
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string } | null>(null);
 
