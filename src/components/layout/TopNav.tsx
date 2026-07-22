@@ -20,6 +20,7 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
   const { success: showSuccess, error: showError, warning: showWarning } = useToast();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showCsvDropdown, setShowCsvDropdown] = useState(false);
+  const [showMobileNav, setShowMobileNav] = useState(false);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -72,31 +73,94 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
           </h1>
         </div>
         
-        <div className="flex items-center gap-3 sm:gap-6 overflow-x-auto no-scrollbar py-1">
+        {/* Desktop Navigation Tabs */}
+        <div className="hidden md:flex items-center gap-6 overflow-x-auto no-scrollbar py-1">
           <button 
             onClick={() => setActiveTab('active')}
-            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 ${activeTab === 'active' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
+            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 cursor-pointer ${activeTab === 'active' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
           >
             Home
           </button>
           <button 
             onClick={() => setActiveTab('summary')}
-            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 ${activeTab === 'summary' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
+            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 cursor-pointer ${activeTab === 'summary' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
           >
             Summary
           </button>
           <button 
             onClick={() => setActiveTab('calendar')}
-            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 ${activeTab === 'calendar' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
+            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 cursor-pointer ${activeTab === 'calendar' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
           >
             Calendar
           </button>
           <button 
             onClick={() => setActiveTab('anniversaries')}
-            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 ${activeTab === 'anniversaries' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
+            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 cursor-pointer ${activeTab === 'anniversaries' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
           >
             Anniversaries
           </button>
+        </div>
+
+        {/* Mobile View Selector Dropdown */}
+        <div className="md:hidden relative">
+          <button
+            onClick={() => setShowMobileNav(!showMobileNav)}
+            className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-[#1B3A5C] px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-200/80 cursor-pointer"
+          >
+            <span>{activeTab === 'active' ? 'Home' : activeTab === 'summary' ? 'Summary' : activeTab === 'calendar' ? 'Calendar' : 'Anniversaries'}</span>
+            <ChevronDown size={14} className={`transition-transform duration-200 ${showMobileNav ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showMobileNav && (
+            <>
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setShowMobileNav(false)}
+              />
+              <div className="absolute left-0 mt-2 w-44 bg-white border border-[#e5e5ea] rounded-2xl shadow-xl py-2 z-50 animate-scale-up">
+                <button
+                  onClick={() => {
+                    setActiveTab('active');
+                    setShowMobileNav(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${activeTab === 'active' ? 'bg-[#1B3A5C]/10 text-[#1B3A5C]' : 'text-slate-700 hover:bg-slate-50'}`}
+                >
+                  <span>Home (Escrows)</span>
+                  {activeTab === 'active' && <span className="w-1.5 h-1.5 rounded-full bg-[#1B3A5C]" />}
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('summary');
+                    setShowMobileNav(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${activeTab === 'summary' ? 'bg-[#1B3A5C]/10 text-[#1B3A5C]' : 'text-slate-700 hover:bg-slate-50'}`}
+                >
+                  <span>Summary</span>
+                  {activeTab === 'summary' && <span className="w-1.5 h-1.5 rounded-full bg-[#1B3A5C]" />}
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('calendar');
+                    setShowMobileNav(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${activeTab === 'calendar' ? 'bg-[#1B3A5C]/10 text-[#1B3A5C]' : 'text-slate-700 hover:bg-slate-50'}`}
+                >
+                  <span>Calendar</span>
+                  {activeTab === 'calendar' && <span className="w-1.5 h-1.5 rounded-full bg-[#1B3A5C]" />}
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('anniversaries');
+                    setShowMobileNav(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${activeTab === 'anniversaries' ? 'bg-[#1B3A5C]/10 text-[#1B3A5C]' : 'text-slate-700 hover:bg-slate-50'}`}
+                >
+                  <span>Anniversaries</span>
+                  {activeTab === 'anniversaries' && <span className="w-1.5 h-1.5 rounded-full bg-[#1B3A5C]" />}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
