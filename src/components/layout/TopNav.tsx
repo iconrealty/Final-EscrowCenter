@@ -72,24 +72,30 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
           </h1>
         </div>
         
-        <div className="hidden md:flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-6 overflow-x-auto no-scrollbar py-1">
           <button 
             onClick={() => setActiveTab('active')}
-            className={`text-sm font-medium transition-colors ${activeTab === 'active' ? 'text-[#1d1d1f]' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
+            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 ${activeTab === 'active' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
           >
             Home
           </button>
           <button 
             onClick={() => setActiveTab('summary')}
-            className={`text-sm font-medium transition-colors ${activeTab === 'summary' ? 'text-[#1d1d1f]' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
+            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 ${activeTab === 'summary' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
           >
             Summary
           </button>
           <button 
             onClick={() => setActiveTab('calendar')}
-            className={`text-sm font-medium transition-colors ${activeTab === 'calendar' ? 'text-[#1d1d1f]' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
+            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 ${activeTab === 'calendar' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
           >
             Calendar
+          </button>
+          <button 
+            onClick={() => setActiveTab('anniversaries')}
+            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 ${activeTab === 'anniversaries' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
+          >
+            Anniversaries
           </button>
         </div>
       </div>

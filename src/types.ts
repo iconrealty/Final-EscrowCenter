@@ -7,6 +7,15 @@ export interface EscrowDocument {
   type?: string;
 }
 
+export interface AnniversaryInteraction {
+  id: string;
+  date: string; // ISO string or YYYY-MM-DD
+  yearCount: number;
+  notes: string;
+  method: 'Phone' | 'Text' | 'Email' | 'In Person' | 'Card/Gift';
+  createdAt: string;
+}
+
 export interface Escrow {
   id: string;
   escrowNumber?: string;
@@ -42,6 +51,7 @@ export interface Escrow {
   contingencyDays?: Record<string, number>;
   contingencyStartDate?: string;
   documents?: EscrowDocument[];
+  anniversaryInteractions?: AnniversaryInteraction[];
   lastUpdated: string;
 }
 

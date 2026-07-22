@@ -1,0 +1,444 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  PartyPopper, 
+  Search, 
+  Clock, 
+  Award, 
+  Home, 
+  Send, 
+  ChevronRight,
+  Gift,
+  CheckCircle2,
+  MessageSquare
+} from 'lucide-react';
+import { Escrow } from '../../types';
+import { AnniversaryWishModal } from './AnniversaryWishModal';
+
+interface AnniversaryTrackerProps {
+  escrows: Escrow[];
+  onSelectEscrow: (escrow: Escrow) => void;
+  onUpdateEscrow?: (id: string, data: Partial<Escrow>) => void;
+}
+
+interface ProcessedAnniversary {
+  escrow: Escrow;
+  coeDateObj: Date;
+  coeYear: number;
+  coeMonth: number; // 0-11
+  coeDay: number; // 1-31
+  yearsClosed: number;
+  nextAnniversaryDate: Date;
+  daysUntilNext: number;
+  isToday: boolean;
+  isThisMonth: boolean;
+  isWithin30Days: boolean;
+  isMilestone: boolean;
+  formattedAnniversaryDate: string;
+}
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: AnniversaryTrackerProps) {
+  const [search, setSearch] = useState('');
+  const [filterMode, setFilterMode] = useState<'upcoming30' | 'thisMonth' | 'byMonth' | 'milestones' | 'all'>('upcoming30');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string } | null>(null);
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const currentDay = now.getDate();
+
+  // Process and extract all closed escrows
+  const processedAnniversaries: ProcessedAnniversary[] = useMemo(() => {
+    const closedList = escrows.filter(e => e.status === 'Closed' && e.coeDate && e.coeDate.trim() !== '');
+
+    return closedList.map(escrow => {
+      const parts = escrow.coeDate.split('-');
+      let coeYear = parseInt(parts[0], 10);
+      let coeMonth = parseInt(parts[1], 10) - 1; // 0-indexed
+      let coeDay = parseInt(parts[2], 10);
+
+      if (isNaN(coeYear) || isNaN(coeMonth) || isNaN(coeDay)) {
+        const d = new Date(escrow.coeDate);
+        coeYear = d.getFullYear();
+        coeMonth = d.getMonth();
+        coeDay = d.getDate();
+      }
+
+      const coeDateObj = new Date(coeYear, coeMonth, coeDay);
+
+      let thisYearAnniversary = new Date(currentYear, coeMonth, coeDay);
+      
+      const todayStart = new Date(currentYear, currentMonth, currentDay);
+      let diffMs = thisYearAnniversary.getTime() - todayStart.getTime();
+      let diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+      let nextAnniversaryDate = thisYearAnniversary;
+      let yearsClosed = currentYear - coeYear;
+
+      if (diffDays < 0) {
+        nextAnniversaryDate = new Date(currentYear + 1, coeMonth, coeDay);
+        const nextDiffMs = nextAnniversaryDate.getTime() - todayStart.getTime();
+        diffDays = Math.round(nextDiffMs / (1000 * 60 * 60 * 24));
+        yearsClosed += 1;
+      }
+
+      const isToday = diffDays === 0;
+      const isThisMonth = coeMonth === currentMonth;
+      const isWithin30Days = diffDays >= 0 && diffDays <= 30;
+      const isMilestone = yearsClosed === 1 || yearsClosed === 3 || yearsClosed === 5 || yearsClosed === 10 || (yearsClosed > 0 && yearsClosed % 5 === 0);
+
+      const formattedAnniversaryDate = `${MONTH_NAMES[coeMonth]} ${coeDay}`;
+
+      return {
+        escrow,
+        coeDateObj,
+        coeYear,
+        coeMonth,
+        coeDay,
+        yearsClosed: Math.max(1, yearsClosed),
+        nextAnniversaryDate,
+        daysUntilNext: diffDays,
+        isToday,
+        isThisMonth,
+        isWithin30Days,
+        isMilestone,
+        formattedAnniversaryDate,
+      };
+    });
+  }, [escrows, currentYear, currentMonth, currentDay]);
+
+  // Overall statistics
+  const stats = useMemo(() => {
+    const totalClients = processedAnniversaries.length;
+    const thisMonthCount = processedAnniversaries.filter(a => a.coeMonth === currentMonth).length;
+    const upcoming30Count = processedAnniversaries.filter(a => a.isWithin30Days).length;
+    const milestonesCount = processedAnniversaries.filter(a => a.isMilestone && a.isWithin30Days).length;
+
+    return {
+      totalClients,
+      thisMonthCount,
+      upcoming30Count,
+      milestonesCount,
+    };
+  }, [processedAnniversaries, currentMonth]);
+
+  // Filter and sort items based on selected mode & search
+  const filteredList = useMemo(() => {
+    let list = processedAnniversaries;
+
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      list = list.filter(item => {
+        const clientName = `${item.escrow.clientFirstName || ''} ${item.escrow.clientLastName || ''} ${item.escrow.client2FirstName || ''} ${item.escrow.client2LastName || ''}`.toLowerCase();
+        const address = (item.escrow.address || '').toLowerCase();
+        const agent = (item.escrow.agentName || '').toLowerCase();
+        return clientName.includes(q) || address.includes(q) || agent.includes(q);
+      });
+    }
+
+    if (filterMode === 'upcoming30') {
+      list = list.filter(item => item.isWithin30Days);
+    } else if (filterMode === 'thisMonth') {
+      list = list.filter(item => item.coeMonth === currentMonth);
+    } else if (filterMode === 'byMonth') {
+      list = list.filter(item => item.coeMonth === selectedMonth);
+    } else if (filterMode === 'milestones') {
+      list = list.filter(item => item.isMilestone);
+    }
+
+    return list.sort((a, b) => a.daysUntilNext - b.daysUntilNext);
+  }, [processedAnniversaries, filterMode, selectedMonth, search, currentMonth]);
+
+  const getOrdinal = (n: number) => {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto flex flex-col gap-5 pb-12">
+      {/* Top Header Card in white theme matching app */}
+      <div className="bg-white border border-[#e5e5ea] rounded-2xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-black text-[#1d1d1f] tracking-tight">
+            Closing Anniversary Tracker
+          </h2>
+        </div>
+
+        {/* Mini stat pills */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-5 py-3 text-center min-w-[110px]">
+            <p className="text-2xl sm:text-3xl font-black text-[#1B3A5C]">{stats.upcoming30Count}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Next 30 Days</p>
+          </div>
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-5 py-3 text-center min-w-[110px]">
+            <p className="text-2xl sm:text-3xl font-black text-amber-600">{stats.thisMonthCount}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{MONTH_NAMES[currentMonth]}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Bar & Controls */}
+      <div className="bg-white border border-[#e5e5ea] rounded-2xl p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Filter Pills */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            onClick={() => setFilterMode('upcoming30')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+              filterMode === 'upcoming30'
+                ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            Upcoming (Next 30 Days)
+          </button>
+          <button
+            onClick={() => setFilterMode('thisMonth')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+              filterMode === 'thisMonth'
+                ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            This Month ({MONTH_NAMES[currentMonth]})
+          </button>
+          <button
+            onClick={() => setFilterMode('byMonth')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+              filterMode === 'byMonth'
+                ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            By Month
+          </button>
+          <button
+            onClick={() => setFilterMode('milestones')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+              filterMode === 'milestones'
+                ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            Milestone Years
+          </button>
+          <button
+            onClick={() => setFilterMode('all')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+              filterMode === 'all'
+                ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            All Closed ({stats.totalClients})
+          </button>
+        </div>
+
+        {/* Right side: Search & Month Selector */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          {filterMode === 'byMonth' && (
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
+              className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
+            >
+              {MONTH_NAMES.map((m, idx) => (
+                <option key={m} value={idx}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+            <input
+              type="text"
+              placeholder="Search client or address..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main List Grid */}
+      {filteredList.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredList.map((item) => {
+            const {
+              escrow,
+              yearsClosed,
+              daysUntilNext,
+              isToday,
+              isMilestone,
+              formattedAnniversaryDate,
+              coeYear,
+            } = item;
+
+            const clientFullName = escrow.clientFirstName
+              ? `${escrow.clientFirstName} ${escrow.clientLastName || ''}`
+              : 'Valued Client';
+
+            const secondClientName = escrow.client2FirstName
+              ? `${escrow.client2FirstName} ${escrow.client2LastName || ''}`
+              : null;
+
+            return (
+              <div
+                key={escrow.id}
+                className={`bg-white border rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between transition-all duration-200 hover:shadow-lg relative overflow-hidden group ${
+                  isToday
+                    ? 'border-amber-400 ring-2 ring-amber-400/30'
+                    : isMilestone
+                    ? 'border-emerald-200 bg-gradient-to-b from-emerald-50/20 to-white'
+                    : 'border-[#e5e5ea]'
+                }`}
+              >
+                {/* Top Badge Banner */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  {isToday ? (
+                    <span className="inline-flex items-center gap-1.5 bg-amber-500 text-white px-2.5 py-1 rounded-lg text-xs font-extrabold shadow-sm animate-pulse">
+                      <PartyPopper size={14} />
+                      <span>TODAY IS THE ANNIVERSARY!</span>
+                    </span>
+                  ) : isMilestone ? (
+                    <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg text-xs font-bold">
+                      <Award size={14} className="text-emerald-600" />
+                      <span>{getOrdinal(yearsClosed)} Year Milestone</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold">
+                      <Clock size={13} className="text-slate-500" />
+                      <span>{getOrdinal(yearsClosed)} Anniversary</span>
+                    </span>
+                  )}
+
+                  <span className="text-xs font-bold text-slate-500 shrink-0">
+                    {daysUntilNext === 0
+                      ? 'Today'
+                      : daysUntilNext === 1
+                      ? 'In 1 day'
+                      : `In ${daysUntilNext} days`}
+                  </span>
+                </div>
+
+                {/* Client & Address Body */}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-extrabold text-base text-[#1d1d1f] group-hover:text-[#1B3A5C] transition-colors line-clamp-1">
+                        {clientFullName}
+                      </h4>
+                      {secondClientName && (
+                        <p className="text-xs font-semibold text-slate-500 line-clamp-1">
+                          & {secondClientName}
+                        </p>
+                      )}
+                    </div>
+
+                    {escrow.representation && (
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200/60 shrink-0">
+                        {escrow.representation}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs font-medium text-slate-600 mt-2 flex items-center gap-1.5">
+                    <Home size={14} className="text-slate-400 shrink-0" />
+                    <span className="truncate">{escrow.address}</span>
+                  </p>
+
+                  <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Original Closing</p>
+                      <p className="font-bold text-slate-700 mt-0.5">
+                        {formattedAnniversaryDate}, {coeYear}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Purchase Price</p>
+                      <p className="font-bold text-slate-700 mt-0.5">
+                        {escrow.price ? `$${escrow.price.toLocaleString()}` : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Logged interaction preview */}
+                  {escrow.anniversaryInteractions && escrow.anniversaryInteractions.length > 0 && (
+                    <div className="mt-3 bg-emerald-50/80 border border-emerald-200/80 rounded-xl p-2.5 text-xs flex items-start gap-2">
+                      <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                      <div className="overflow-hidden">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-900">
+                          <span>Contacted ({escrow.anniversaryInteractions[0].date})</span>
+                          <span className="text-emerald-700 font-normal">• {escrow.anniversaryInteractions[0].method}</span>
+                        </div>
+                        <p className="text-emerald-950 text-xs font-medium mt-0.5 line-clamp-2 leading-relaxed">
+                          "{escrow.anniversaryInteractions[0].notes}"
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions Footer */}
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
+                  <button
+                    onClick={() =>
+                      setWishModalEscrow({
+                        escrow,
+                        years: yearsClosed,
+                        dateFormatted: formattedAnniversaryDate,
+                      })
+                    }
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-[#1B3A5C] hover:bg-[#11253C] text-white py-2.5 px-3 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+                  >
+                    <Send size={13} />
+                    <span>Send Wish / Log Call</span>
+                  </button>
+
+                  <button
+                    onClick={() => onSelectEscrow(escrow)}
+                    className="flex items-center justify-center bg-slate-100 hover:bg-slate-200/80 text-slate-700 p-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                    title="View Property Details"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-white border border-[#e5e5ea] rounded-2xl p-12 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-4">
+            <Gift size={28} />
+          </div>
+          <h3 className="text-lg font-bold text-[#1d1d1f]">No closing anniversaries found</h3>
+          <p className="text-xs text-[#86868b] mt-1 max-w-md mx-auto leading-relaxed">
+            {search
+              ? 'No closed clients match your search query.'
+              : 'There are no closed escrows matching this anniversary time filter. Make sure your closed escrows have Close of Escrow (COE) dates recorded.'}
+          </p>
+        </div>
+      )}
+
+      {/* Wish Modal */}
+      {wishModalEscrow && (
+        <AnniversaryWishModal
+          escrow={wishModalEscrow.escrow}
+          yearsCount={wishModalEscrow.years}
+          anniversaryDateFormatted={wishModalEscrow.dateFormatted}
+          onClose={() => setWishModalEscrow(null)}
+          onUpdateEscrow={onUpdateEscrow}
+        />
+      )}
+    </div>
+  );
+}

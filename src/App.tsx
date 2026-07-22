@@ -8,6 +8,7 @@ import { SalesSummary } from './components/summary/SalesSummary';
 import { ChecklistTable } from './components/summary/ChecklistTable';
 import { YearlyRepresentationSummary } from './components/summary/YearlyRepresentationSummary';
 import { CalendarView } from './components/calendar/CalendarView';
+import { AnniversaryTracker } from './components/anniversaries/AnniversaryTracker';
 import { AddEditModal } from './components/modals/AddEditModal';
 import { DetailModal } from './components/modals/DetailModal';
 import { ConfirmModal } from './components/modals/ConfirmModal';
@@ -18,7 +19,7 @@ import { MilestonesContingenciesModal } from './components/modals/MilestonesCont
 import { useEscrows } from './hooks/useEscrows';
 import { Escrow } from './types';
 import { differenceInCalendarDays, parseISO, getISOWeek, getISOWeekYear } from 'date-fns';
-import { Home, LayoutDashboard, Calendar } from 'lucide-react';
+import { Home, LayoutDashboard, Calendar, Gift } from 'lucide-react';
 
 function App() {
   const { escrows, addEscrow, editEscrow, deleteEscrow, toggleTask, importEscrows } = useEscrows();
@@ -197,6 +198,16 @@ function App() {
               />
             </div>
           )}
+
+          {activeTab === 'anniversaries' && (
+            <div className="max-w-7xl mx-auto h-full">
+              <AnniversaryTracker 
+                escrows={escrows} 
+                onSelectEscrow={(escrow) => setDetailEscrow(escrow)} 
+                onUpdateEscrow={(id, data) => editEscrow(id, data)}
+              />
+            </div>
+          )}
         </main>
       </div>
 
@@ -263,6 +274,7 @@ function App() {
           { id: 'active', icon: Home, label: 'Home' },
           { id: 'summary', icon: LayoutDashboard, label: 'Summary' },
           { id: 'calendar', icon: Calendar, label: 'Calendar' },
+          { id: 'anniversaries', icon: Gift, label: 'Anniv.' },
         ].map((item) => {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
