@@ -45,6 +45,12 @@ const TEMPLATES = [
     text: 'Hi [ClientName],\n\nNow its time to get quotes on Home insurance, you can try first with your actual insurance company if you need any additional quotes please let me know. - [AgentName]'
   },
   {
+    id: 'inspection_day',
+    label: 'Inspection Day',
+    subject: 'Inspection Day - [Address]',
+    text: 'Hi [ClientFirstName],\n\nThe inspection usually takes about 1.5 hours, and I recommend that you be present for at least the last 30 minutes so the inspector can walk you through the main findings. \nAt the same time, we’ll be conducting our initial visual home inspection.'
+  },
+  {
     id: 'inspection',
     label: 'Home Inspection',
     subject: 'Home Inspection Update - [Address]',
