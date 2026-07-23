@@ -19,9 +19,8 @@ interface AnniversaryItem {
   escrow: Escrow;
   yearsCount: number;
   dateFormatted: string;
-  daysLeft: number; // 0 = today, > 0 = upcoming in X days
+  daysSinceAnniversary: number; // 0 = today, > 0 = days passed since anniversary
   isToday: boolean;
-  hasResponded: boolean;
 }
 
 export function MorningBriefingWidget({
@@ -35,9 +34,10 @@ export function MorningBriefingWidget({
   const currentYear = now.getFullYear();
   const todayFormatted = format(now, 'EEEE, MMMM d, yyyy');
 
-  // Gather anniversaries happening TODAY or within next 14 days
+  // Gather active anniversaries that have reached or passed their anniversary date and remain unresponded
   const upcomingAnniversaries = useMemo(() => {
     const list: AnniversaryItem[] = [];
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     escrows
       .filter((e) => e.status === 'Closed' && e.coeDate && e.coeDate.trim() !== '')
@@ -57,44 +57,46 @@ export function MorningBriefingWidget({
         const coeDay = coeDateObj.getDate();
         const coeYear = coeDateObj.getFullYear();
 
-        // Calculate anniversary date for this year
+        // Calculate this year's anniversary date
         const thisYearAnniv = new Date(currentYear, coeMonth, coeDay);
-        
-        // Difference in calendar days from today
-        const diffMs = thisYearAnniv.getTime() - new Date(currentYear, now.getMonth(), now.getDate()).getTime();
-        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        const yearsCount = currentYear - coeYear;
 
-        // We care about today and upcoming within 14 days
-        if (diffDays >= 0 && diffDays <= 14) {
-          const yearsCount = Math.max(1, currentYear - coeYear);
-          
-          // Check if responded
-          const dateStr = format(thisYearAnniv, 'yyyy-MM-dd');
-          const hasResponded = escrow.anniversaryInteractions?.some(
-            (item) => item.date === dateStr || item.yearCount === yearsCount
-          ) || false;
+        if (yearsCount < 1) return; // 1st anniversary hasn't arrived yet (closed this year)
 
-          // Only include pending (unresponded) anniversaries in the Daily Morning Briefing
-          if (!hasResponded) {
-            const dateFormatted = format(thisYearAnniv, 'MMM d');
+        // Days elapsed since this year's anniversary date:
+        // 0 = TODAY (on the exact day of the event)
+        // > 0 = Anniversary date passed X days ago
+        // < 0 = Anniversary date is in the FUTURE (e.g. Oct 5 is in +74 days)
+        const diffMs = todayStart.getTime() - thisYearAnniv.getTime();
+        const daysSinceAnniversary = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-            list.push({
-              escrow,
-              yearsCount,
-              dateFormatted,
-              daysLeft: diffDays,
-              isToday: diffDays === 0,
-              hasResponded,
-            });
-          }
-        }
+        // STRICT RULE 1: ONLY show starting ON the day of the event (daysSinceAnniversary >= 0).
+        // DO NOT show future anniversaries (daysSinceAnniversary < 0).
+        // Also cap at recent past anniversaries (within 30 days) so past years/months prior to feature adoption don't flood the briefing.
+        if (daysSinceAnniversary < 0 || daysSinceAnniversary > 30) return;
+
+        // STRICT RULE 2: Check if the agent has logged a response for this anniversary.
+        const dateStr = format(thisYearAnniv, 'yyyy-MM-dd');
+        const hasResponded = escrow.anniversaryInteractions?.some(
+          (item) => item.date === dateStr || item.yearCount === yearsCount || (item.date && item.date.startsWith(currentYear.toString()))
+        ) || false;
+
+        // Once responded, remove it from the Daily Morning Briefing!
+        if (hasResponded) return;
+
+        const dateFormatted = format(thisYearAnniv, 'MMM d');
+
+        list.push({
+          escrow,
+          yearsCount,
+          dateFormatted,
+          daysSinceAnniversary,
+          isToday: daysSinceAnniversary === 0,
+        });
       });
 
-    // Sort: Today first, then closest upcoming
-    list.sort((a, b) => {
-      if (a.isToday !== b.isToday) return a.isToday ? -1 : 1;
-      return a.daysLeft - b.daysLeft;
-    });
+    // Sort: Today first (0), then closest pending days
+    list.sort((a, b) => a.daysSinceAnniversary - b.daysSinceAnniversary);
 
     return list;
   }, [escrows, currentYear, now]);
@@ -110,7 +112,7 @@ export function MorningBriefingWidget({
             <span className="text-xs text-slate-400">• {todayFormatted}</span>
           </div>
           <p className="text-xs text-slate-600 mt-1 font-medium">
-            You&apos;re all caught up! No upcoming home closing anniversaries in the next 14 days.
+            You&apos;re all caught up! No active home closing anniversaries due today.
           </p>
         </div>
       </div>
@@ -148,7 +150,7 @@ export function MorningBriefingWidget({
       {isExpanded && (
         <div className="p-4 sm:p-5 bg-white">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {upcomingAnniversaries.map(({ escrow, yearsCount, dateFormatted, daysLeft, isToday, hasResponded }) => {
+            {upcomingAnniversaries.map(({ escrow, yearsCount, dateFormatted, daysSinceAnniversary, isToday }) => {
               const clientName = `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim();
               const phone = escrow.clientPhone || escrow.client2Phone;
 
@@ -156,9 +158,7 @@ export function MorningBriefingWidget({
                 <div
                   key={`anniv-${escrow.id}`}
                   className={`p-3.5 rounded-xl border transition-all bg-white flex flex-col justify-between ${
-                    hasResponded
-                      ? 'border-slate-200 bg-slate-50/50 opacity-80'
-                      : isToday
+                    isToday
                       ? 'border-slate-200 bg-amber-50/20'
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
@@ -171,20 +171,14 @@ export function MorningBriefingWidget({
                             TODAY
                           </span>
                         ) : (
-                          <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-200">
-                            In {daysLeft} Days ({dateFormatted})
+                          <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-200">
+                            {daysSinceAnniversary} Day{daysSinceAnniversary > 1 ? 's' : ''} Pending ({dateFormatted})
                           </span>
                         )}
                         <span className="text-xs font-extrabold text-[#059669]">
                           {yearsCount} Year{yearsCount > 1 ? 's' : ''} Anniversary
                         </span>
                       </div>
-
-                      {hasResponded && (
-                        <span className="bg-[#059669] text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
-                          RESPONDED & LOGGED
-                        </span>
-                      )}
                     </div>
 
                     <h4 className="text-xs font-black text-slate-900">{clientName}</h4>
@@ -223,14 +217,10 @@ export function MorningBriefingWidget({
 
                     <button
                       onClick={() => onOpenWishModal(escrow, yearsCount, dateFormatted)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        hasResponded
-                          ? 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                          : 'bg-[#059669] hover:bg-[#047857] text-white'
-                      }`}
+                      className="px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 bg-[#059669] hover:bg-[#047857] text-white"
                     >
                       <Send size={12} />
-                      <span>{hasResponded ? 'View Log' : 'Send Wish / Log Call'}</span>
+                      <span>Send Wish / Log Call</span>
                     </button>
                   </div>
                 </div>
