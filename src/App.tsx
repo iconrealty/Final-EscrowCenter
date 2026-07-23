@@ -9,6 +9,8 @@ import { ChecklistTable } from './components/summary/ChecklistTable';
 import { YearlyRepresentationSummary } from './components/summary/YearlyRepresentationSummary';
 import { CalendarView } from './components/calendar/CalendarView';
 import { AnniversaryTracker } from './components/anniversaries/AnniversaryTracker';
+import { MorningBriefingWidget } from './components/dashboard/MorningBriefingWidget';
+import { AnniversaryWishModal } from './components/anniversaries/AnniversaryWishModal';
 import { AddEditModal } from './components/modals/AddEditModal';
 import { DetailModal } from './components/modals/DetailModal';
 import { ConfirmModal } from './components/modals/ConfirmModal';
@@ -36,6 +38,7 @@ function App() {
   const [detailEscrow, setDetailEscrow] = useState<Escrow | null>(null);
   const [clientUpdateEscrow, setClientUpdateEscrow] = useState<Escrow | null>(null);
   const [updateTasksEscrow, setUpdateTasksEscrow] = useState<Escrow | null>(null);
+  const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string } | null>(null);
 
   
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -122,6 +125,12 @@ function App() {
         <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
           {activeTab === 'active' && (
             <div className="max-w-7xl mx-auto">
+              <MorningBriefingWidget 
+                escrows={escrows}
+                onSelectEscrow={(escrow) => setDetailEscrow(escrow)}
+                onOpenWishModal={(escrow, years, dateFormatted) => setWishModalEscrow({ escrow, years, dateFormatted })}
+              />
+
               <FilterBar 
                 filter={filter} setFilter={setFilter}
                 search={search} setSearch={setSearch}
@@ -254,6 +263,16 @@ function App() {
         />
       )}
 
+
+      {wishModalEscrow && (
+        <AnniversaryWishModal 
+          escrow={escrows.find(e => e.id === wishModalEscrow.escrow.id) || wishModalEscrow.escrow}
+          yearsCount={wishModalEscrow.years}
+          anniversaryDateFormatted={wishModalEscrow.dateFormatted}
+          onClose={() => setWishModalEscrow(null)}
+          onUpdateEscrow={(id, data) => editEscrow(id, data)}
+        />
+      )}
 
       {confirmDeleteId && (
         <ConfirmModal 
