@@ -32,6 +32,20 @@ export function EscrowCard({
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
+  const formatDateDisplay = (dateStr?: string) => {
+    if (!dateStr) return '-';
+    try {
+      const str = dateStr.trim();
+      if (/\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+        const [m, d, y] = str.split('/');
+        return format(new Date(Number(y), Number(m) - 1, Number(d)), 'MMM d, yyyy');
+      }
+      return format(parseISO(str), 'MMM d, yyyy');
+    } catch {
+      return dateStr;
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-[#e5e5ea] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col">
       {/* Upper Area: Escrow Number, Days Left and Actions */}
@@ -116,21 +130,27 @@ export function EscrowCard({
           </div>
         </div>
 
-        {/* Pricing, Code (COE), Commission Grid */}
-        <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-[#e5e5ea]">
+        {/* Pricing, Acceptance Date, Code (COE), Commission Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 bg-slate-50 p-3 rounded-xl border border-[#e5e5ea]">
           <div>
             <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5">Price</div>
-            <div className="font-mono text-xs sm:text-sm md:text-base font-bold text-[#16a34a]">{formatCurrency(escrow.price)}</div>
+            <div className="font-mono text-xs sm:text-sm font-bold text-[#16a34a]">{formatCurrency(escrow.price)}</div>
+          </div>
+          <div>
+            <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5" title="Acceptance Date">Accepted</div>
+            <div className="font-mono text-xs sm:text-sm font-bold text-[#1d1d1f] truncate">
+              {formatDateDisplay(escrow.acceptanceDate)}
+            </div>
           </div>
           <div>
             <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5" title="Close of Escrow / Code">Code (COE)</div>
             <div className="font-mono text-xs sm:text-sm font-bold text-[#1d1d1f] truncate">
-              {escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMM d, yyyy') : '-'}
+              {formatDateDisplay(escrow.coeDate)}
             </div>
           </div>
           <div>
             <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5">Commission</div>
-            <div className="font-mono text-xs sm:text-sm md:text-base font-bold text-[#1B3A5C]">{formatCurrency(escrow.netCommission)}</div>
+            <div className="font-mono text-xs sm:text-sm font-bold text-[#1B3A5C]">{formatCurrency(escrow.netCommission)}</div>
           </div>
         </div>
 
