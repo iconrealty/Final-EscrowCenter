@@ -185,6 +185,18 @@ export function AnniversaryWishModal({
     window.location.href = `mailto:${escrow.clientEmail}?subject=${subject}&body=${body}`;
   };
 
+  const handleSmsLaunch = () => {
+    const phone = escrow.clientPhone || escrow.client2Phone;
+    logQuickContact('Text');
+    navigator.clipboard.writeText(message);
+    if (phone) {
+      showSuccess('Opening SMS app & copied text to clipboard!');
+      window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
+    } else {
+      showSuccess('Copied text to clipboard!');
+    }
+  };
+
   const handleSaveMaster = async () => {
     const updated = templates.map(t => {
       if (t.id === templateType) {
@@ -416,18 +428,29 @@ export function AnniversaryWishModal({
             <div>
               <span className="font-bold text-[#1d1d1f]">Client Contact: </span>
               <span className="text-[#86868b]">
-                {escrow.clientPhone || 'No phone'} {escrow.clientEmail ? `• ${escrow.clientEmail}` : ''}
+                {escrow.clientPhone || escrow.client2Phone || 'No phone'} {escrow.clientEmail ? `• ${escrow.clientEmail}` : ''}
               </span>
             </div>
-            {escrow.clientEmail && (
-              <button
-                onClick={handleEmailLaunch}
-                className="text-xs font-bold text-[#1B3A5C] hover:underline shrink-0 cursor-pointer flex items-center gap-1"
-              >
-                <Mail size={13} />
-                <span>Open Email App</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {(escrow.clientPhone || escrow.client2Phone) && (
+                <button
+                  onClick={handleSmsLaunch}
+                  className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors shrink-0 cursor-pointer flex items-center gap-1.5"
+                >
+                  <MessageSquare size={13} />
+                  <span>Send Text (SMS)</span>
+                </button>
+              )}
+              {escrow.clientEmail && (
+                <button
+                  onClick={handleEmailLaunch}
+                  className="text-xs font-bold text-[#1B3A5C] bg-sky-50 hover:bg-sky-100 border border-sky-200 px-3 py-1.5 rounded-lg transition-colors shrink-0 cursor-pointer flex items-center gap-1.5"
+                >
+                  <Mail size={13} />
+                  <span>Open Email App</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* SECTION: Log Client Conversation & Notes */}
@@ -539,10 +562,10 @@ export function AnniversaryWishModal({
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50/50 border-t border-[#e5e5ea] px-6 py-4 flex items-center justify-end gap-3 shrink-0">
+        <div className="bg-slate-50/50 border-t border-[#e5e5ea] px-6 py-4 flex flex-wrap items-center justify-end gap-2.5 shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-[#86868b] hover:text-[#1d1d1f] hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            className="px-4 py-2.5 text-xs font-bold text-[#86868b] hover:text-[#1d1d1f] hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -551,16 +574,33 @@ export function AnniversaryWishModal({
               logQuickContact('Phone', 'Responded / Contacted client for anniversary');
               showSuccess('Marked anniversary as responded!');
             }}
-            className="bg-[#059669] hover:bg-[#047857] text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
+            className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer flex items-center gap-1.5"
           >
             <span>Mark as Responded</span>
           </button>
           <button
             onClick={handleCopy}
-            className="bg-[#1B3A5C] hover:bg-[#11253C] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+            className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
           >
-            {copied ? 'Copied & Marked Responded!' : 'Copy Message'}
+            {copied ? 'Copied & Marked!' : 'Copy Message'}
           </button>
+          {templateType === 'sms' ? (
+            <button
+              onClick={handleSmsLaunch}
+              className="bg-[#059669] hover:bg-[#047857] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
+            >
+              <MessageSquare size={14} />
+              <span>Send Text (SMS)</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleEmailLaunch}
+              className="bg-[#1B3A5C] hover:bg-[#11253C] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
+            >
+              <Mail size={14} />
+              <span>Send Email</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
