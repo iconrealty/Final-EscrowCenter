@@ -210,7 +210,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
             <p className="text-2xl sm:text-3xl font-black text-amber-600">{stats.thisMonthCount}</p>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{MONTH_NAMES[currentMonth]}</p>
           </div>
-          <div className="bg-[#059669]/10 border border-[#059669]/20 rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
+          <div className="bg-[#059669]/10 border border-transparent rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
             <p className="text-2xl sm:text-3xl font-black text-[#059669]">{stats.respondedCount}</p>
             <p className="text-[10px] font-bold text-[#059669] uppercase tracking-wider mt-0.5">Responded</p>
           </div>
@@ -245,11 +245,10 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
             onClick={() => setFilterMode('responded')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
               filterMode === 'responded'
-                ? 'bg-[#059669] text-white border-[#059669] shadow-sm'
-                : 'bg-[#059669]/10 text-[#059669] border-[#059669]/30 hover:bg-[#059669]/20'
+                ? 'bg-[#059669] text-white border-transparent shadow-sm'
+                : 'bg-[#059669]/10 text-[#059669] border-transparent hover:bg-[#059669]/20'
             }`}
           >
-            <CheckCircle2 size={13} className={filterMode === 'responded' ? 'text-white' : 'text-[#059669]'} />
             <span>Responded ({stats.respondedCount})</span>
           </button>
           <button
@@ -356,11 +355,11 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                 key={escrow.id}
                 className={`bg-white border rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between transition-all duration-300 hover:shadow-lg relative overflow-hidden group ${
                   hasResponded
-                    ? 'border-[#059669] bg-gradient-to-b from-[#059669]/10 via-[#059669]/5 to-white ring-2 ring-[#059669]/20'
+                    ? 'border-slate-200 bg-gradient-to-b from-[#059669]/10 via-[#059669]/5 to-white'
                     : isToday
                     ? 'border-amber-400 ring-2 ring-amber-400/30'
                     : isMilestone && !isPassedThisYear
-                    ? 'border-[#059669]/30 bg-gradient-to-b from-[#059669]/5 to-white'
+                    ? 'border-slate-200 bg-gradient-to-b from-[#059669]/5 to-white'
                     : 'border-[#e5e5ea]'
                 }`}
               >
@@ -368,8 +367,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                 <div className="flex items-center justify-between gap-2 mb-3">
                   {hasResponded ? (
                     <span className="inline-flex items-center gap-1.5 bg-[#059669] text-white px-2.5 py-1 rounded-lg text-xs font-extrabold shadow-sm">
-                      <CheckCircle2 size={14} />
-                      <span>RESPONDED & LOGGED ✓</span>
+                      <span>RESPONDED & LOGGED</span>
                     </span>
                   ) : isToday ? (
                     <span className="inline-flex items-center gap-1.5 bg-amber-500 text-white px-2.5 py-1 rounded-lg text-xs font-extrabold shadow-sm animate-pulse">
@@ -378,23 +376,20 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                     </span>
                   ) : isPassedThisYear && (filterMode === 'thisMonth' || isThisMonth) ? (
                     <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-bold">
-                      <Clock size={13} className="text-slate-400" />
                       <span>{getOrdinal(yearsThisYear)} Anniversary (Passed)</span>
                     </span>
                   ) : isMilestone ? (
                     <span className="inline-flex items-center gap-1.5 bg-[#059669]/10 text-[#059669] border border-[#059669]/30 px-2.5 py-1 rounded-lg text-xs font-bold">
-                      <Award size={14} className="text-[#059669]" />
                       <span>{getOrdinal(yearsThisYear)} Year Milestone</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold">
-                      <Clock size={13} className="text-slate-500" />
                       <span>{getOrdinal(yearsThisYear)} Anniversary</span>
                     </span>
                   )}
 
                   <span className={`text-xs font-bold shrink-0 ${hasResponded ? 'text-[#059669] font-extrabold' : isPassedThisYear && (filterMode === 'thisMonth' || isThisMonth) ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {hasResponded ? 'Completed ✓' : relativeTimeText}
+                    {hasResponded ? 'Completed' : relativeTimeText}
                   </span>
                 </div>
 
@@ -441,7 +436,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
 
                   {/* Logged interaction preview */}
                   {escrow.anniversaryInteractions && escrow.anniversaryInteractions.length > 0 && (
-                    <div className="mt-3 bg-[#059669]/10 border border-[#059669]/30 rounded-xl p-2.5 text-xs flex items-start gap-2 shadow-xs">
+                    <div className="mt-3 bg-[#059669]/10 border border-slate-200/80 rounded-xl p-2.5 text-xs flex items-start gap-2 shadow-xs">
                       <CheckCircle2 size={14} className="text-[#059669] shrink-0 mt-0.5" />
                       <div className="overflow-hidden">
                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#059669]">
@@ -472,8 +467,8 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                         : 'bg-[#1B3A5C] hover:bg-[#11253C] text-white'
                     }`}
                   >
-                    {hasResponded ? <CheckCircle2 size={14} /> : <Send size={13} />}
-                    <span>{hasResponded ? 'Responded ✓ (View/Log)' : 'Send Wish / Log Call'}</span>
+                    {!hasResponded && <Send size={13} />}
+                    <span>{hasResponded ? 'Responded (View/Log)' : 'Send Wish / Log Call'}</span>
                   </button>
 
                   <button

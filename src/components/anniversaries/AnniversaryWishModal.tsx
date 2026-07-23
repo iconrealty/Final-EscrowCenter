@@ -553,7 +553,6 @@ export function AnniversaryWishModal({
             }}
             className="bg-[#059669] hover:bg-[#047857] text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
           >
-            <CheckCircle2 size={14} />
             <span>Mark as Responded</span>
           </button>
           <button
