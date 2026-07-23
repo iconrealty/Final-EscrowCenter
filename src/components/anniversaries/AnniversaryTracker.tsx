@@ -355,11 +355,9 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                 key={escrow.id}
                 className={`bg-white border rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between transition-all duration-300 hover:shadow-lg relative overflow-hidden group ${
                   hasResponded
-                    ? 'border-slate-200 bg-gradient-to-b from-[#059669]/10 via-[#059669]/5 to-white'
+                    ? 'border-slate-200'
                     : isToday
                     ? 'border-amber-400 ring-2 ring-amber-400/30'
-                    : isMilestone && !isPassedThisYear
-                    ? 'border-slate-200 bg-gradient-to-b from-[#059669]/5 to-white'
                     : 'border-[#e5e5ea]'
                 }`}
               >
@@ -379,7 +377,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                       <span>{getOrdinal(yearsThisYear)} Anniversary (Passed)</span>
                     </span>
                   ) : isMilestone ? (
-                    <span className="inline-flex items-center gap-1.5 bg-[#059669]/10 text-[#059669] border border-[#059669]/30 px-2.5 py-1 rounded-lg text-xs font-bold">
+                    <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-800 px-2.5 py-1 rounded-lg text-xs font-bold">
                       <span>{getOrdinal(yearsThisYear)} Year Milestone</span>
                     </span>
                   ) : (
