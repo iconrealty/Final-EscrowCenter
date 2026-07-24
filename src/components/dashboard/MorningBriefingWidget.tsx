@@ -107,12 +107,12 @@ export function MorningBriefingWidget({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-extrabold text-sm text-[#1B3A5C] uppercase tracking-wider">
-              Daily Morning Briefing
+              Closing Anniversaries
             </h2>
             <span className="text-xs text-slate-400">• {todayFormatted}</span>
           </div>
           <p className="text-xs text-slate-600 mt-1 font-medium">
-            You&apos;re all caught up! No active home closing anniversaries due today.
+            You&apos;re all caught up! No home closing anniversaries due today.
           </p>
         </div>
       </div>
@@ -126,7 +126,7 @@ export function MorningBriefingWidget({
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="font-extrabold text-sm text-[#1B3A5C] uppercase tracking-wider">
-              Daily Morning Briefing
+              Closing Anniversaries
             </h2>
             <span className="bg-slate-200/80 text-slate-700 text-[11px] font-bold px-2.5 py-0.5 rounded-md">
               {todayFormatted}
