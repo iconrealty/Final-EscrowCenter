@@ -67,6 +67,7 @@ export function generateCsvTemplate(): string {
       '"98453-PC"', // Escrow #
       '"Closed"', // Status
       '"Buyer"', // Representation
+      '"Zillow"', // Lead Source
       '"1206 Louise St, Santa Ana, CA 92703"', // Address
       '"Patrick Curley"', // Client Name
       '"Patrick"', // Client First Name
@@ -101,6 +102,7 @@ export function generateCsvTemplate(): string {
       '"47294-CC"',
       '"Open"',
       '"Seller"',
+      '"Self"',
       '"12592 Montecito Rd #9, Seal Beach, CA 90740"',
       '"Carlos Campa"',
       '"Carlos"',
@@ -129,6 +131,41 @@ export function generateCsvTemplate(): string {
       '"$585,000.00"',
       '"2.5"',
       '"$14,625.00"',
+      '""'
+    ],
+    [
+      '"38102-TL"',
+      '"Open"',
+      '"Buyer"',
+      '"Team Lead"',
+      '"742 Evergreen Terrace, Springfield, OR 97477"',
+      '"Homer Simpson"',
+      '"Homer"',
+      '"Simpson"',
+      '""',
+      '""',
+      '""',
+      '""',
+      '""',
+      '""',
+      '"Paul Muner"',
+      '""',
+      '""',
+      '""',
+      '""',
+      '""',
+      '""',
+      '""',
+      '""',
+      '""',
+      '""',
+      '""',
+      '"First American Title"',
+      '"07/01/2026"',
+      '"08/10/2026"',
+      '"$650,000.00"',
+      '"2.5"',
+      '"$16,250.00"',
       '""'
     ]
   ];
@@ -172,6 +209,7 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       escapeCsv(e.escrowNumber || ''),
       escapeCsv(e.status || 'Open'),
       escapeCsv(e.representation || ''),
+      escapeCsv(e.leadSource || 'Zillow'),
       escapeCsv(e.address || ''),
       escapeCsv(clientName),
       escapeCsv(e.clientFirstName || ''),
@@ -481,6 +519,17 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
 
   const commissionPercent = getVal(['commission percent', 'commission %', 'commission_percent']) ? Number(String(getVal(['commission percent', 'commission %', 'commission_percent'])).replace(/[^0-9.]/g, '')) : undefined;
 
+  // Lead Source mapping
+  const rawSource = getVal(['lead source', 'source']);
+  let leadSource: 'Zillow' | 'Self' | 'Team Lead' | 'Opcity' | 'Other' | undefined = undefined;
+  if (rawSource) {
+    if (rawSource.toLowerCase().includes('zillow')) leadSource = 'Zillow';
+    else if (rawSource.toLowerCase().includes('self') || rawSource.toLowerCase().includes('soi') || rawSource.toLowerCase().includes('referral')) leadSource = 'Self';
+    else if (rawSource.toLowerCase().includes('team')) leadSource = 'Team Lead';
+    else if (rawSource.toLowerCase().includes('opcity')) leadSource = 'Opcity';
+    else leadSource = 'Other';
+  }
+
   // Additional fields to include in Notes
   const noteLines: string[] = [];
   const sisuNotes = getVal(['notes', 'comments', 'description']);
@@ -535,6 +584,7 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     acceptanceDate,
     coeDate,
     status: parsedStatus,
+    leadSource,
     notes: noteLines.join('\n')
   };
 }
