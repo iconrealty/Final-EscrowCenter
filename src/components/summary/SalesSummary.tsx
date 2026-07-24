@@ -9,7 +9,7 @@ interface SalesSummaryProps {
 }
 
 export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'total' | 'monthly' | 'commission'>('total');
+  const [activeSubTab, setActiveSubTab] = useState<'total' | 'monthly' | 'commission' | 'source'>('total');
   const [commissionGroup, setCommissionGroup] = useState<'monthly' | 'yearly'>('monthly');
   const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null);
 
@@ -177,6 +177,37 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     return commissionGroup === 'monthly' ? commissionByMonth : commissionByYear;
   }, [commissionGroup, commissionByMonth, commissionByYear]);
 
+  // Group Escrows by Lead Source
+  const leadSourceStats = useMemo(() => {
+    const nonCancelled = selectedYear === 'all'
+      ? escrows.filter(e => e.status !== 'Cancelled')
+      : escrows.filter(e => e.status !== 'Cancelled' && (e.coeDate?.includes(selectedYear) || e.acceptanceDate?.includes(selectedYear)));
+
+    const totalCount = nonCancelled.length;
+    const sourcesMap: Record<string, { key: string; label: string; count: number; volume: number; commission: number; escrows: Escrow[] }> = {
+      'Zillow': { key: 'Zillow', label: 'Zillow', count: 0, volume: 0, commission: 0, escrows: [] },
+      'Self': { key: 'Self', label: 'Self', count: 0, volume: 0, commission: 0, escrows: [] },
+      'Other': { key: 'Other', label: 'Other', count: 0, volume: 0, commission: 0, escrows: [] },
+    };
+
+    nonCancelled.forEach((e) => {
+      const src = e.leadSource || 'Zillow';
+      const key = (src === 'Zillow' || src === 'Self') ? src : 'Other';
+      sourcesMap[key].count += 1;
+      sourcesMap[key].volume += e.price || 0;
+      sourcesMap[key].commission += e.netCommission || 0;
+      sourcesMap[key].escrows.push(e);
+    });
+
+    return {
+      totalCount,
+      sources: Object.values(sourcesMap).map(s => ({
+        ...s,
+        percent: totalCount > 0 ? (s.count / totalCount) * 100 : 0
+      }))
+    };
+  }, [escrows, selectedYear]);
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -261,6 +292,19 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             }`}
           >
             Commissions
+          </button>
+          <button
+            onClick={() => {
+              setActiveSubTab('source');
+              setExpandedPeriod(null);
+            }}
+            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+              activeSubTab === 'source'
+                ? 'bg-black text-white shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f]'
+            }`}
+          >
+            Lead Source
           </button>
         </div>
       </div>
@@ -602,6 +646,154 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                   <div>
                     <p className="uppercase text-[9px] tracking-widest font-bold text-neutral-500">No commissions yet</p>
                     <p className="text-[10px] text-[#86868b] mt-1 normal-case">Change an escrow status to "Closed" to calculate commissions.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {activeSubTab === 'source' && (
+          /* LEAD SOURCE ANALYTICS VIEW */
+          <div className="flex-1 flex flex-col overflow-hidden p-5 gap-4 animate-fade-in">
+            {/* Header with Year filter */}
+            <div className="flex items-center justify-between shrink-0">
+              <div>
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Escrows by Lead Source</span>
+                <span className="text-[13px] font-bold text-[#1B3A5C] font-mono mt-0.5 block">
+                  {leadSourceStats.totalCount} Total Escrow{leadSourceStats.totalCount === 1 ? '' : 's'}
+                </span>
+              </div>
+              
+              {/* Year Selector */}
+              <div className="relative inline-flex items-center">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
+                >
+                  <option value="all">All Time</option>
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      {yr}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute right-2.5 text-[#86868b] flex items-center">
+                  <ChevronDown size={12} />
+                </div>
+              </div>
+            </div>
+
+            {/* Source Cards Grid */}
+            <div className="grid grid-cols-3 gap-3">
+              {leadSourceStats.sources.map((source) => (
+                <div key={source.key} className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">{source.label}</span>
+                      <span className="text-[10px] font-mono font-bold text-[#86868b]">{Math.round(source.percent)}%</span>
+                    </div>
+                    <div className="text-lg font-extrabold text-[#1d1d1f] font-mono mt-1">
+                      {source.count} <span className="text-[10px] text-[#86868b] font-normal uppercase">escrows</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-slate-200/60 flex flex-col text-[10px] font-mono">
+                    <span className="text-[#86868b]">Vol: <strong className="text-[#1d1d1f]">{formatCurrency(source.volume)}</strong></span>
+                    <span className="text-[#86868b]">Comm: <strong className="text-[#059669]">{formatCurrency(source.commission)}</strong></span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* List Header */}
+            <div className="flex items-center justify-between text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
+              <span>Source Category</span>
+              <span>Escrows & Commission</span>
+            </div>
+
+            {/* Scrollable list of sources & escrows */}
+            <div className="flex-1 overflow-y-auto pr-1">
+              {leadSourceStats.sources.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {leadSourceStats.sources.map((source) => {
+                    const isExpanded = expandedPeriod === source.key;
+                    return (
+                      <div key={source.key} className="border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50">
+                        {/* Source Summary row */}
+                        <button
+                          onClick={() => handlePeriodToggle(source.key)}
+                          className="w-full flex items-center justify-between p-3 hover:bg-slate-100/50 transition-all duration-200 cursor-pointer text-left"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <ChevronDown
+                              size={14}
+                              className={`text-[#86868b] transition-transform duration-200 shrink-0 ${
+                                isExpanded ? 'transform rotate-0' : 'transform -rotate-90'
+                              }`}
+                            />
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-[#1d1d1f] block truncate">
+                                {source.label} Source
+                              </span>
+                              <span className="text-[10px] text-[#86868b]">
+                                {source.count} {source.count === 1 ? 'escrow' : 'escrows'} ({Math.round(source.percent)}%)
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-xs font-extrabold text-[#1B3A5C] font-mono block">
+                              {formatCurrency(source.volume)}
+                            </span>
+                            <span className="text-[10px] font-bold text-[#059669] font-mono block">
+                              {formatCurrency(source.commission)} comm.
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Collapsible list of escrows */}
+                        {isExpanded && (
+                          <div className="bg-white border-t border-slate-100/60 p-2 flex flex-col gap-1.5 animate-slide-down">
+                            {source.escrows.length > 0 ? (
+                              source.escrows.map((escrow) => (
+                                <div
+                                  key={escrow.id}
+                                  onClick={() => onSelectEscrow(escrow)}
+                                  className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-all duration-150 cursor-pointer"
+                                >
+                                  <div className="min-w-0 flex-1 pr-3">
+                                    <div className="text-[11px] font-semibold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
+                                      {escrow.address}
+                                    </div>
+                                    <div className="text-[9px] text-[#86868b] mt-0.5">
+                                      {escrow.clientFirstName} {escrow.clientLastName} • {escrow.status}
+                                    </div>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <div className="text-[11px] font-bold text-[#1d1d1f] font-mono">
+                                      {formatCurrency(escrow.price || 0)}
+                                    </div>
+                                    <div className="text-[9px] font-bold text-[#059669] font-mono">
+                                      {formatCurrency(escrow.netCommission || 0)}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="p-3 text-center text-[11px] text-[#86868b]">No escrows registered under {source.label}</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-12 text-center text-[#86868b] text-sm font-medium flex flex-col items-center gap-3 justify-center h-full">
+                  <div className="w-10 h-10 rounded-full bg-neutral-50 border border-neutral-100 text-neutral-400 flex items-center justify-center shadow-sm">
+                    <BarChart3 size={16} />
+                  </div>
+                  <div>
+                    <p className="uppercase text-[9px] tracking-widest font-bold text-neutral-500">No Lead Source Data</p>
                   </div>
                 </div>
               )}

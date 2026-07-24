@@ -150,7 +150,7 @@ export function DetailModal({
           
           {/* Apple/Tesla-style Minimalist Overview */}
           <section id="detail-overview" className="pb-6 border-b border-[#e5e5ea]">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-6 sm:gap-8">
               
               {/* Sale Price */}
               <div className="flex flex-col">
@@ -175,6 +175,16 @@ export function DetailModal({
                 <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Net Commission</span>
                 <span className="text-lg sm:text-xl font-normal text-[#1d1d1f]">
                   {formatCurrency(escrow.netCommission)}
+                </span>
+              </div>
+
+              {/* Lead Source */}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Lead Source</span>
+                <span className="text-sm sm:text-base font-normal text-[#1d1d1f] truncate" title={escrow.leadSource || 'Zillow'}>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-[#1B3A5C]/10 text-[#1B3A5C]">
+                    {escrow.leadSource || 'Zillow'}
+                  </span>
                 </span>
               </div>
 

@@ -47,6 +47,7 @@ export function AddEditModal({
       contingencyStartDate: format(today, 'yyyy-MM-dd'),
       status: 'Open',
       representation: 'Buyer' as 'Buyer' | 'Seller' | 'Dual',
+      leadSource: 'Zillow' as 'Zillow' | 'Self' | 'Other',
       notes: '',
       contingencyDays: {
         'L1': '14', 'L2': '10', 'L3': '7', 'L4': '7', 'L5': '7', 'L6': '7', 'L7': '7', 'L8': '7', 'L9': '7'
@@ -143,6 +144,7 @@ export function AddEditModal({
         coeDate: escrow.coeDate,
         status: escrow.status,
         representation: escrow.representation || 'Buyer',
+        leadSource: (escrow.leadSource as any) || 'Zillow',
         notes: escrow.notes,
         contingencyDays: stringifiedDays
       });
@@ -283,6 +285,15 @@ export function AddEditModal({
                 <option value="Open">Open</option>
                 <option value="Closed">Closed</option>
                 <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Lead Source</label>
+              <select value={formData.leadSource} onChange={e => setFormData({...formData, leadSource: e.target.value as any})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]">
+                <option value="Zillow">Zillow</option>
+                <option value="Self">Self</option>
+                <option value="Other">Other</option>
               </select>
             </div>
 

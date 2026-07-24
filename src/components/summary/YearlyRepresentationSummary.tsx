@@ -8,6 +8,7 @@ interface YearlyRepresentationSummaryProps {
 
 export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSummaryProps) {
   const currentYearStr = new Date().getFullYear().toString();
+  const [viewMode, setViewMode] = useState<'rep' | 'source'>('rep');
 
   // Extract all unique years present in escrows, ensuring the current year is included
   const availableYears = useMemo(() => {
@@ -47,7 +48,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
     });
   }, [escrows, selectedYear]);
 
-  // Calculate statistics for the selected year
+  // Calculate statistics for the selected year (Representation)
   const stats = useMemo(() => {
     let buyer = 0;
     let seller = 0;
@@ -77,13 +78,59 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
     };
   }, [filteredEscrows]);
 
+  // Calculate statistics for Lead Source
+  const sourceStats = useMemo(() => {
+    let zillow = 0;
+    let self = 0;
+    let other = 0;
+
+    filteredEscrows.forEach((escrow) => {
+      const src = escrow.leadSource || 'Zillow';
+      if (src === 'Zillow') zillow += 1;
+      else if (src === 'Self') self += 1;
+      else other += 1;
+    });
+
+    const total = zillow + self + other;
+
+    return {
+      total,
+      zillow,
+      self,
+      other,
+      zillowPercent: total > 0 ? (zillow / total) * 100 : 0,
+      selfPercent: total > 0 ? (self / total) * 100 : 0,
+      otherPercent: total > 0 ? (other / total) * 100 : 0,
+    };
+  }, [filteredEscrows]);
+
   return (
     <div className="bg-white rounded-2xl border border-[#e5e5ea] overflow-hidden flex flex-col h-full shadow-sm">
       {/* Tesla / Apple Inspired Minimalist Header */}
-      <div className="px-5 py-4 border-b border-[#e5e5ea] bg-slate-50 flex flex-row sm:items-center justify-between gap-3 shrink-0">
+      <div className="px-5 py-3 border-b border-[#e5e5ea] bg-slate-50 flex flex-row items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2">
-          <div>
-            <h2 className="font-bold text-[#1d1d1f] text-xs uppercase tracking-wider leading-none">Escrows</h2>
+          {/* Sub-tabs for Representation vs Lead Source */}
+          <div className="flex bg-slate-200/70 p-0.5 rounded-lg text-[11px] font-bold">
+            <button
+              onClick={() => setViewMode('rep')}
+              className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+                viewMode === 'rep'
+                  ? 'bg-black text-white shadow-sm'
+                  : 'text-[#86868b] hover:text-[#1d1d1f]'
+              }`}
+            >
+              Representation
+            </button>
+            <button
+              onClick={() => setViewMode('source')}
+              className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+                viewMode === 'source'
+                  ? 'bg-black text-white shadow-sm'
+                  : 'text-[#86868b] hover:text-[#1d1d1f]'
+              }`}
+            >
+              Lead Source
+            </button>
           </div>
         </div>
 
@@ -125,72 +172,133 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Active Selection</span>
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Category</span>
                 <span className="text-sm font-bold text-[#1B3A5C] tracking-wide">
-                  {selectedYear === 'all' ? 'All Time' : selectedYear}
+                  {viewMode === 'rep' ? 'Representation' : 'Lead Sources'}
                 </span>
               </div>
             </div>
 
             {/* Pristine Minimalist Progress Tracks */}
-            <div className="flex flex-col gap-4">
-              {/* Buyer Track */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#059669]" />
-                    <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Buyer Rep</span>
+            {viewMode === 'rep' ? (
+              <div className="flex flex-col gap-4">
+                {/* Buyer Track */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#059669]" />
+                      <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Buyer Rep</span>
+                    </div>
+                    <div className="font-mono text-neutral-500 font-bold">
+                      {stats.buyer} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(stats.buyerPercent)}%)</span>
+                    </div>
                   </div>
-                  <div className="font-mono text-neutral-500 font-bold">
-                    {stats.buyer} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(stats.buyerPercent)}%)</span>
+                  <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+                    <div 
+                      style={{ width: `${stats.buyerPercent}%` }} 
+                      className="bg-[#059669] h-full rounded-full transition-all duration-500" 
+                    />
                   </div>
                 </div>
-                <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
-                  <div 
-                    style={{ width: `${stats.buyerPercent}%` }} 
-                    className="bg-[#059669] h-full rounded-full transition-all duration-500" 
-                  />
-                </div>
-              </div>
 
-              {/* Seller Track */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
-                    <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Seller Rep</span>
+                {/* Seller Track */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
+                      <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Seller Rep</span>
+                    </div>
+                    <div className="font-mono text-neutral-500 font-bold">
+                      {stats.seller} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(stats.sellerPercent)}%)</span>
+                    </div>
                   </div>
-                  <div className="font-mono text-neutral-500 font-bold">
-                    {stats.seller} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(stats.sellerPercent)}%)</span>
+                  <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+                    <div 
+                      style={{ width: `${stats.sellerPercent}%` }} 
+                      className="bg-[#1B3A5C] h-full rounded-full transition-all duration-500" 
+                    />
                   </div>
                 </div>
-                <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
-                  <div 
-                    style={{ width: `${stats.sellerPercent}%` }} 
-                    className="bg-[#1B3A5C] h-full rounded-full transition-all duration-500" 
-                  />
-                </div>
-              </div>
 
-              {/* Dual Track */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#11253C]" />
-                    <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Dual Rep</span>
+                {/* Dual Track */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#11253C]" />
+                      <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Dual Rep</span>
+                    </div>
+                    <div className="font-mono text-neutral-500 font-bold">
+                      {stats.dual} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(stats.dualPercent)}%)</span>
+                    </div>
                   </div>
-                  <div className="font-mono text-neutral-500 font-bold">
-                    {stats.dual} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(stats.dualPercent)}%)</span>
+                  <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+                    <div 
+                      style={{ width: `${stats.dualPercent}%` }} 
+                      className="bg-[#11253C] h-full rounded-full transition-all duration-500" 
+                    />
                   </div>
-                </div>
-                <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
-                  <div 
-                    style={{ width: `${stats.dualPercent}%` }} 
-                    className="bg-[#11253C] h-full rounded-full transition-all duration-500" 
-                  />
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {/* Zillow Track */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#006AFF]" />
+                      <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Zillow</span>
+                    </div>
+                    <div className="font-mono text-neutral-500 font-bold">
+                      {sourceStats.zillow} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(sourceStats.zillowPercent)}%)</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+                    <div 
+                      style={{ width: `${sourceStats.zillowPercent}%` }} 
+                      className="bg-[#006AFF] h-full rounded-full transition-all duration-500" 
+                    />
+                  </div>
+                </div>
+
+                {/* Self Track */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#059669]" />
+                      <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Self</span>
+                    </div>
+                    <div className="font-mono text-neutral-500 font-bold">
+                      {sourceStats.self} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(sourceStats.selfPercent)}%)</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+                    <div 
+                      style={{ width: `${sourceStats.selfPercent}%` }} 
+                      className="bg-[#059669] h-full rounded-full transition-all duration-500" 
+                    />
+                  </div>
+                </div>
+
+                {/* Other Track */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
+                      <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Other</span>
+                    </div>
+                    <div className="font-mono text-neutral-500 font-bold">
+                      {sourceStats.other} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(sourceStats.otherPercent)}%)</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+                    <div 
+                      style={{ width: `${sourceStats.otherPercent}%` }} 
+                      className="bg-[#1B3A5C] h-full rounded-full transition-all duration-500" 
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="py-10 text-center text-[#86868b] text-sm font-medium flex flex-col items-center gap-3 h-full justify-center">

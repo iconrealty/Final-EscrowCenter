@@ -63,6 +63,9 @@ export function EscrowCard({
           )}
         </div>
         <div className="flex items-center gap-2.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
+            {escrow.leadSource || 'Zillow'}
+          </span>
           <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
             escrow.representation === 'Seller'
               ? 'bg-[#1B3A5C] text-white'

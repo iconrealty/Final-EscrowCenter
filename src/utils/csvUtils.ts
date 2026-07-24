@@ -4,6 +4,7 @@ export const CSV_HEADERS = [
   'Escrow #',
   'Status',
   'Representation',
+  'Lead Source',
   'Address',
   'Client Name',
   'Client First Name',
@@ -342,6 +343,13 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
     else if (rawRep.toLowerCase().includes('seller')) representation = 'Seller';
     else if (rawRep.toLowerCase().includes('dual')) representation = 'Dual';
 
+    // Lead Source mapping
+    const rawSource = getVal(['lead source', 'source']);
+    let leadSource: 'Zillow' | 'Self' | 'Other' = 'Zillow';
+    if (rawSource.toLowerCase().includes('zillow')) leadSource = 'Zillow';
+    else if (rawSource.toLowerCase().includes('self') || rawSource.toLowerCase().includes('soi') || rawSource.toLowerCase().includes('referral')) leadSource = 'Self';
+    else if (rawSource) leadSource = 'Other';
+
     // Map fields
     const escrow: Partial<Escrow> = {
       escrowNumber: getVal(['escrow #', 'escrow number', 'escrow no', 'escrowno', 'escrow_no', 'escrow_number']),
@@ -372,6 +380,7 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       coeDate: rawCoe ? parseDateToIso(rawCoe) : new Date().toISOString().split('T')[0],
       status: parsedStatus,
       representation,
+      leadSource,
       notes
     };
     
