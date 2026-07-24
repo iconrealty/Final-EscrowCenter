@@ -187,12 +187,14 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     const sourcesMap: Record<string, { key: string; label: string; count: number; volume: number; commission: number; escrows: Escrow[] }> = {
       'Zillow': { key: 'Zillow', label: 'Zillow', count: 0, volume: 0, commission: 0, escrows: [] },
       'Self': { key: 'Self', label: 'Self', count: 0, volume: 0, commission: 0, escrows: [] },
+      'Team Lead': { key: 'Team Lead', label: 'Team Lead', count: 0, volume: 0, commission: 0, escrows: [] },
+      'Opcity': { key: 'Opcity', label: 'Opcity', count: 0, volume: 0, commission: 0, escrows: [] },
       'Other': { key: 'Other', label: 'Other', count: 0, volume: 0, commission: 0, escrows: [] },
     };
 
     nonCancelled.forEach((e) => {
       const src = e.leadSource || 'Zillow';
-      const key = (src === 'Zillow' || src === 'Self') ? src : 'Other';
+      const key = (src === 'Zillow' || src === 'Self' || src === 'Team Lead' || src === 'Opcity') ? src : 'Other';
       sourcesMap[key].count += 1;
       sourcesMap[key].volume += e.price || 0;
       sourcesMap[key].commission += e.netCommission || 0;
@@ -685,25 +687,27 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             </div>
 
             {/* Source Cards Grid */}
-            <div className="grid grid-cols-3 gap-3">
-              {leadSourceStats.sources.map((source) => (
-                <div key={source.key} className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">{source.label}</span>
-                      <span className="text-[10px] font-mono font-bold text-[#86868b]">{Math.round(source.percent)}%</span>
+            {leadSourceStats.sources.filter(s => s.count > 0).length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {leadSourceStats.sources.filter(s => s.count > 0).map((source) => (
+                  <div key={source.key} className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">{source.label}</span>
+                        <span className="text-[10px] font-mono font-bold text-[#86868b]">{Math.round(source.percent)}%</span>
+                      </div>
+                      <div className="text-lg font-extrabold text-[#1d1d1f] font-mono mt-1">
+                        {source.count} <span className="text-[10px] text-[#86868b] font-normal uppercase">escrows</span>
+                      </div>
                     </div>
-                    <div className="text-lg font-extrabold text-[#1d1d1f] font-mono mt-1">
-                      {source.count} <span className="text-[10px] text-[#86868b] font-normal uppercase">escrows</span>
+                    <div className="mt-2 pt-2 border-t border-slate-200/60 flex flex-col text-[10px] font-mono">
+                      <span className="text-[#86868b]">Vol: <strong className="text-[#1d1d1f]">{formatCurrency(source.volume)}</strong></span>
+                      <span className="text-[#86868b]">Comm: <strong className="text-[#059669]">{formatCurrency(source.commission)}</strong></span>
                     </div>
                   </div>
-                  <div className="mt-2 pt-2 border-t border-slate-200/60 flex flex-col text-[10px] font-mono">
-                    <span className="text-[#86868b]">Vol: <strong className="text-[#1d1d1f]">{formatCurrency(source.volume)}</strong></span>
-                    <span className="text-[#86868b]">Comm: <strong className="text-[#059669]">{formatCurrency(source.commission)}</strong></span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* List Header */}
             <div className="flex items-center justify-between text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
@@ -713,9 +717,9 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
 
             {/* Scrollable list of sources & escrows */}
             <div className="flex-1 overflow-y-auto pr-1">
-              {leadSourceStats.sources.length > 0 ? (
+              {leadSourceStats.sources.filter(s => s.count > 0).length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  {leadSourceStats.sources.map((source) => {
+                  {leadSourceStats.sources.filter(s => s.count > 0).map((source) => {
                     const isExpanded = expandedPeriod === source.key;
                     return (
                       <div key={source.key} className="border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50">

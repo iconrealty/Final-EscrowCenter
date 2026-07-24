@@ -345,9 +345,11 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
 
     // Lead Source mapping
     const rawSource = getVal(['lead source', 'source']);
-    let leadSource: 'Zillow' | 'Self' | 'Other' = 'Zillow';
+    let leadSource: 'Zillow' | 'Self' | 'Team Lead' | 'Opcity' | 'Other' = 'Zillow';
     if (rawSource.toLowerCase().includes('zillow')) leadSource = 'Zillow';
     else if (rawSource.toLowerCase().includes('self') || rawSource.toLowerCase().includes('soi') || rawSource.toLowerCase().includes('referral')) leadSource = 'Self';
+    else if (rawSource.toLowerCase().includes('team')) leadSource = 'Team Lead';
+    else if (rawSource.toLowerCase().includes('opcity')) leadSource = 'Opcity';
     else if (rawSource) leadSource = 'Other';
 
     // Map fields

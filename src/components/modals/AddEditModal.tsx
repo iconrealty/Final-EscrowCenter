@@ -293,6 +293,8 @@ export function AddEditModal({
               <select value={formData.leadSource} onChange={e => setFormData({...formData, leadSource: e.target.value as any})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]">
                 <option value="Zillow">Zillow</option>
                 <option value="Self">Self</option>
+                <option value="Team Lead">Team Lead</option>
+                <option value="Opcity">Opcity</option>
                 <option value="Other">Other</option>
               </select>
             </div>

@@ -82,24 +82,32 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
   const sourceStats = useMemo(() => {
     let zillow = 0;
     let self = 0;
+    let teamLead = 0;
+    let opcity = 0;
     let other = 0;
 
     filteredEscrows.forEach((escrow) => {
       const src = escrow.leadSource || 'Zillow';
       if (src === 'Zillow') zillow += 1;
       else if (src === 'Self') self += 1;
+      else if (src === 'Team Lead') teamLead += 1;
+      else if (src === 'Opcity') opcity += 1;
       else other += 1;
     });
 
-    const total = zillow + self + other;
+    const total = zillow + self + teamLead + opcity + other;
 
     return {
       total,
       zillow,
       self,
+      teamLead,
+      opcity,
       other,
       zillowPercent: total > 0 ? (zillow / total) * 100 : 0,
       selfPercent: total > 0 ? (self / total) * 100 : 0,
+      teamLeadPercent: total > 0 ? (teamLead / total) * 100 : 0,
+      opcityPercent: total > 0 ? (opcity / total) * 100 : 0,
       otherPercent: total > 0 ? (other / total) * 100 : 0,
     };
   }, [filteredEscrows]);
@@ -240,63 +248,46 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-4">
-                {/* Zillow Track */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#006AFF]" />
-                      <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Zillow</span>
-                    </div>
-                    <div className="font-mono text-neutral-500 font-bold">
-                      {sourceStats.zillow} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(sourceStats.zillowPercent)}%)</span>
-                    </div>
+              <div className="flex flex-col gap-3">
+                {[
+                  { key: 'Zillow', label: 'Zillow', count: sourceStats.zillow, percent: sourceStats.zillowPercent, color: '#006AFF' },
+                  { key: 'Self', label: 'Self', count: sourceStats.self, percent: sourceStats.selfPercent, color: '#059669' },
+                  { key: 'Team Lead', label: 'Team Lead', count: sourceStats.teamLead, percent: sourceStats.teamLeadPercent, color: '#8B5CF6' },
+                  { key: 'Opcity', label: 'Opcity', count: sourceStats.opcity, percent: sourceStats.opcityPercent, color: '#F59E0B' },
+                  { key: 'Other', label: 'Other', count: sourceStats.other, percent: sourceStats.otherPercent, color: '#1B3A5C' },
+                ].filter(s => s.count > 0).length > 0 ? (
+                  [
+                    { key: 'Zillow', label: 'Zillow', count: sourceStats.zillow, percent: sourceStats.zillowPercent, color: '#006AFF' },
+                    { key: 'Self', label: 'Self', count: sourceStats.self, percent: sourceStats.selfPercent, color: '#059669' },
+                    { key: 'Team Lead', label: 'Team Lead', count: sourceStats.teamLead, percent: sourceStats.teamLeadPercent, color: '#8B5CF6' },
+                    { key: 'Opcity', label: 'Opcity', count: sourceStats.opcity, percent: sourceStats.opcityPercent, color: '#F59E0B' },
+                    { key: 'Other', label: 'Other', count: sourceStats.other, percent: sourceStats.otherPercent, color: '#1B3A5C' },
+                  ]
+                    .filter(s => s.count > 0)
+                    .map((item) => (
+                      <div key={item.key} className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                            <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">{item.label}</span>
+                          </div>
+                          <div className="font-mono text-neutral-500 font-bold">
+                            {item.count} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(item.percent)}%)</span>
+                          </div>
+                        </div>
+                        <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                          <div 
+                            style={{ width: `${item.percent}%`, backgroundColor: item.color }} 
+                            className="h-full rounded-full transition-all duration-500" 
+                          />
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="py-6 text-center text-[#86868b] text-xs font-medium">
+                    No lead sources found for this selection
                   </div>
-                  <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
-                    <div 
-                      style={{ width: `${sourceStats.zillowPercent}%` }} 
-                      className="bg-[#006AFF] h-full rounded-full transition-all duration-500" 
-                    />
-                  </div>
-                </div>
-
-                {/* Self Track */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#059669]" />
-                      <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Self</span>
-                    </div>
-                    <div className="font-mono text-neutral-500 font-bold">
-                      {sourceStats.self} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(sourceStats.selfPercent)}%)</span>
-                    </div>
-                  </div>
-                  <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
-                    <div 
-                      style={{ width: `${sourceStats.selfPercent}%` }} 
-                      className="bg-[#059669] h-full rounded-full transition-all duration-500" 
-                    />
-                  </div>
-                </div>
-
-                {/* Other Track */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
-                      <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Other</span>
-                    </div>
-                    <div className="font-mono text-neutral-500 font-bold">
-                      {sourceStats.other} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(sourceStats.otherPercent)}%)</span>
-                    </div>
-                  </div>
-                  <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
-                    <div 
-                      style={{ width: `${sourceStats.otherPercent}%` }} 
-                      className="bg-[#1B3A5C] h-full rounded-full transition-all duration-500" 
-                    />
-                  </div>
-                </div>
+                )}
               </div>
             )}
           </div>

@@ -47,7 +47,7 @@ export interface Escrow {
   notes: string;
   status: 'Open' | 'Closed' | 'Cancelled';
   representation?: 'Buyer' | 'Seller' | 'Dual';
-  leadSource?: 'Zillow' | 'Self' | 'Other' | string;
+  leadSource?: 'Zillow' | 'Self' | 'Team Lead' | 'Opcity' | 'Other' | string;
   tasks: Record<string, boolean>;
   contingencyDays?: Record<string, number>;
   contingencyStartDate?: string;
