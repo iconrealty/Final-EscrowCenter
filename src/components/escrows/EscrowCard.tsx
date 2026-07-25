@@ -189,16 +189,16 @@ export function EscrowCard({
                   e.stopPropagation();
                   onUpdateTasks();
                 }}
-                className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-200/90 shadow-2xs hover:border-[#3B82F6] hover:bg-blue-50/30 transition-all cursor-pointer group/step"
+                className="flex items-center justify-between bg-[#3B82F6] text-white border border-blue-600/80 p-2.5 rounded-xl shadow-xs hover:bg-[#2563EB] transition-all cursor-pointer group/step"
                 title="Click to update task status"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-2 h-2 rounded-full bg-[#3B82F6] shrink-0" />
-                  <span className="text-xs font-bold text-slate-800 truncate group-hover/step:text-[#1B3A5C]">
+                  <span className="w-2 h-2 rounded-full bg-white shrink-0 shadow-2xs" />
+                  <span className="text-xs font-bold text-white truncate">
                     {nextMilestone.label}
                   </span>
                 </div>
-                <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded shrink-0">
+                <span className="text-[10px] font-bold text-[#3B82F6] bg-white px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
                   Pending
                 </span>
               </div>
