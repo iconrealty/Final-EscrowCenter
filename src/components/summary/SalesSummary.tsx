@@ -261,19 +261,19 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   return (
     <div className="bg-white rounded-2xl border border-[#e5e5ea] overflow-hidden flex flex-col h-full shadow-sm">
       {/* Tesla / Apple-inspired Minimalist Header with Sub-tabs */}
-      <div className="px-5 py-3 border-b border-[#e5e5ea] bg-slate-50 flex flex-row items-center justify-between gap-3 shrink-0">
+      <div className="px-4 sm:px-5 py-3 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0 overflow-hidden">
         <div>
           <h2 className="font-bold text-[#1d1d1f] text-xs uppercase tracking-wider leading-none">Sales Summary</h2>
         </div>
 
         {/* Minimal Sub-tabs */}
-        <div className="flex bg-slate-200/70 p-0.5 rounded-lg text-[11px] font-bold shrink-0">
+        <div className="flex bg-slate-200/70 p-0.5 rounded-lg text-[11px] font-bold overflow-x-auto max-w-full scrollbar-none whitespace-nowrap shrink-0 w-full sm:w-auto">
           <button
             onClick={() => {
               setActiveSubTab('total');
               setExpandedPeriod(null);
             }}
-            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
               activeSubTab === 'total'
                 ? 'bg-black text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
@@ -286,7 +286,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
               setActiveSubTab('monthly');
               setExpandedPeriod(null);
             }}
-            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
               activeSubTab === 'monthly'
                 ? 'bg-black text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
@@ -299,7 +299,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
               setActiveSubTab('commission');
               setExpandedPeriod(null);
             }}
-            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
               activeSubTab === 'commission'
                 ? 'bg-black text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
@@ -312,7 +312,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
               setActiveSubTab('source');
               setExpandedPeriod(null);
             }}
-            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
               activeSubTab === 'source'
                 ? 'bg-black text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'

@@ -111,13 +111,13 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
   return (
     <div className="bg-white rounded-2xl border border-[#e5e5ea] overflow-hidden flex flex-col h-full shadow-sm">
       {/* Tesla / Apple Inspired Minimalist Header */}
-      <div className="px-5 py-3 border-b border-[#e5e5ea] bg-slate-50 flex flex-row items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-2">
+      <div className="px-4 sm:px-5 py-3 border-b border-[#e5e5ea] bg-slate-50 flex flex-row items-center justify-between gap-2.5 sm:gap-3 shrink-0 overflow-hidden">
+        <div className="flex items-center gap-2 max-w-full overflow-hidden">
           {/* Sub-tabs for Representation vs Lead Source */}
-          <div className="flex bg-slate-200/70 p-0.5 rounded-lg text-[11px] font-bold">
+          <div className="flex bg-slate-200/70 p-0.5 rounded-lg text-[11px] font-bold overflow-x-auto max-w-full scrollbar-none whitespace-nowrap">
             <button
               onClick={() => setViewMode('rep')}
-              className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
                 viewMode === 'rep'
                   ? 'bg-black text-white shadow-sm'
                   : 'text-[#86868b] hover:text-[#1d1d1f]'
@@ -127,7 +127,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
             </button>
             <button
               onClick={() => setViewMode('source')}
-              className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
                 viewMode === 'source'
                   ? 'bg-black text-white shadow-sm'
                   : 'text-[#86868b] hover:text-[#1d1d1f]'
