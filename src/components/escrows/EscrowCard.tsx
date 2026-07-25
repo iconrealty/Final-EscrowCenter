@@ -1,7 +1,6 @@
 import React from 'react';
 import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
-import { AppleFitnessRings } from '../shared/AppleFitnessRings';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 
 export function EscrowCard({ 
@@ -28,6 +27,9 @@ export function EscrowCard({
   const completedTasks = ALL_TASKS.filter(t => escrow.tasks[t.key]).length;
   const completedMilestones = MILESTONES.filter(t => escrow.tasks[t.key]).length;
   const completedContingencies = CONTINGENCIES.filter(t => escrow.tasks[t.key]).length;
+
+  // Find next pending milestone
+  const nextMilestone = MILESTONES.find(m => !escrow.tasks[m.key]);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
@@ -157,37 +159,137 @@ export function EscrowCard({
           </div>
         </div>
 
-        {/* Unified Apple Fitness progress rings */}
+        {/* Linear Multi-Segment Escrow Progress Pipeline */}
         <div 
           onClick={onViewDetails} 
-          className="mt-1.5 cursor-pointer hover:opacity-95 transition-opacity"
-          title="Click to view progress details"
+          className="mt-1 p-3 bg-slate-50 border border-slate-200/80 rounded-xl cursor-pointer hover:bg-slate-100/70 transition-all group/progress"
+          title="Click to view full escrow tasks details"
         >
-          <AppleFitnessRings 
-            rings={[
-              {
-                label: "Overall Progress",
-                progress: (completedTasks / 21) * 100,
-                color: "#1B3A5C", // Professional Dark Navy Blue
-                bgColor: "#1B3A5C",
-                valueText: `${completedTasks}/21`
-              },
-              {
-                label: "Milestones Done",
-                progress: (completedMilestones / 12) * 100,
-                color: "#3B82F6", // Professional Azure Blue
-                bgColor: "#3B82F6",
-                valueText: `${completedMilestones}/12`
-              },
-              {
-                label: "Contingencies Cleared",
-                progress: (completedContingencies / 9) * 100,
-                color: "#EF9F27", // Professional Amber Yellow
-                bgColor: "#EF9F27",
-                valueText: `${completedContingencies}/9`
-              }
-            ]}
-          />
+          {/* Actual Status Section (Live active status container at top) */}
+          <div className="flex flex-col gap-1.5 mb-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
+                Actual Status
+              </span>
+              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                daysToCoe <= 5 && escrow.status === 'Open'
+                  ? 'bg-rose-100 text-rose-700 border border-rose-200' 
+                  : 'bg-slate-200/80 text-slate-700'
+              }`}>
+                {daysToCoe > 0 ? `${daysToCoe} Days Left` : daysToCoe === 0 ? 'Closing Today' : `${Math.abs(daysToCoe)} Days Past COE`}
+              </span>
+            </div>
+
+            {nextMilestone ? (
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpdateTasks();
+                }}
+                className="flex items-center justify-between bg-gradient-to-r from-blue-50/90 via-indigo-50/30 to-white p-2.5 rounded-xl border border-blue-200/90 shadow-2xs hover:border-blue-400 hover:shadow-xs transition-all cursor-pointer group/milestone"
+                title="Click to update task status"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {/* Live Pulsing Beacon */}
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
+                  </span>
+                  
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-700 bg-blue-100/90 px-1.5 py-0.5 rounded shrink-0">
+                      IN PROGRESS
+                    </span>
+                    <span className="text-xs font-bold text-slate-900 truncate group-hover/milestone:text-blue-900">
+                      {nextMilestone.label}
+                    </span>
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-bold text-[#3B82F6] group-hover/milestone:text-blue-800 bg-white group-hover/milestone:bg-blue-100/80 border border-blue-200 px-2 py-1 rounded-md shrink-0 transition-colors shadow-2xs ml-2">
+                  Update &rarr;
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between bg-emerald-50/90 text-emerald-900 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                  </span>
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">
+                    COMPLETED
+                  </span>
+                  <span className="text-xs font-bold">All 12 Milestones Complete &bull; Ready for COE</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Progress Bars Section */}
+          <div className="pt-2.5 border-t border-slate-200/80">
+            {/* Overall Completion Header */}
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
+                <span className="text-[11px] font-bold text-[#1B3A5C] uppercase tracking-wider">Escrow Completion</span>
+              </div>
+              <div className="flex items-center gap-2 font-mono text-xs">
+                <span className="font-extrabold text-[#1d1d1f]">{completedTasks} / 21 Tasks</span>
+                <span className="font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-1.5 py-0.5 rounded text-[10px]">
+                  {Math.round((completedTasks / 21) * 100)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Primary Horizontal Progress Bar */}
+            <div className="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden mb-2.5">
+              <div 
+                className="h-full bg-gradient-to-r from-[#1B3A5C] to-[#2B5A8C] rounded-full transition-all duration-500"
+                style={{ width: `${Math.round((completedTasks / 21) * 100)}%` }}
+              />
+            </div>
+
+            {/* Breakdown Sub-Bars: Milestones & Contingencies */}
+            <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-200/60">
+              {/* Milestones Bar */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-slate-700 flex items-center gap-1 text-[10px] uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
+                    Milestones
+                  </span>
+                  <span className="font-mono font-bold text-slate-600 text-[10px]">
+                    {completedMilestones}/12 ({Math.round((completedMilestones / 12) * 100)}%)
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#3B82F6] rounded-full transition-all duration-500"
+                    style={{ width: `${Math.round((completedMilestones / 12) * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Contingencies Bar */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-slate-700 flex items-center gap-1 text-[10px] uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+                    Contingencies
+                  </span>
+                  <span className="font-mono font-bold text-slate-600 text-[10px]">
+                    {completedContingencies}/9 ({Math.round((completedContingencies / 9) * 100)}%)
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#F59E0B] rounded-full transition-all duration-500"
+                    style={{ width: `${Math.round((completedContingencies / 9) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Quick Access Buttons */}
