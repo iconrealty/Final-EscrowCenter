@@ -45,12 +45,24 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     return Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
   }, [closedEscrows]);
 
+  // Helper function to extract exact year from escrow (prioritizing COE date, then acceptance date)
+  const getEscrowYear = (e: Escrow): string => {
+    const dateStr = (e.coeDate || e.acceptanceDate || '').trim();
+    if (!dateStr) return '';
+    if (/^\d{4}/.test(dateStr)) return dateStr.substring(0, 4);
+    const match = dateStr.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
+    if (match) return match[1];
+    const parsed = new Date(dateStr);
+    if (!isNaN(parsed.getTime())) return parsed.getFullYear().toString();
+    return '';
+  };
+
   // Selected year state for the Total Amount tab (defaults to actual current year)
   const [selectedYear, setSelectedYear] = useState<string>(() => {
     return new Date().getFullYear().toString();
   });
 
-  // Extract all unique years (YYYY) from closed escrows
+  // Extract all unique years (YYYY) from all escrows (excluding Cancelled)
   const availableYears = useMemo(() => {
     const yearsSet = new Set<string>();
     
@@ -59,17 +71,16 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     const currentYear = now.getFullYear().toString();
     yearsSet.add(currentYear);
 
-    closedEscrows.forEach((escrow) => {
-      if (escrow.coeDate && escrow.coeDate.length >= 4) {
-        const yr = escrow.coeDate.substring(0, 4);
-        if (/^\d{4}$/.test(yr)) {
-          yearsSet.add(yr);
-        }
+    escrows.forEach((escrow) => {
+      if (escrow.status === 'Cancelled') return;
+      const yr = getEscrowYear(escrow);
+      if (yr && /^\d{4}$/.test(yr)) {
+        yearsSet.add(yr);
       }
     });
 
     return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
-  }, [closedEscrows]);
+  }, [escrows]);
 
   // Filter closed escrows by selected year if not "all"
   const parseCoeTime = (coeDate?: string): number => {
@@ -86,7 +97,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   const filteredClosedEscrows = useMemo(() => {
     let list = selectedYear === 'all'
       ? closedEscrows
-      : closedEscrows.filter((e) => e.coeDate && e.coeDate.includes(selectedYear));
+      : closedEscrows.filter((e) => getEscrowYear(e) === selectedYear);
 
     return [...list].sort((a, b) => parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate));
   }, [closedEscrows, selectedYear]);
@@ -179,11 +190,12 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
 
   // Group Escrows by Lead Source
   const leadSourceStats = useMemo(() => {
-    const nonCancelled = selectedYear === 'all'
-      ? escrows.filter(e => e.status !== 'Cancelled')
-      : escrows.filter(e => e.status !== 'Cancelled' && (e.coeDate?.includes(selectedYear) || e.acceptanceDate?.includes(selectedYear)));
+    const nonCancelled = escrows.filter(e => e.status !== 'Cancelled');
+    const filtered = selectedYear === 'all'
+      ? nonCancelled
+      : nonCancelled.filter(e => getEscrowYear(e) === selectedYear);
 
-    const totalCount = nonCancelled.length;
+    const totalCount = filtered.length;
     const sourcesMap: Record<string, { key: string; label: string; count: number; volume: number; commission: number; escrows: Escrow[] }> = {
       'Zillow': { key: 'Zillow', label: 'Zillow', count: 0, volume: 0, commission: 0, escrows: [] },
       'Self': { key: 'Self', label: 'Self', count: 0, volume: 0, commission: 0, escrows: [] },
@@ -192,7 +204,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
       'Other': { key: 'Other', label: 'Other', count: 0, volume: 0, commission: 0, escrows: [] },
     };
 
-    nonCancelled.forEach((e) => {
+    filtered.forEach((e) => {
       const src = e.leadSource || 'Zillow';
       const key = (src === 'Zillow' || src === 'Self' || src === 'Team Lead' || src === 'Opcity') ? src : 'Other';
       sourcesMap[key].count += 1;

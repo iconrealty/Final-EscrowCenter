@@ -10,6 +10,17 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
   const currentYearStr = new Date().getFullYear().toString();
   const [viewMode, setViewMode] = useState<'rep' | 'source'>('rep');
 
+  const getEscrowYear = (e: Escrow): string => {
+    const dateStr = (e.coeDate || e.acceptanceDate || '').trim();
+    if (!dateStr) return '';
+    if (/^\d{4}/.test(dateStr)) return dateStr.substring(0, 4);
+    const match = dateStr.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
+    if (match) return match[1];
+    const parsed = new Date(dateStr);
+    if (!isNaN(parsed.getTime())) return parsed.getFullYear().toString();
+    return '';
+  };
+
   // Extract all unique years present in escrows, ensuring the current year is included
   const availableYears = useMemo(() => {
     const yearsSet = new Set<string>();
@@ -17,15 +28,8 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
 
     escrows.forEach((escrow) => {
       if (escrow.status === 'Cancelled') return;
-      let year = '';
-      if (escrow.coeDate && escrow.coeDate.length >= 4) {
-        const parsedYear = escrow.coeDate.substring(0, 4);
-        if (!isNaN(Number(parsedYear))) year = parsedYear;
-      } else if (escrow.acceptanceDate && escrow.acceptanceDate.length >= 4) {
-        const parsedYear = escrow.acceptanceDate.substring(0, 4);
-        if (!isNaN(Number(parsedYear))) year = parsedYear;
-      }
-      if (year) yearsSet.add(year);
+      const year = getEscrowYear(escrow);
+      if (year && /^\d{4}$/.test(year)) yearsSet.add(year);
     });
     return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
   }, [escrows, currentYearStr]);
@@ -37,15 +41,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
   const filteredEscrows = useMemo(() => {
     const nonCancelled = escrows.filter((e) => e.status !== 'Cancelled');
     if (selectedYear === 'all') return nonCancelled;
-    return nonCancelled.filter((escrow) => {
-      let year = '';
-      if (escrow.coeDate && escrow.coeDate.length >= 4) {
-        year = escrow.coeDate.substring(0, 4);
-      } else if (escrow.acceptanceDate && escrow.acceptanceDate.length >= 4) {
-        year = escrow.acceptanceDate.substring(0, 4);
-      }
-      return year === selectedYear;
-    });
+    return nonCancelled.filter((escrow) => getEscrowYear(escrow) === selectedYear);
   }, [escrows, selectedYear]);
 
   // Calculate statistics for the selected year (Representation)
