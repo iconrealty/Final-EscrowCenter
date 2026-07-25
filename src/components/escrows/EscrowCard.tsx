@@ -165,18 +165,11 @@ export function EscrowCard({
           className="mt-1 p-3 bg-slate-50 border border-slate-200/80 rounded-xl cursor-pointer hover:bg-slate-100/70 transition-all group/progress"
           title="Click to view full escrow tasks details"
         >
-          {/* Actual Status Section (Live active status container at top) */}
+          {/* Next Step Section (Live active status container at top) */}
           <div className="flex flex-col gap-1.5 mb-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
-                Actual Status
-              </span>
-              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                daysToCoe <= 5 && escrow.status === 'Open'
-                  ? 'bg-rose-100 text-rose-700 border border-rose-200' 
-                  : 'bg-slate-200/80 text-slate-700'
-              }`}>
-                {daysToCoe > 0 ? `${daysToCoe} Days Left` : daysToCoe === 0 ? 'Closing Today' : `${Math.abs(daysToCoe)} Days Past COE`}
+                Next Step
               </span>
             </div>
 
