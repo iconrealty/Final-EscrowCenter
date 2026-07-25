@@ -165,12 +165,22 @@ export function EscrowCard({
           className="mt-1 p-3 bg-slate-50 border border-slate-200/80 rounded-xl cursor-pointer hover:bg-slate-100/70 transition-all group/progress"
           title="Click to view full escrow tasks details"
         >
-          {/* Next Step Section (Live active status container at top) */}
+          {/* Next Step Section */}
           <div className="flex flex-col gap-1.5 mb-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
                 Next Step
               </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpdateTasks();
+                }}
+                className="text-[10px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
+              >
+                Update Tasks &rarr;
+              </button>
             </div>
 
             {nextMilestone ? (
@@ -179,41 +189,22 @@ export function EscrowCard({
                   e.stopPropagation();
                   onUpdateTasks();
                 }}
-                className="flex items-center justify-between bg-gradient-to-r from-blue-50/90 via-indigo-50/30 to-white p-2.5 rounded-xl border border-blue-200/90 shadow-2xs hover:border-blue-400 hover:shadow-xs transition-all cursor-pointer group/milestone"
+                className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-200/90 shadow-2xs hover:border-[#3B82F6] hover:bg-blue-50/30 transition-all cursor-pointer group/step"
                 title="Click to update task status"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  {/* Live Pulsing Beacon */}
-                  <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#3B82F6] shrink-0" />
+                  <span className="text-xs font-bold text-slate-800 truncate group-hover/step:text-[#1B3A5C]">
+                    {nextMilestone.label}
                   </span>
-                  
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-700 bg-blue-100/90 px-1.5 py-0.5 rounded shrink-0">
-                      IN PROGRESS
-                    </span>
-                    <span className="text-xs font-bold text-slate-900 truncate group-hover/milestone:text-blue-900">
-                      {nextMilestone.label}
-                    </span>
-                  </div>
                 </div>
-
-                <span className="text-[10px] font-bold text-[#3B82F6] group-hover/milestone:text-blue-800 bg-white group-hover/milestone:bg-blue-100/80 border border-blue-200 px-2 py-1 rounded-md shrink-0 transition-colors shadow-2xs ml-2">
-                  Update &rarr;
+                <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded shrink-0">
+                  Pending
                 </span>
               </div>
             ) : (
-              <div className="flex items-center justify-between bg-emerald-50/90 text-emerald-900 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
-                  </span>
-                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">
-                    COMPLETED
-                  </span>
-                  <span className="text-xs font-bold">All 12 Milestones Complete &bull; Ready for COE</span>
-                </div>
+              <div className="flex items-center justify-between bg-emerald-50/80 text-emerald-800 p-2.5 rounded-lg border border-emerald-200/80 text-xs font-bold">
+                <span>All 12 Milestones Completed &bull; Ready for COE</span>
               </div>
             )}
           </div>
