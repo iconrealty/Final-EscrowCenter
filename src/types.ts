@@ -64,6 +64,7 @@ export const MILESTONES = [
   { key: 'INSP', label: 'Inspection' },
   { key: 'RR', label: 'RR' },
   { key: 'AVID', label: 'AVID' },
+  { key: 'SDR', label: 'Seller Disclosures Received & Reviewed' },
   { key: 'APR', label: 'Appraisal' },
   { key: 'Insurance', label: 'Insurance' },
   { key: 'LFA', label: 'Loan Final Approval' },
