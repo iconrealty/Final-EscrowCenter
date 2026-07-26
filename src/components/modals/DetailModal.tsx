@@ -37,6 +37,20 @@ export function DetailModal({
     ? escrow.price * (Number(escrow.commissionPercent) / 100)
     : 0;
 
+  const formatDateDisplay = (dateStr?: string) => {
+    if (!dateStr) return '-';
+    try {
+      const str = dateStr.trim();
+      if (/\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+        const [m, d, y] = str.split('/');
+        return format(new Date(Number(y), Number(m) - 1, Number(d)), 'MMM d, yyyy');
+      }
+      return format(parseISO(str), 'MMM d, yyyy');
+    } catch {
+      return dateStr;
+    }
+  };
+
   const hasClient2 = !!(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim());
 
   const contacts = [
@@ -45,12 +59,14 @@ export function DetailModal({
       name: `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || '-',
       phone: escrow.clientPhone,
       email: escrow.clientEmail,
+      birthday: escrow.clientBirthday,
     },
     {
       role: 'Client 2',
       name: `${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`.trim() || '-',
       phone: escrow.client2Phone,
       email: escrow.client2Email,
+      birthday: escrow.client2Birthday,
     },
     {
       role: 'Agent',
@@ -252,6 +268,11 @@ export function DetailModal({
                             No Email Address
                           </p>
                         )}
+                        {c.birthday && c.birthday.trim() !== '' ? (
+                          <p className="text-xs text-[#1B3A5C] font-semibold pt-0.5" title="Client Birthday">
+                            Birthday: {formatDateDisplay(c.birthday)}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
 

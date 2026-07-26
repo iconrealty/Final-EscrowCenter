@@ -9,7 +9,8 @@ import {
   ChevronRight,
   Gift,
   CheckCircle2,
-  MessageSquare
+  MessageSquare,
+  Trash2
 } from 'lucide-react';
 import { Escrow } from '../../types';
 import { AnniversaryWishModal } from './AnniversaryWishModal';
@@ -21,7 +22,9 @@ interface AnniversaryTrackerProps {
 }
 
 interface ProcessedAnniversary {
+  id: string;
   escrow: Escrow;
+  eventType: 'anniversary' | 'birthday';
   coeDateObj: Date;
   coeYear: number;
   coeMonth: number; // 0-11
@@ -37,6 +40,7 @@ interface ProcessedAnniversary {
   isMilestone: boolean;
   hasResponded: boolean;
   formattedAnniversaryDate: string;
+  birthdayClientName?: string;
 }
 
 const MONTH_NAMES = [
@@ -46,20 +50,24 @@ const MONTH_NAMES = [
 
 export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: AnniversaryTrackerProps) {
   const [search, setSearch] = useState('');
-  const [filterMode, setFilterMode] = useState<'upcoming30' | 'thisMonth' | 'byMonth' | 'milestones' | 'responded' | 'all'>('thisMonth');
+  const [filterMode, setFilterMode] = useState<'upcoming30' | 'thisMonth' | 'birthdays' | 'anniversaries' | 'byMonth' | 'milestones' | 'responded' | 'all'>('thisMonth');
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
-  const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string } | null>(null);
+  const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string; wishType?: 'anniversary' | 'birthday' } | null>(null);
 
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
   const currentDay = now.getDate();
 
-  // Process and extract all closed escrows
+  // Process and extract both closed escrow anniversaries AND client birthdays
   const processedAnniversaries: ProcessedAnniversary[] = useMemo(() => {
+    const list: ProcessedAnniversary[] = [];
+    const todayStart = new Date(currentYear, currentMonth, currentDay);
+
+    // 1. Process Closing Anniversaries (Closed Escrows)
     const closedList = escrows.filter(e => e.status === 'Closed' && e.coeDate && e.coeDate.trim() !== '');
 
-    return closedList.map(escrow => {
+    closedList.forEach(escrow => {
       const parts = escrow.coeDate.split('-');
       let coeYear = parseInt(parts[0], 10);
       let coeMonth = parseInt(parts[1], 10) - 1; // 0-indexed
@@ -72,11 +80,10 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
         coeDay = d.getDate();
       }
 
-      const coeDateObj = new Date(coeYear, coeMonth, coeDay);
+      if (isNaN(coeYear) || isNaN(coeMonth) || isNaN(coeDay)) return;
 
+      const coeDateObj = new Date(coeYear, coeMonth, coeDay);
       const thisYearAnniversary = new Date(currentYear, coeMonth, coeDay);
-      const todayStart = new Date(currentYear, currentMonth, currentDay);
-      
       const diffMs = thisYearAnniversary.getTime() - todayStart.getTime();
       const daysDiffThisYear = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
@@ -99,7 +106,6 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
       const isWithin30Days = daysDiffThisYear >= 0 && daysDiffThisYear <= 30;
       const isMilestone = yearsThisYear === 1 || yearsThisYear === 3 || yearsThisYear === 5 || yearsThisYear === 10 || (yearsThisYear > 0 && yearsThisYear % 5 === 0);
 
-      // Check if user has responded / logged a contact for this anniversary
       const hasResponded = Boolean(
         escrow.anniversaryInteractions &&
         escrow.anniversaryInteractions.length > 0 &&
@@ -112,8 +118,10 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
 
       const formattedAnniversaryDate = `${MONTH_NAMES[coeMonth]} ${coeDay}`;
 
-      return {
+      list.push({
+        id: `anniv-${escrow.id}`,
         escrow,
+        eventType: 'anniversary',
         coeDateObj,
         coeYear,
         coeMonth,
@@ -129,8 +137,89 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
         isMilestone,
         hasResponded,
         formattedAnniversaryDate,
-      };
+      });
     });
+
+    // 2. Process Client Birthdays (All Escrows)
+    escrows.forEach(escrow => {
+      const processBday = (bdayStr?: string, isClient2 = false) => {
+        if (!bdayStr || !bdayStr.trim()) return;
+        const str = bdayStr.trim();
+        let bYear = currentYear;
+        let bMonth = -1;
+        let bDay = -1;
+
+        if (/\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+          const [m, d, y] = str.split('/');
+          bMonth = parseInt(m, 10) - 1;
+          bDay = parseInt(d, 10);
+          bYear = parseInt(y, 10);
+        } else {
+          const parts = str.split('T')[0].split('-');
+          if (parts.length >= 3) {
+            bYear = parseInt(parts[0], 10);
+            bMonth = parseInt(parts[1], 10) - 1;
+            bDay = parseInt(parts[2], 10);
+          }
+        }
+
+        if (isNaN(bMonth) || isNaN(bDay) || bMonth < 0 || bDay < 1) return;
+
+        const thisYearBday = new Date(currentYear, bMonth, bDay);
+        const diffMs = thisYearBday.getTime() - todayStart.getTime();
+        const daysDiffThisYear = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+        let daysUntilNext = daysDiffThisYear;
+        if (daysDiffThisYear < 0) {
+          const nextBday = new Date(currentYear + 1, bMonth, bDay);
+          const nextDiffMs = nextBday.getTime() - todayStart.getTime();
+          daysUntilNext = Math.round(nextDiffMs / (1000 * 60 * 60 * 24));
+        }
+
+        const isToday = daysDiffThisYear === 0;
+        const isPassedThisYear = daysDiffThisYear < 0;
+        const isThisMonth = bMonth === currentMonth;
+        const isWithin30Days = daysDiffThisYear >= 0 && daysDiffThisYear <= 30;
+
+        const dateStr = `${currentYear}-${(bMonth + 1).toString().padStart(2, '0')}-${bDay.toString().padStart(2, '0')}`;
+        const hasResponded = Boolean(
+          escrow.anniversaryInteractions &&
+          escrow.anniversaryInteractions.some(i => i.date === dateStr || (i.notes && i.notes.toLowerCase().includes('birthday')))
+        );
+
+        const formattedAnniversaryDate = `${MONTH_NAMES[bMonth]} ${bDay}`;
+        const name = isClient2
+          ? `${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`.trim()
+          : `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim();
+
+        list.push({
+          id: `bday-${escrow.id}-${isClient2 ? '2' : '1'}`,
+          escrow,
+          eventType: 'birthday',
+          coeDateObj: thisYearBday,
+          coeYear: bYear,
+          coeMonth: bMonth,
+          coeDay: bDay,
+          yearsThisYear: 0,
+          yearsAtNext: 0,
+          daysDiffThisYear,
+          daysUntilNext,
+          isToday,
+          isPassedThisYear,
+          isThisMonth,
+          isWithin30Days,
+          isMilestone: false,
+          hasResponded,
+          formattedAnniversaryDate,
+          birthdayClientName: name || 'Valued Client',
+        });
+      };
+
+      processBday(escrow.clientBirthday, false);
+      processBday(escrow.client2Birthday, true);
+    });
+
+    return list;
   }, [escrows, currentYear, currentMonth, currentDay]);
 
   // Overall statistics
@@ -140,6 +229,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
     const upcoming30Count = processedAnniversaries.filter(a => a.isWithin30Days).length;
     const milestonesCount = processedAnniversaries.filter(a => a.isMilestone && a.isWithin30Days).length;
     const respondedCount = processedAnniversaries.filter(a => a.hasResponded).length;
+    const birthdaysCount = processedAnniversaries.filter(a => a.eventType === 'birthday').length;
 
     return {
       totalClients,
@@ -147,6 +237,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
       upcoming30Count,
       milestonesCount,
       respondedCount,
+      birthdaysCount,
     };
   }, [processedAnniversaries, currentMonth]);
 
@@ -170,6 +261,12 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
     } else if (filterMode === 'thisMonth') {
       list = list.filter(item => item.coeMonth === currentMonth);
       return list.sort((a, b) => a.coeDay - b.coeDay);
+    } else if (filterMode === 'birthdays') {
+      list = list.filter(item => item.eventType === 'birthday');
+      return list.sort((a, b) => a.daysUntilNext - b.daysUntilNext);
+    } else if (filterMode === 'anniversaries') {
+      list = list.filter(item => item.eventType === 'anniversary');
+      return list.sort((a, b) => a.daysUntilNext - b.daysUntilNext);
     } else if (filterMode === 'byMonth') {
       list = list.filter(item => item.coeMonth === selectedMonth);
       return list.sort((a, b) => a.coeDay - b.coeDay);
@@ -196,7 +293,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
       <div className="bg-white border border-[#e5e5ea] rounded-2xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-[#1d1d1f] tracking-tight">
-            Closing Anniversary Tracker
+            Closing Anniversary
           </h2>
         </div>
 
@@ -206,8 +303,12 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
             <p className="text-2xl sm:text-3xl font-black text-[#1B3A5C]">{stats.upcoming30Count}</p>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Next 30 Days</p>
           </div>
+          <div className="bg-amber-50 border border-amber-200/80 rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
+            <p className="text-2xl sm:text-3xl font-black text-amber-600">{stats.birthdaysCount}</p>
+            <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mt-0.5">Birthdays</p>
+          </div>
           <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
-            <p className="text-2xl sm:text-3xl font-black text-amber-600">{stats.thisMonthCount}</p>
+            <p className="text-2xl sm:text-3xl font-black text-slate-800">{stats.thisMonthCount}</p>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{MONTH_NAMES[currentMonth]}</p>
           </div>
           <div className="bg-[#059669]/10 border border-transparent rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
@@ -240,6 +341,26 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
             }`}
           >
             This Month ({MONTH_NAMES[currentMonth]})
+          </button>
+          <button
+            onClick={() => setFilterMode('birthdays')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+              filterMode === 'birthdays'
+                ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+            }`}
+          >
+            <span>Birthdays ({stats.birthdaysCount})</span>
+          </button>
+          <button
+            onClick={() => setFilterMode('anniversaries')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+              filterMode === 'anniversaries'
+                ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            Closing Anniversaries
           </button>
           <button
             onClick={() => setFilterMode('responded')}
@@ -279,7 +400,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
             }`}
           >
-            All Closed ({stats.totalClients})
+            All Items ({stats.totalClients})
           </button>
         </div>
 
@@ -317,7 +438,9 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredList.map((item) => {
             const {
+              id,
               escrow,
+              eventType,
               yearsThisYear,
               daysDiffThisYear,
               daysUntilNext,
@@ -328,13 +451,16 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
               hasResponded,
               formattedAnniversaryDate,
               coeYear,
+              birthdayClientName,
             } = item;
 
-            const clientFullName = escrow.clientFirstName
-              ? `${escrow.clientFirstName} ${escrow.clientLastName || ''}`
-              : 'Valued Client';
+            const isBirthday = eventType === 'birthday';
 
-            const secondClientName = escrow.client2FirstName
+            const clientFullName = isBirthday
+              ? (birthdayClientName || 'Valued Client')
+              : (escrow.clientFirstName ? `${escrow.clientFirstName} ${escrow.clientLastName || ''}` : 'Valued Client');
+
+            const secondClientName = !isBirthday && escrow.client2FirstName
               ? `${escrow.client2FirstName} ${escrow.client2LastName || ''}`
               : null;
 
@@ -352,7 +478,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
 
             return (
               <div
-                key={escrow.id}
+                key={id}
                 className={`bg-white border rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between transition-all duration-300 hover:shadow-lg relative overflow-hidden group ${
                   hasResponded
                     ? 'border-slate-200'
@@ -370,7 +496,11 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                   ) : isToday ? (
                     <span className="inline-flex items-center gap-1.5 bg-amber-500 text-white px-2.5 py-1 rounded-lg text-xs font-extrabold shadow-sm animate-pulse">
                       <PartyPopper size={14} />
-                      <span>TODAY IS THE ANNIVERSARY!</span>
+                      <span>{isBirthday ? 'TODAY IS THEIR BIRTHDAY!' : 'TODAY IS THE ANNIVERSARY!'}</span>
+                    </span>
+                  ) : isBirthday ? (
+                    <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 border border-amber-200/80 px-2.5 py-1 rounded-lg text-xs font-bold">
+                      <span>Client Birthday</span>
                     </span>
                   ) : isPassedThisYear && (filterMode === 'thisMonth' || isThisMonth) ? (
                     <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-bold">
@@ -418,33 +548,65 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                   </p>
 
                   <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Original Closing</p>
-                      <p className="font-bold text-slate-700 mt-0.5">
-                        {formattedAnniversaryDate}, {coeYear}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Purchase Price</p>
-                      <p className="font-bold text-slate-700 mt-0.5">
-                        {escrow.price ? `$${escrow.price.toLocaleString()}` : 'N/A'}
-                      </p>
-                    </div>
+                    {isBirthday ? (
+                      <>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Birthday Date</p>
+                          <p className="font-bold text-slate-700 mt-0.5">
+                            {formattedAnniversaryDate}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Contact Phone</p>
+                          <p className="font-bold text-slate-700 mt-0.5 truncate">
+                            {escrow.clientPhone || escrow.client2Phone || 'N/A'}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Original Closing</p>
+                          <p className="font-bold text-slate-700 mt-0.5">
+                            {formattedAnniversaryDate}, {coeYear}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Purchase Price</p>
+                          <p className="font-bold text-slate-700 mt-0.5">
+                            {escrow.price ? `$${escrow.price.toLocaleString()}` : 'N/A'}
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Logged interaction preview */}
                   {escrow.anniversaryInteractions && escrow.anniversaryInteractions.length > 0 && (
-                    <div className="mt-3 bg-[#059669]/10 border border-slate-200/80 rounded-xl p-2.5 text-xs flex items-start gap-2 shadow-xs">
-                      <CheckCircle2 size={14} className="text-[#059669] shrink-0 mt-0.5" />
-                      <div className="overflow-hidden">
+                    <div className="mt-3 bg-[#059669]/10 border border-slate-200/80 rounded-xl p-2.5 text-xs shadow-xs">
+                      <div className="overflow-hidden flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#059669]">
                           <span>Contacted ({escrow.anniversaryInteractions[0].date})</span>
                           <span className="text-[#059669] font-semibold">• {escrow.anniversaryInteractions[0].method}</span>
                         </div>
-                        <p className="text-slate-800 text-xs font-medium mt-0.5 line-clamp-2 leading-relaxed">
-                          "{escrow.anniversaryInteractions[0].notes}"
-                        </p>
+                        {onUpdateEscrow && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const updated = (escrow.anniversaryInteractions || []).slice(1);
+                              onUpdateEscrow(escrow.id, { anniversaryInteractions: updated });
+                            }}
+                            className="text-slate-400 hover:text-red-600 transition-colors p-0.5 cursor-pointer"
+                            title="Remove log (revert status to uncompleted)"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                       </div>
+                      <p className="text-slate-800 text-xs font-medium mt-0.5 line-clamp-2 leading-relaxed">
+                        "{escrow.anniversaryInteractions[0].notes}"
+                      </p>
                     </div>
                   )}
                 </div>
@@ -457,6 +619,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                         escrow,
                         years: yearsThisYear,
                         dateFormatted: formattedAnniversaryDate,
+                        wishType: eventType,
                       })
                     }
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer ${
@@ -501,6 +664,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
           escrow={wishModalEscrow.escrow}
           yearsCount={wishModalEscrow.years}
           anniversaryDateFormatted={wishModalEscrow.dateFormatted}
+          wishType={wishModalEscrow.wishType}
           onClose={() => setWishModalEscrow(null)}
           onUpdateEscrow={onUpdateEscrow}
         />

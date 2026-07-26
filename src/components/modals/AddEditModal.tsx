@@ -25,10 +25,12 @@ export function AddEditModal({
       clientLastName: '',
       clientPhone: '',
       clientEmail: '',
+      clientBirthday: '',
       client2FirstName: '',
       client2LastName: '',
       client2Phone: '',
       client2Email: '',
+      client2Birthday: '',
       collaborator: '',
       escrowOfficer: '',
       escrowPhone: '',
@@ -81,6 +83,8 @@ export function AddEditModal({
       clientLastName: parsed.clientLastName || prev.clientLastName,
       clientPhone: parsed.clientPhone || prev.clientPhone,
       clientEmail: parsed.clientEmail || prev.clientEmail,
+      clientBirthday: parsed.clientBirthday || prev.clientBirthday,
+      client2Birthday: parsed.client2Birthday || prev.client2Birthday,
       agentName: parsed.agentName || prev.agentName,
       agentEmail: parsed.agentEmail || prev.agentEmail,
       agentPhone: parsed.agentPhone || prev.agentPhone,
@@ -122,10 +126,12 @@ export function AddEditModal({
         clientLastName: escrow.clientLastName || '',
         clientPhone: escrow.clientPhone || '',
         clientEmail: escrow.clientEmail || '',
+        clientBirthday: escrow.clientBirthday || '',
         client2FirstName: escrow.client2FirstName || '',
         client2LastName: escrow.client2LastName || '',
         client2Phone: escrow.client2Phone || '',
         client2Email: escrow.client2Email || '',
+        client2Birthday: escrow.client2Birthday || '',
         collaborator: escrow.collaborator,
         escrowOfficer: escrow.escrowOfficer,
         escrowPhone: escrow.escrowPhone || '',
@@ -348,6 +354,11 @@ export function AddEditModal({
               <input type="email" value={formData.clientEmail} placeholder="e.g. client@email.com" onChange={e => setFormData({...formData, clientEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Client Birthday</label>
+              <input type="date" value={formData.clientBirthday} onChange={e => setFormData({...formData, clientBirthday: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
+
             <div className="md:col-span-2 mt-2">
               <h3 className="text-sm font-bold text-[#1d1d1f] border-b border-[#e5e5ea] pb-1.5 mb-1">Client Number 2 Details (Optional)</h3>
             </div>
@@ -370,6 +381,11 @@ export function AddEditModal({
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 Email</label>
               <input type="email" value={formData.client2Email} placeholder="e.g. client2@email.com" onChange={e => setFormData({...formData, client2Email: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 Birthday</label>
+              <input type="date" value={formData.client2Birthday} onChange={e => setFormData({...formData, client2Birthday: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2 mt-2">

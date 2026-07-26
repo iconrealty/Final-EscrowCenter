@@ -4,12 +4,13 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { Phone, MessageSquare, Mail, UserCheck, Gift, Calendar, CheckCircle2 } from 'lucide-react';
+import { Phone, MessageSquare, Mail, UserCheck, Gift, Calendar, CheckCircle2, Trash2, RotateCcw } from 'lucide-react';
 
 interface AnniversaryWishModalProps {
   escrow: Escrow;
   yearsCount: number;
   anniversaryDateFormatted: string;
+  wishType?: 'anniversary' | 'birthday';
   onClose: () => void;
   onUpdateEscrow?: (id: string, data: Partial<Escrow>) => void;
 }
@@ -35,33 +36,52 @@ const DEFAULT_ANNIVERSARY_TEMPLATES: TemplateConfig[] = [
   }
 ];
 
+const DEFAULT_BIRTHDAY_TEMPLATES: TemplateConfig[] = [
+  {
+    id: 'sms',
+    label: 'Text / SMS',
+    text: `Hi [ClientFirstName]! Happy Birthday! 🎂🎉 I hope you have an amazing day celebrating. Wishing you a fantastic year ahead filled with joy and happiness! - [AgentName]`
+  },
+  {
+    id: 'email',
+    label: 'Email',
+    subject: `Happy Birthday, [ClientFirstName]! 🎂🎉`,
+    text: `Subject: Happy Birthday, [ClientFirstName]! 🎂🎉\n\nDear [ClientName],\n\nWishing you a very Happy Birthday! 🎂🎉\n\nI hope your special day is filled with happiness, great food, and wonderful memories with family and friends.\n\nThank you for being such a valued client and friend. If you ever need anything at all, please don't hesitate to get in touch!\n\nWarmest regards,\n[AgentName]`
+  }
+];
+
 export function AnniversaryWishModal({
   escrow,
   yearsCount,
   anniversaryDateFormatted,
+  wishType = 'anniversary',
   onClose,
   onUpdateEscrow,
 }: AnniversaryWishModalProps) {
+  const isBirthday = wishType === 'birthday';
   const { success: showSuccess } = useToast();
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [templateType, setTemplateType] = useState<'sms' | 'email'>('sms');
 
+  const defaultTemplates = isBirthday ? DEFAULT_BIRTHDAY_TEMPLATES : DEFAULT_ANNIVERSARY_TEMPLATES;
+  const storageKey = isBirthday ? 'birthday_custom_templates' : 'anniversary_custom_templates';
+
   // Master templates state
   const [templates, setTemplates] = useState<TemplateConfig[]>(() => {
-    const saved = localStorage.getItem('anniversary_custom_templates');
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return DEFAULT_ANNIVERSARY_TEMPLATES.map(t => {
+        return defaultTemplates.map(t => {
           const custom = parsed.find((p: any) => p.id === t.id);
           return custom ? { ...t, text: custom.text, subject: custom.subject || t.subject } : t;
         });
       } catch (e) {
-        return DEFAULT_ANNIVERSARY_TEMPLATES;
+        return defaultTemplates;
       }
     }
-    return DEFAULT_ANNIVERSARY_TEMPLATES;
+    return defaultTemplates;
   });
 
   // Master Edit Mode State
@@ -87,21 +107,22 @@ export function AnniversaryWishModal({
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          if (data && Array.isArray(data.anniversaryTemplates)) {
-            const cloudTemplates = data.anniversaryTemplates;
-            setTemplates(DEFAULT_ANNIVERSARY_TEMPLATES.map(t => {
+          const cloudField = isBirthday ? 'birthdayTemplates' : 'anniversaryTemplates';
+          if (data && Array.isArray(data[cloudField])) {
+            const cloudTemplates = data[cloudField];
+            setTemplates(defaultTemplates.map(t => {
               const custom = cloudTemplates.find((p: any) => p.id === t.id);
               return custom ? { ...t, text: custom.text, subject: custom.subject || t.subject } : t;
             }));
           }
         }
       } catch (err) {
-        console.error("Error loading anniversary templates from Firestore:", err);
+        console.error("Error loading templates from Firestore:", err);
       }
     };
 
     loadCloudTemplates();
-  }, [user]);
+  }, [user, isBirthday]);
 
   const yearsOrdinalStr = (n: number) => {
     const s = ['th', 'st', 'nd', 'rd'];
@@ -159,7 +180,7 @@ export function AnniversaryWishModal({
         id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
         date: new Date().toISOString().split('T')[0],
         yearCount: yearsCount,
-        notes: customNotes || `Sent ${method} anniversary wish to client.`,
+        notes: customNotes || `Sent ${method} ${isBirthday ? 'birthday' : 'anniversary'} wish to client.`,
         method: method,
         createdAt: new Date().toISOString()
       };
@@ -167,6 +188,15 @@ export function AnniversaryWishModal({
         anniversaryInteractions: [newInteraction, ...(escrow.anniversaryInteractions || [])]
       });
     }
+  };
+
+  const handleDeleteInteraction = (logId: string) => {
+    if (!onUpdateEscrow) return;
+    const updated = (escrow.anniversaryInteractions || []).filter(i => i.id !== logId);
+    onUpdateEscrow(escrow.id, {
+      anniversaryInteractions: updated
+    });
+    showSuccess('Log deleted — status reset to uncompleted');
   };
 
   const handleCopy = () => {
@@ -180,7 +210,8 @@ export function AnniversaryWishModal({
   const handleEmailLaunch = () => {
     if (!escrow.clientEmail) return;
     logQuickContact('Email');
-    const subject = encodeURIComponent(`Happy ${anniversaryTitle}! 🏠🎉`);
+    const subjectText = isBirthday ? `Happy Birthday, ${clientName}!` : `Happy ${anniversaryTitle}! 🏠🎉`;
+    const subject = encodeURIComponent(subjectText);
     const body = encodeURIComponent(message.replace(/Subject:.*\n\n/, ''));
     window.location.href = `mailto:${escrow.clientEmail}?subject=${subject}&body=${body}`;
   };
@@ -206,14 +237,15 @@ export function AnniversaryWishModal({
     });
 
     setTemplates(updated);
-    localStorage.setItem('anniversary_custom_templates', JSON.stringify(updated));
+    localStorage.setItem(storageKey, JSON.stringify(updated));
 
     if (user) {
       try {
         const docRef = doc(db, 'users', user.uid);
-        await setDoc(docRef, { anniversaryTemplates: updated }, { merge: true });
+        const cloudField = isBirthday ? 'birthdayTemplates' : 'anniversaryTemplates';
+        await setDoc(docRef, { [cloudField]: updated }, { merge: true });
       } catch (e) {
-        console.error("Error saving anniversary templates to Firestore:", e);
+        console.error("Error saving templates to Firestore:", e);
       }
     }
 
@@ -223,7 +255,7 @@ export function AnniversaryWishModal({
   };
 
   const handleResetDefault = () => {
-    const defaultT = DEFAULT_ANNIVERSARY_TEMPLATES.find(t => t.id === templateType);
+    const defaultT = defaultTemplates.find(t => t.id === templateType);
     if (defaultT) {
       setMasterText(defaultT.text);
     }
@@ -291,9 +323,11 @@ export function AnniversaryWishModal({
         {/* Header - White background matching app style */}
         <div className="bg-white border-b border-[#e5e5ea] px-6 py-5 flex items-center justify-between shrink-0">
           <div>
-            <h3 className="font-bold text-lg text-[#1d1d1f] tracking-tight">Send Anniversary Wish</h3>
+            <h3 className="font-bold text-lg text-[#1d1d1f] tracking-tight">
+              {isBirthday ? 'Send Birthday Wish' : 'Send Anniversary Wish'}
+            </h3>
             <p className="text-xs text-[#86868b] mt-0.5">
-              {clientName} • {yearsOrdinalVal} Anniversary ({anniversaryDateFormatted})
+              {clientName} • {isBirthday ? `Birthday (${anniversaryDateFormatted})` : `${yearsOrdinalVal} Anniversary (${anniversaryDateFormatted})`}
             </p>
           </div>
           <button
@@ -435,19 +469,19 @@ export function AnniversaryWishModal({
               {(escrow.clientPhone || escrow.client2Phone) && (
                 <button
                   onClick={handleSmsLaunch}
-                  className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors shrink-0 cursor-pointer flex items-center gap-1.5"
+                  title="Send Text (SMS)"
+                  className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center"
                 >
-                  <MessageSquare size={13} />
-                  <span>Send Text (SMS)</span>
+                  <MessageSquare size={16} />
                 </button>
               )}
               {escrow.clientEmail && (
                 <button
                   onClick={handleEmailLaunch}
-                  className="text-xs font-bold text-[#1B3A5C] bg-sky-50 hover:bg-sky-100 border border-sky-200 px-3 py-1.5 rounded-lg transition-colors shrink-0 cursor-pointer flex items-center gap-1.5"
+                  title="Open Email App"
+                  className="text-xs font-bold text-[#1B3A5C] bg-sky-50 hover:bg-sky-100 border border-sky-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center"
                 >
-                  <Mail size={13} />
-                  <span>Open Email App</span>
+                  <Mail size={16} />
                 </button>
               )}
             </div>
@@ -457,8 +491,7 @@ export function AnniversaryWishModal({
           <div className="border-t border-slate-200/80 pt-4 mt-1">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h4 className="font-extrabold text-xs text-[#1d1d1f] uppercase tracking-wider flex items-center gap-1.5">
-                  <UserCheck size={14} className="text-[#1B3A5C]" />
+                <h4 className="font-extrabold text-xs text-[#1d1d1f] uppercase tracking-wider">
                   <span>Interaction Log & Call Notes</span>
                 </h4>
                 <p className="text-[11px] text-[#86868b] mt-0.5">
@@ -466,14 +499,32 @@ export function AnniversaryWishModal({
                 </p>
               </div>
 
-              {!isLoggingConversation && (
-                <button
-                  onClick={() => setIsLoggingConversation(true)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#1B3A5C] text-xs font-bold transition-all cursor-pointer shrink-0"
-                >
-                  + Log Contact
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {interactions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onUpdateEscrow) {
+                        onUpdateEscrow(escrow.id, { anniversaryInteractions: [] });
+                        showSuccess('Status reset to uncompleted');
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1"
+                    title="Remove all logs and reset status to uncompleted"
+                  >
+                    <RotateCcw size={12} />
+                    <span>Set Uncompleted</span>
+                  </button>
+                )}
+                {!isLoggingConversation && (
+                  <button
+                    onClick={() => setIsLoggingConversation(true)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#1B3A5C] text-xs font-bold transition-all cursor-pointer shrink-0"
+                  >
+                    + Log Contact
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Input Form for logging conversation */}
@@ -538,18 +589,30 @@ export function AnniversaryWishModal({
             {/* Past Interactions List */}
             {interactions.length > 0 ? (
               <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
-                {interactions.map((item) => (
-                  <div key={item.id} className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs flex flex-col gap-1">
-                    <div className="flex items-center justify-between text-[#86868b]">
-                      <span className="font-bold text-[#1d1d1f] flex items-center gap-1.5">
-                        <CheckCircle2 size={13} className="text-[#059669]" />
-                        <span>Contacted via {item.method} ({item.yearCount ? `${yearsOrdinalStr(item.yearCount)} Anniv.` : 'Anniversary'})</span>
-                      </span>
-                      <span className="text-[10px] font-semibold">{item.date}</span>
+                {interactions.map((item) => {
+                  const isItemBday = isBirthday || (item.notes && item.notes.toLowerCase().includes('birthday'));
+                  return (
+                    <div key={item.id} className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs flex flex-col gap-1">
+                      <div className="flex items-center justify-between text-[#86868b]">
+                        <span className="font-bold text-[#1d1d1f]">
+                          <span>Contacted via {item.method} ({isItemBday ? 'Birthday' : item.yearCount ? `${yearsOrdinalStr(item.yearCount)} Anniv.` : 'Anniversary'})</span>
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-semibold">{item.date}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteInteraction(item.id)}
+                            className="text-slate-400 hover:text-red-600 transition-colors p-1 rounded-lg hover:bg-red-50 cursor-pointer"
+                            title="Delete log (revert status to uncompleted)"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-slate-700 font-medium leading-relaxed">{item.notes}</p>
                     </div>
-                    <p className="text-slate-700 font-medium pl-5 leading-relaxed">{item.notes}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               !isLoggingConversation && (
@@ -587,18 +650,18 @@ export function AnniversaryWishModal({
           {templateType === 'sms' ? (
             <button
               onClick={handleSmsLaunch}
-              className="bg-[#059669] hover:bg-[#047857] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
+              title="Send Text (SMS)"
+              className="bg-[#059669] hover:bg-[#047857] text-white p-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
             >
-              <MessageSquare size={14} />
-              <span>Send Text (SMS)</span>
+              <MessageSquare size={16} />
             </button>
           ) : (
             <button
               onClick={handleEmailLaunch}
-              className="bg-[#1B3A5C] hover:bg-[#11253C] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
+              title="Send Email"
+              className="bg-[#1B3A5C] hover:bg-[#11253C] text-white p-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
             >
-              <Mail size={14} />
-              <span>Send Email</span>
+              <Mail size={16} />
             </button>
           )}
         </div>

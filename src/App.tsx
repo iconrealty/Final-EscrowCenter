@@ -38,7 +38,7 @@ function App() {
   const [detailEscrow, setDetailEscrow] = useState<Escrow | null>(null);
   const [clientUpdateEscrow, setClientUpdateEscrow] = useState<Escrow | null>(null);
   const [updateTasksEscrow, setUpdateTasksEscrow] = useState<Escrow | null>(null);
-  const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string } | null>(null);
+  const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string; wishType?: 'anniversary' | 'birthday' } | null>(null);
 
   
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -128,7 +128,7 @@ function App() {
               <MorningBriefingWidget 
                 escrows={escrows}
                 onSelectEscrow={(escrow) => setDetailEscrow(escrow)}
-                onOpenWishModal={(escrow, years, dateFormatted) => setWishModalEscrow({ escrow, years, dateFormatted })}
+                onOpenWishModal={(escrow, years, dateFormatted, wishType) => setWishModalEscrow({ escrow, years, dateFormatted, wishType })}
               />
 
               <FilterBar 
@@ -269,6 +269,7 @@ function App() {
           escrow={escrows.find(e => e.id === wishModalEscrow.escrow.id) || wishModalEscrow.escrow}
           yearsCount={wishModalEscrow.years}
           anniversaryDateFormatted={wishModalEscrow.dateFormatted}
+          wishType={wishModalEscrow.wishType}
           onClose={() => setWishModalEscrow(null)}
           onUpdateEscrow={(id, data) => editEscrow(id, data)}
         />

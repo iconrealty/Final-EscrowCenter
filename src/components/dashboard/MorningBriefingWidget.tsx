@@ -12,14 +12,18 @@ import { format, parseISO } from 'date-fns';
 interface MorningBriefingWidgetProps {
   escrows: Escrow[];
   onSelectEscrow: (escrow: Escrow) => void;
-  onOpenWishModal: (escrow: Escrow, yearsCount: number, dateFormatted: string) => void;
+  onOpenWishModal: (escrow: Escrow, yearsCount: number, dateFormatted: string, wishType?: 'anniversary' | 'birthday') => void;
 }
 
-interface AnniversaryItem {
+interface BriefingItem {
+  id: string;
   escrow: Escrow;
+  type: 'anniversary' | 'birthday';
+  title: string;
+  subtitle: string;
   yearsCount: number;
   dateFormatted: string;
-  daysSinceAnniversary: number; // 0 = today, > 0 = days passed since anniversary
+  daysSinceEvent: number; // 0 = today, > 0 = days passed since event
   isToday: boolean;
 }
 
@@ -34,11 +38,12 @@ export function MorningBriefingWidget({
   const currentYear = now.getFullYear();
   const todayFormatted = format(now, 'EEEE, MMMM d, yyyy');
 
-  // Gather active anniversaries that have reached or passed their anniversary date and remain unresponded
-  const upcomingAnniversaries = useMemo(() => {
-    const list: AnniversaryItem[] = [];
+  // Gather active anniversaries and client birthdays that are due/pending
+  const upcomingBriefingItems = useMemo(() => {
+    const list: BriefingItem[] = [];
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+    // 1. Process Closing Anniversaries
     escrows
       .filter((e) => e.status === 'Closed' && e.coeDate && e.coeDate.trim() !== '')
       .forEach((escrow) => {
@@ -57,62 +62,110 @@ export function MorningBriefingWidget({
         const coeDay = coeDateObj.getDate();
         const coeYear = coeDateObj.getFullYear();
 
-        // Calculate this year's anniversary date
         const thisYearAnniv = new Date(currentYear, coeMonth, coeDay);
         const yearsCount = currentYear - coeYear;
 
-        if (yearsCount < 1) return; // 1st anniversary hasn't arrived yet (closed this year)
+        if (yearsCount < 1) return;
 
-        // Days elapsed since this year's anniversary date:
-        // 0 = TODAY (on the exact day of the event)
-        // > 0 = Anniversary date passed X days ago
-        // < 0 = Anniversary date is in the FUTURE (e.g. Oct 5 is in +74 days)
         const diffMs = todayStart.getTime() - thisYearAnniv.getTime();
-        const daysSinceAnniversary = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        const daysSinceEvent = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-        // STRICT RULE 1: ONLY show starting ON the day of the event (daysSinceAnniversary >= 0).
-        // DO NOT show future anniversaries (daysSinceAnniversary < 0).
-        // Also cap at recent past anniversaries (within 30 days) so past years/months prior to feature adoption don't flood the briefing.
-        if (daysSinceAnniversary < 0 || daysSinceAnniversary > 30) return;
+        if (daysSinceEvent < 0 || daysSinceEvent > 30) return;
 
-        // STRICT RULE 2: Check if the agent has logged a response for this anniversary.
         const dateStr = format(thisYearAnniv, 'yyyy-MM-dd');
         const hasResponded = escrow.anniversaryInteractions?.some(
           (item) => item.date === dateStr || item.yearCount === yearsCount || (item.date && item.date.startsWith(currentYear.toString()))
         ) || false;
 
-        // Once responded, remove it from the Daily Morning Briefing!
         if (hasResponded) return;
 
         const dateFormatted = format(thisYearAnniv, 'MMM d');
+        const clientName = `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || 'Valued Client';
 
         list.push({
+          id: `anniv-${escrow.id}`,
           escrow,
+          type: 'anniversary',
+          title: clientName,
+          subtitle: escrow.address || '',
           yearsCount,
           dateFormatted,
-          daysSinceAnniversary,
-          isToday: daysSinceAnniversary === 0,
+          daysSinceEvent,
+          isToday: daysSinceEvent === 0,
         });
       });
 
-    // Sort: Today first (0), then closest pending days
-    list.sort((a, b) => a.daysSinceAnniversary - b.daysSinceAnniversary);
+    // 2. Process Client Birthdays
+    escrows.forEach((escrow) => {
+      const checkBirthday = (bdayStr?: string, isClient2 = false) => {
+        if (!bdayStr || !bdayStr.trim()) return;
+        let bMonth: number, bDay: number;
+        const str = bdayStr.trim();
+        if (/\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+          const [m, d] = str.split('/');
+          bMonth = Number(m) - 1;
+          bDay = Number(d);
+        } else {
+          const parts = str.split('T')[0].split('-');
+          if (parts.length >= 3) {
+            bMonth = Number(parts[1]) - 1;
+            bDay = Number(parts[2]);
+          } else return;
+        }
 
+        if (isNaN(bMonth) || isNaN(bDay)) return;
+
+        const thisYearBday = new Date(currentYear, bMonth, bDay);
+        const diffMs = todayStart.getTime() - thisYearBday.getTime();
+        const daysSinceEvent = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+        if (daysSinceEvent < 0 || daysSinceEvent > 30) return;
+
+        const dateStr = format(thisYearBday, 'yyyy-MM-dd');
+        const hasResponded = escrow.anniversaryInteractions?.some(
+          (item) => item.date === dateStr || (item.notes && item.notes.toLowerCase().includes('birthday'))
+        );
+
+        if (hasResponded) return;
+
+        const dateFormatted = format(thisYearBday, 'MMM d');
+        const name = isClient2
+          ? `${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`.trim()
+          : `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim();
+
+        list.push({
+          id: `bday-${escrow.id}-${isClient2 ? '2' : '1'}`,
+          escrow,
+          type: 'birthday',
+          title: `${name || 'Client'} (Birthday)`,
+          subtitle: escrow.address || 'Client',
+          yearsCount: 0,
+          dateFormatted,
+          daysSinceEvent,
+          isToday: daysSinceEvent === 0,
+        });
+      };
+
+      checkBirthday(escrow.clientBirthday, false);
+      checkBirthday(escrow.client2Birthday, true);
+    });
+
+    list.sort((a, b) => a.daysSinceEvent - b.daysSinceEvent);
     return list;
   }, [escrows, currentYear, now]);
 
-  if (upcomingAnniversaries.length === 0) {
+  if (upcomingBriefingItems.length === 0) {
     return (
       <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs mb-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-extrabold text-sm text-[#1B3A5C] uppercase tracking-wider">
-              Closing Anniversaries
+              Anniversaries & Birthdays
             </h2>
             <span className="text-xs text-slate-400">• {todayFormatted}</span>
           </div>
           <p className="text-xs text-slate-600 mt-1 font-medium">
-            You&apos;re all caught up! No home closing anniversaries due today.
+            You&apos;re all caught up! No home closing anniversaries or client birthdays due today.
           </p>
         </div>
       </div>
@@ -126,14 +179,14 @@ export function MorningBriefingWidget({
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="font-extrabold text-sm text-[#1B3A5C] uppercase tracking-wider">
-              Closing Anniversaries
+              Anniversaries & Birthdays
             </h2>
             <span className="bg-slate-200/80 text-slate-700 text-[11px] font-bold px-2.5 py-0.5 rounded-md">
               {todayFormatted}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5 font-medium">
-            {upcomingAnniversaries.length} Client Home Closing {upcomingAnniversaries.length === 1 ? 'Anniversary' : 'Anniversaries'}
+            {upcomingBriefingItems.length} Client {upcomingBriefingItems.length === 1 ? 'Anniversary or Birthday' : 'Anniversaries & Birthdays'}
           </p>
         </div>
 
@@ -150,13 +203,12 @@ export function MorningBriefingWidget({
       {isExpanded && (
         <div className="p-4 sm:p-5 bg-white">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {upcomingAnniversaries.map(({ escrow, yearsCount, dateFormatted, daysSinceAnniversary, isToday }) => {
-              const clientName = `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim();
+            {upcomingBriefingItems.map(({ id, escrow, type, title, subtitle, yearsCount, dateFormatted, daysSinceEvent, isToday }) => {
               const phone = escrow.clientPhone || escrow.client2Phone;
 
               return (
                 <div
-                  key={`anniv-${escrow.id}`}
+                  key={id}
                   className={`p-3.5 rounded-xl border transition-all bg-white flex flex-col justify-between ${
                     isToday
                       ? 'border-slate-200 bg-amber-50/20'
@@ -172,21 +224,27 @@ export function MorningBriefingWidget({
                           </span>
                         ) : (
                           <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-200">
-                            {daysSinceAnniversary} Day{daysSinceAnniversary > 1 ? 's' : ''} Pending ({dateFormatted})
+                            {daysSinceEvent} Day{daysSinceEvent > 1 ? 's' : ''} Pending ({dateFormatted})
                           </span>
                         )}
-                        <span className="text-xs font-extrabold text-[#059669]">
-                          {yearsCount} Year{yearsCount > 1 ? 's' : ''} Anniversary
-                        </span>
+                        {type === 'birthday' ? (
+                          <span className="text-xs font-extrabold text-amber-600 flex items-center gap-1">
+                            <span>Client Birthday</span>
+                          </span>
+                        ) : (
+                          <span className="text-xs font-extrabold text-[#059669]">
+                            {yearsCount} Year{yearsCount > 1 ? 's' : ''} Anniversary
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    <h4 className="text-xs font-black text-slate-900">{clientName}</h4>
+                    <h4 className="text-xs font-black text-slate-900">{title}</h4>
                     <p 
                       className="text-xs font-medium text-[#1B3A5C] hover:underline cursor-pointer mt-0.5"
                       onClick={() => onSelectEscrow(escrow)}
                     >
-                      {escrow.address}
+                      {subtitle}
                     </p>
                   </div>
 
@@ -216,7 +274,7 @@ export function MorningBriefingWidget({
                     </div>
 
                     <button
-                      onClick={() => onOpenWishModal(escrow, yearsCount, dateFormatted)}
+                      onClick={() => onOpenWishModal(escrow, yearsCount, dateFormatted, type)}
                       className="px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 bg-[#059669] hover:bg-[#047857] text-white"
                     >
                       <Send size={12} />
