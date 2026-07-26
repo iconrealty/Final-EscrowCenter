@@ -3,6 +3,7 @@ import { Escrow, MILESTONES, CONTINGENCIES, isContingencyUrgent, getContingencyD
 import { X, Check } from 'lucide-react';
 import { MilestoneChip } from '../escrows/MilestoneChip';
 import { ContingencyChip } from '../escrows/ContingencyChip';
+import { ActiveContingenciesTicker } from '../escrows/ActiveContingenciesTicker';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
 
 export function MilestonesContingenciesModal({ 
@@ -124,6 +125,11 @@ export function MilestonesContingenciesModal({
                 />
               ))}
             </div>
+          </div>
+
+          {/* Active Contingency Mini Pill Ticker */}
+          <div className="flex justify-start my-1">
+            <ActiveContingenciesTicker escrow={escrow} />
           </div>
 
           {/* Contingencies Section */}

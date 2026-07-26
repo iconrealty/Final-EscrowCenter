@@ -2,6 +2,7 @@ import React from 'react';
 import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
+import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
 
 export function EscrowCard({ 
   escrow, 
@@ -207,6 +208,11 @@ export function EscrowCard({
                 <span>All 12 Milestones Completed &bull; Ready for COE</span>
               </div>
             )}
+          </div>
+
+          {/* Active Contingencies Ticker */}
+          <div className="mb-3">
+            <ActiveContingenciesTicker escrow={escrow} onUpdateTasks={onUpdateTasks} />
           </div>
 
           {/* Progress Bars Section */}
