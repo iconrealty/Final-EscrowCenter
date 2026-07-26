@@ -46,8 +46,11 @@ export function ActiveContingenciesTicker({
           </span>
         </div>
         <div 
-          onClick={onUpdateTasks}
-          className="flex items-center justify-between bg-emerald-600 text-white border border-emerald-700/80 p-2.5 rounded-xl shadow-xs hover:bg-emerald-700 transition-all cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            onUpdateTasks?.();
+          }}
+          className="flex items-center justify-between bg-emerald-600 text-white border border-emerald-700/80 p-2.5 rounded-xl shadow-xs hover:bg-emerald-700 transition-all cursor-pointer select-none"
           title="All contingencies removed! Click to view details."
         >
           <div className="flex items-center gap-2 min-w-0">
@@ -100,14 +103,24 @@ export function ActiveContingenciesTicker({
         <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
           Active Contingencies
         </span>
-        <span className="text-[10px] font-mono font-bold text-slate-500">
-          {currentIndex + 1} of {activeContingencies.length} Active
-        </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onUpdateTasks?.();
+          }}
+          className="text-[10px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
+        >
+          {currentIndex + 1} of {activeContingencies.length} Active &rarr;
+        </button>
       </div>
 
       {/* Main Box matching Next Step layout */}
       <div 
-        onClick={onUpdateTasks}
+        onClick={(e) => {
+          e.stopPropagation();
+          onUpdateTasks?.();
+        }}
         className={`flex items-center justify-between text-white border p-2.5 rounded-xl shadow-xs transition-all cursor-pointer group/step select-none ${boxBgClass}`}
         title="Active contingency (cycles every 3s). Click to manage tasks."
       >
