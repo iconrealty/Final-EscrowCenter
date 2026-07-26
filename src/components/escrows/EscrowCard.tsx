@@ -239,14 +239,13 @@ export function EscrowCard({
               />
             </div>
 
-            {/* Breakdown Sub-Bars: Milestones & Contingencies */}
-            <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-200/60">
-              {/* Milestones Bar */}
+            {/* Breakdown Sub-Bar: Milestones */}
+            <div className="pt-2 border-t border-slate-200/60">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-bold text-slate-700 flex items-center gap-1 text-[10px] uppercase tracking-wider">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
-                    Milestones
+                    Milestones Progress
                   </span>
                   <span className="font-mono font-bold text-slate-600 text-[10px]">
                     {completedMilestones}/12 ({Math.round((completedMilestones / 12) * 100)}%)
@@ -256,25 +255,6 @@ export function EscrowCard({
                   <div 
                     className="h-full bg-[#3B82F6] rounded-full transition-all duration-500"
                     style={{ width: `${Math.round((completedMilestones / 12) * 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Contingencies Bar */}
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-slate-700 flex items-center gap-1 text-[10px] uppercase tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-                    Contingencies
-                  </span>
-                  <span className="font-mono font-bold text-slate-600 text-[10px]">
-                    {completedContingencies}/9 ({Math.round((completedContingencies / 9) * 100)}%)
-                  </span>
-                </div>
-                <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-[#F59E0B] rounded-full transition-all duration-500"
-                    style={{ width: `${Math.round((completedContingencies / 9) * 100)}%` }}
                   />
                 </div>
               </div>
