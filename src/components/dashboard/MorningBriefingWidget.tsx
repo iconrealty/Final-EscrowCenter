@@ -251,7 +251,7 @@ export function MorningBriefingWidget({
                   {/* Contact & Log Actions */}
                   <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1">
-                      {phone ? (
+                      {type !== 'birthday' && phone ? (
                         <>
                           <a
                             href={`tel:${phone}`}
@@ -268,17 +268,17 @@ export function MorningBriefingWidget({
                             <MessageSquare size={13} />
                           </a>
                         </>
-                      ) : (
+                      ) : type !== 'birthday' ? (
                         <span className="text-[10px] text-slate-400 italic">No phone listed</span>
-                      )}
+                      ) : null}
                     </div>
 
                     <button
                       onClick={() => onOpenWishModal(escrow, yearsCount, dateFormatted, type)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 bg-[#059669] hover:bg-[#047857] text-white"
+                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 bg-[#059669] hover:bg-[#047857] text-white ${type === 'birthday' ? 'w-full justify-center' : ''}`}
                     >
                       <Send size={12} />
-                      <span>Send Wish / Log Call</span>
+                      <span>{type === 'birthday' ? 'Send Birthday Wish' : 'Send Wish / Log Call'}</span>
                     </button>
                   </div>
                 </div>

@@ -467,13 +467,23 @@ export function AnniversaryWishModal({
             </div>
             <div className="flex items-center gap-2">
               {(escrow.clientPhone || escrow.client2Phone) && (
-                <button
-                  onClick={handleSmsLaunch}
-                  title="Send Text (SMS)"
-                  className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center"
-                >
-                  <MessageSquare size={16} />
-                </button>
+                <>
+                  <a
+                    href={`tel:${escrow.clientPhone || escrow.client2Phone}`}
+                    onClick={() => logQuickContact('Phone', 'Called client')}
+                    title="Call Client"
+                    className="text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center"
+                  >
+                    <Phone size={16} />
+                  </a>
+                  <button
+                    onClick={handleSmsLaunch}
+                    title="Send Text (SMS)"
+                    className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center"
+                  >
+                    <MessageSquare size={16} />
+                  </button>
+                </>
               )}
               {escrow.clientEmail && (
                 <button
@@ -647,6 +657,16 @@ export function AnniversaryWishModal({
           >
             {copied ? 'Copied & Marked!' : 'Copy Message'}
           </button>
+          {(escrow.clientPhone || escrow.client2Phone) && (
+            <a
+              href={`tel:${escrow.clientPhone || escrow.client2Phone}`}
+              onClick={() => logQuickContact('Phone', 'Called client')}
+              title="Call Client"
+              className="bg-amber-600 hover:bg-amber-700 text-white p-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
+            >
+              <Phone size={16} />
+            </a>
+          )}
           {templateType === 'sms' ? (
             <button
               onClick={handleSmsLaunch}
