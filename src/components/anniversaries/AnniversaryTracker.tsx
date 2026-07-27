@@ -293,16 +293,12 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
       <div className="bg-white border border-[#e5e5ea] rounded-2xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-[#1d1d1f] tracking-tight">
-            Anniversary
+            Anniversaries
           </h2>
         </div>
 
         {/* Mini stat pills */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
-            <p className="text-2xl sm:text-3xl font-black text-[#1B3A5C]">{stats.upcoming30Count}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Next 30 Days</p>
-          </div>
           <div className="bg-amber-50 border border-amber-200/80 rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
             <p className="text-2xl sm:text-3xl font-black text-amber-600">{stats.birthdaysCount}</p>
             <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mt-0.5">Birthdays</p>
@@ -319,32 +315,56 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
       </div>
 
       {/* Filter Bar & Controls */}
-      <div className="bg-white border border-[#e5e5ea] rounded-2xl p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <button
-            onClick={() => setFilterMode('upcoming30')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
-              filterMode === 'upcoming30'
-                ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
-                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-            }`}
-          >
-            Upcoming (Next 30 Days)
-          </button>
+      <div className="bg-white border border-[#e5e5ea] rounded-2xl p-3.5 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+        {/* Mobile Dropdown Selector (visible on very small screens for quick clear selection) */}
+        <div className="sm:hidden flex items-center gap-2 w-full">
+          <div className="relative flex-1">
+            <select
+              value={filterMode}
+              onChange={(e) => setFilterMode(e.target.value as any)}
+              className="w-full bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2.5 appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
+            >
+              <option value="thisMonth">This Month ({MONTH_NAMES[currentMonth]})</option>
+              <option value="birthdays">Birthdays ({stats.birthdaysCount})</option>
+              <option value="anniversaries">Anniversaries</option>
+              <option value="responded">Responded ({stats.respondedCount})</option>
+              <option value="byMonth">By Month</option>
+              <option value="milestones">Milestones</option>
+              <option value="all">All ({stats.totalClients})</option>
+            </select>
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">▼</div>
+          </div>
+
+          {filterMode === 'byMonth' && (
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
+              className="bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
+            >
+              {MONTH_NAMES.map((m, idx) => (
+                <option key={m} value={idx}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* Filter Pills - Horizontal Scrollable Row (Hidden on mobile dropdown or scrollable smoothly) */}
+        <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0 max-w-full">
           <button
             onClick={() => setFilterMode('thisMonth')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+            className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
               filterMode === 'thisMonth'
                 ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
             }`}
           >
-            This Month ({MONTH_NAMES[currentMonth]})
+            This Month
           </button>
           <button
             onClick={() => setFilterMode('birthdays')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+            className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
               filterMode === 'birthdays'
                 ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
                 : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
@@ -354,17 +374,17 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
           </button>
           <button
             onClick={() => setFilterMode('anniversaries')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+            className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
               filterMode === 'anniversaries'
                 ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
             }`}
           >
-            Closing Anniversaries
+            Anniversaries
           </button>
           <button
             onClick={() => setFilterMode('responded')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+            className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
               filterMode === 'responded'
                 ? 'bg-[#059669] text-white border-transparent shadow-sm'
                 : 'bg-[#059669]/10 text-[#059669] border-transparent hover:bg-[#059669]/20'
@@ -374,7 +394,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
           </button>
           <button
             onClick={() => setFilterMode('byMonth')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+            className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
               filterMode === 'byMonth'
                 ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -384,7 +404,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
           </button>
           <button
             onClick={() => setFilterMode('milestones')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+            className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
               filterMode === 'milestones'
                 ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -394,23 +414,23 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
           </button>
           <button
             onClick={() => setFilterMode('all')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+            className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
               filterMode === 'all'
                 ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
             }`}
           >
-            All Items ({stats.totalClients})
+            All ({stats.totalClients})
           </button>
         </div>
 
-        {/* Right side: Search & Month Selector */}
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        {/* Right side: Search & Month Selector (Desktop) */}
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           {filterMode === 'byMonth' && (
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
-              className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
+              className="hidden sm:block bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
             >
               {MONTH_NAMES.map((m, idx) => (
                 <option key={m} value={idx}>
@@ -420,7 +440,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
             </select>
           )}
 
-          <div className="relative flex-1 md:w-64">
+          <div className="relative flex-1 sm:w-56 lg:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
               type="text"
