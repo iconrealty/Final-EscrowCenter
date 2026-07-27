@@ -293,7 +293,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
       <div className="bg-white border border-[#e5e5ea] rounded-2xl p-6 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-[#1d1d1f] tracking-tight">
-            Closing Anniversary
+            Anniversary
           </h2>
         </div>
 

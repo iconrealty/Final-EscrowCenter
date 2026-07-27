@@ -7,7 +7,9 @@ import {
   onAuthStateChanged,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
@@ -27,6 +29,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if user is returning from Google Redirect sign-in (especially for Safari / Mobile)
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          setUser(result.user);
+        }
+      })
+      .catch((error) => {
+        console.error("Error completing Google redirect sign-in:", error);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -47,9 +60,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithGoogle = () => {
+  const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    return signInWithPopup(auth, provider).then(() => {});
+    provider.setCustomParameters({ prompt: 'select_account' });
+
+    // Detect Safari or iOS devices where popups open separate tabs due to Intelligent Tracking Prevention (ITP)
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+
+    if (isSafari || isIOS || isStandalone) {
+      // Use seamless redirect flow on Safari / iOS / PWA Home Screen
+      await signInWithRedirect(auth, provider);
+    } else {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (err: any) {
+        if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw err;
+        }
+      }
+    }
   };
 
   const signOut = async () => {
