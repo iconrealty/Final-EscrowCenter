@@ -1,0 +1,23 @@
+{
+  "short_name": "MuNR",
+  "name": "MuNR Escrow Command Center",
+  "icons": [
+    {
+      "src": "/app_icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#1B3A5C",
+  "theme_color": "#1B3A5C",
+  "display": "standalone",
+  "orientation": "portrait"
+}
