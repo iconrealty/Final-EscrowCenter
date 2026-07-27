@@ -325,6 +325,7 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
               className="w-full bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2.5 appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
             >
               <option value="thisMonth">This Month ({MONTH_NAMES[currentMonth]})</option>
+              <option value="upcoming30">Next 30 Days ({stats.upcoming30Count})</option>
               <option value="birthdays">Birthdays ({stats.birthdaysCount})</option>
               <option value="anniversaries">Anniversaries</option>
               <option value="responded">Responded ({stats.respondedCount})</option>
@@ -361,6 +362,16 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
             }`}
           >
             This Month
+          </button>
+          <button
+            onClick={() => setFilterMode('upcoming30')}
+            className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+              filterMode === 'upcoming30'
+                ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            Next 30 Days
           </button>
           <button
             onClick={() => setFilterMode('birthdays')}
