@@ -3,6 +3,7 @@ import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
+import { CheckCircle2 } from 'lucide-react';
 
 export function EscrowCard({ 
   escrow, 
@@ -172,16 +173,29 @@ export function EscrowCard({
               <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
                 Next Step
               </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUpdateTasks();
-                }}
-                className="text-[10px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
-              >
-                Update Tasks &rarr;
-              </button>
+              {nextMilestone ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateTasks();
+                  }}
+                  className="text-[10px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
+                >
+                  Update Tasks &rarr;
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateTasks();
+                  }}
+                  className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 cursor-pointer hover:bg-emerald-100"
+                >
+                  0 Pending
+                </button>
+              )}
             </div>
 
             {nextMilestone ? (
@@ -204,8 +218,23 @@ export function EscrowCard({
                 </span>
               </div>
             ) : (
-              <div className="flex items-center justify-between bg-emerald-50/80 text-emerald-800 p-2.5 rounded-lg border border-emerald-200/80 text-xs font-bold">
-                <span>All 12 Milestones Completed &bull; Ready for COE</span>
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpdateTasks();
+                }}
+                className="flex items-center justify-between bg-emerald-600 text-white border border-emerald-700/80 p-2.5 rounded-xl shadow-xs hover:bg-emerald-700 transition-all cursor-pointer select-none"
+                title={`All ${MILESTONES.length} milestones completed! Click to view details.`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <CheckCircle2 size={16} className="text-white shrink-0" />
+                  <span className="text-xs font-bold text-white truncate">
+                    All {MILESTONES.length} Milestones Completed / COE Ready
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
+                  {completedMilestones} / {MILESTONES.length} Done
+                </span>
               </div>
             )}
           </div>
@@ -224,9 +253,9 @@ export function EscrowCard({
                 <span className="text-[11px] font-bold text-[#1B3A5C] uppercase tracking-wider">Escrow Completion</span>
               </div>
               <div className="flex items-center gap-2 font-mono text-xs">
-                <span className="font-extrabold text-[#1d1d1f]">{completedTasks} / 21 Tasks</span>
+                <span className="font-extrabold text-[#1d1d1f]">{completedTasks} / {ALL_TASKS.length} Tasks</span>
                 <span className="font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-1.5 py-0.5 rounded text-[10px]">
-                  {Math.round((completedTasks / 21) * 100)}%
+                  {Math.round((completedTasks / ALL_TASKS.length) * 100)}%
                 </span>
               </div>
             </div>
@@ -235,7 +264,7 @@ export function EscrowCard({
             <div className="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden mb-2.5">
               <div 
                 className="h-full bg-gradient-to-r from-[#1B3A5C] to-[#2B5A8C] rounded-full transition-all duration-500"
-                style={{ width: `${Math.round((completedTasks / 21) * 100)}%` }}
+                style={{ width: `${Math.round((completedTasks / ALL_TASKS.length) * 100)}%` }}
               />
             </div>
 
@@ -244,17 +273,17 @@ export function EscrowCard({
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-bold text-slate-700 flex items-center gap-1 text-[10px] uppercase tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
+                    <span className={`w-1.5 h-1.5 rounded-full ${completedMilestones === MILESTONES.length ? 'bg-emerald-600' : 'bg-[#3B82F6]'}`} />
                     Milestones Progress
                   </span>
-                  <span className="font-mono font-bold text-slate-600 text-[10px]">
-                    {completedMilestones}/12 ({Math.round((completedMilestones / 12) * 100)}%)
+                  <span className={`font-mono font-bold text-[10px] ${completedMilestones === MILESTONES.length ? 'text-emerald-600 font-extrabold' : 'text-slate-600'}`}>
+                    {completedMilestones}/{MILESTONES.length} ({Math.round((completedMilestones / MILESTONES.length) * 100)}%)
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-[#3B82F6] rounded-full transition-all duration-500"
-                    style={{ width: `${Math.round((completedMilestones / 12) * 100)}%` }}
+                    className={`h-full rounded-full transition-all duration-500 ${completedMilestones === MILESTONES.length ? 'bg-emerald-600' : 'bg-[#3B82F6]'}`}
+                    style={{ width: `${Math.round((completedMilestones / MILESTONES.length) * 100)}%` }}
                   />
                 </div>
               </div>
