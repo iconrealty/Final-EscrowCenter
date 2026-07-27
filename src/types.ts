@@ -90,6 +90,18 @@ export const ALL_TASKS = [...MILESTONES, ...CONTINGENCIES];
 
 import { addDays, differenceInCalendarDays, parseISO } from 'date-fns';
 
+export const DEFAULT_CONTINGENCY_DAYS: Record<string, number> = {
+  'L1': 14,
+  'L2': 10,
+  'L3': 7,
+  'L4': 7,
+  'L5': 7,
+  'L6': 7,
+  'L7': 7,
+  'L8': 7,
+  'L9': 7,
+};
+
 export function isContingencyUrgent(escrow: Escrow, taskKey: string): boolean {
   if (escrow.status !== 'Open') return false;
   if (escrow.tasks[taskKey]) return false; // Already done
@@ -101,10 +113,20 @@ export function isContingencyUrgent(escrow: Escrow, taskKey: string): boolean {
 }
 
 export function getContingencyDaysLeft(escrow: Escrow, taskKey: string): number | null {
-  const days = escrow.contingencyDays?.[taskKey];
-  const startDateStr = escrow.contingencyStartDate || escrow.acceptanceDate;
-  if (days === undefined || !startDateStr) return null;
+  const days = escrow.contingencyDays?.[taskKey] ?? DEFAULT_CONTINGENCY_DAYS[taskKey] ?? 7;
+  const startDateStr = escrow.contingencyStartDate || escrow.acceptanceDate || escrow.lastUpdated || escrow.coeDate;
+  if (!startDateStr) {
+    return days;
+  }
 
-  const deadline = addDays(parseISO(startDateStr), days);
-  return differenceInCalendarDays(deadline, new Date());
+  try {
+    const startDate = parseISO(startDateStr);
+    if (isNaN(startDate.getTime())) {
+      return days;
+    }
+    const deadline = addDays(startDate, days);
+    return differenceInCalendarDays(deadline, new Date());
+  } catch (e) {
+    return days;
+  }
 }

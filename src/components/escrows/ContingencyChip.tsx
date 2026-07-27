@@ -40,7 +40,9 @@ export function ContingencyChip({
   }
 
   let formattedLabel = `${taskKey} - ${label}`;
-  if (!isDone && daysLeft !== null && daysLeft !== undefined) {
+  if (isDone) {
+    formattedLabel = `DONE - ${taskKey} - ${label}`;
+  } else if (daysLeft !== null && daysLeft !== undefined) {
     if (daysLeft > 1) {
       formattedLabel += ` (${daysLeft} days left)`;
     } else if (daysLeft === 1) {
