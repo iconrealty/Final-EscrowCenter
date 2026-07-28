@@ -124,17 +124,19 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
       {/* Long Goals Bar Below the Cards */}
       <button
         onClick={onOpenGoals}
-        className="w-full bg-white hover:bg-slate-100/80 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 cursor-pointer group transition-all text-left"
+        className="w-full bg-white hover:bg-slate-100/80 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-start gap-2.5 sm:gap-5 cursor-pointer group transition-all text-left"
         title="Click to view Goals & Performance Tracker"
       >
         <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
           <span className="text-xs font-black uppercase tracking-[1px] text-[#1B3A5C]">
-            Goals
+            {actualYear}
           </span>
           <span className="text-[10px] text-slate-400 font-bold sm:hidden">Click to view</span>
         </div>
 
-        <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto flex-wrap">
+        <div className="h-4 w-px bg-slate-200 hidden sm:block shrink-0" />
+
+        <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-6 w-full sm:w-auto flex-wrap">
           {/* Units First */}
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Units:</span>
