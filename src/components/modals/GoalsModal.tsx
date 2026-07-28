@@ -319,25 +319,25 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
                 </div>
               </div>
 
-              {/* Dark Pill Badges for Pace & Status */}
-              <div className="sm:text-right flex flex-col sm:items-end gap-1">
+              {/* Pace & Status Text Labels */}
+              <div className="sm:text-right flex flex-col sm:items-end">
                 {paceStatus === 'achieved' && (
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-black bg-emerald-600 text-white shadow-xs">
+                  <span className="text-xs sm:text-sm font-semibold text-emerald-600">
                     Goal Achieved!
                   </span>
                 )}
                 {paceStatus === 'on_track' && (
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-black bg-emerald-600 text-white shadow-xs">
+                  <span className="text-xs sm:text-sm font-semibold text-emerald-600">
                     On Track ({commPercent}%)
                   </span>
                 )}
                 {paceStatus === 'on_track_pipeline' && (
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-black bg-blue-600 text-white shadow-xs">
+                  <span className="text-xs sm:text-sm font-semibold text-blue-600">
                     On Track with Pipeline ({projectedCommPercent}%)
                   </span>
                 )}
                 {paceStatus === 'off_track' && (
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-black bg-rose-800 text-white shadow-xs">
+                  <span className="text-xs sm:text-sm font-semibold text-rose-600">
                     Off Track ({commPercent}% vs {yearElapsedPercent}% pace)
                   </span>
                 )}
@@ -411,25 +411,25 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
                 </div>
               </div>
 
-              {/* Pill Badges for Units Pace & Status */}
-              <div className="sm:text-right flex flex-col sm:items-end gap-1">
+              {/* Pace & Status Text Labels for Units */}
+              <div className="sm:text-right flex flex-col sm:items-end">
                 {unitsPaceStatus === 'achieved' && (
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs">
+                  <span className="text-xs sm:text-sm font-semibold text-emerald-600">
                     Goal Achieved!
                   </span>
                 )}
                 {unitsPaceStatus === 'on_track' && (
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs">
+                  <span className="text-xs sm:text-sm font-semibold text-emerald-600">
                     On Track ({dealsPercent}%)
                   </span>
                 )}
                 {unitsPaceStatus === 'on_track_pipeline' && (
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-blue-600 text-white shadow-xs">
+                  <span className="text-xs sm:text-sm font-semibold text-blue-600">
                     On Track with Pipeline ({projectedDealsPercent}%)
                   </span>
                 )}
                 {unitsPaceStatus === 'off_track' && (
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-rose-800 text-white shadow-xs">
+                  <span className="text-xs sm:text-sm font-semibold text-rose-600">
                     Off Track ({dealsPercent}% vs {yearElapsedPercent}% pace)
                   </span>
                 )}
