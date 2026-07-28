@@ -66,12 +66,12 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
   // Income Status
   const isIncomeAchieved = closedCommission >= goalTargetIncome && goalTargetIncome > 0;
   const isIncomeOnTrack = isIncomeAchieved || closedCommission >= expectedIncomePace || projectedTotalCommission >= expectedIncomePace;
-  const incomeStatusText = isIncomeAchieved ? 'Achieved' : (isIncomeOnTrack ? 'On Track' : 'Off Track');
+  const incomeStatusText = isIncomeOnTrack ? 'On Track' : 'Off Track';
 
   // Units Status
   const isUnitsAchieved = closedYtd >= goalTargetUnits && goalTargetUnits > 0;
   const isUnitsOnTrack = isUnitsAchieved || closedYtd >= expectedUnitsPace || projectedTotalUnits >= expectedUnitsPace;
-  const unitsStatusText = isUnitsAchieved ? 'Achieved' : (isUnitsOnTrack ? 'On Track' : 'Off Track');
+  const unitsStatusText = isUnitsOnTrack ? 'On Track' : 'Off Track';
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);

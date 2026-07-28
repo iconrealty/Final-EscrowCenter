@@ -187,20 +187,25 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white border border-[#e5e5ea] shadow-2xl rounded-3xl w-full max-w-2xl overflow-hidden my-8 animate-scale-up">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="bg-white border border-[#e5e5ea] shadow-2xl rounded-2xl sm:rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden my-auto animate-scale-up">
         {/* Header - Clean Slate-50 background */}
-        <div className="bg-slate-50 text-slate-900 px-6 py-5 flex items-center justify-between border-b border-slate-200">
+        <div className="bg-slate-50 text-slate-900 px-4 sm:px-6 py-4 flex items-center justify-between border-b border-slate-200 shrink-0">
           <div>
-            <h2 className="text-lg font-bold tracking-tight leading-tight text-slate-900">Annual Goals & Performance</h2>
+            <h2 className="text-base sm:text-lg font-bold tracking-tight leading-tight text-slate-900">Annual Goals & Performance</h2>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Year Selector */}
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="bg-white border border-slate-300 text-slate-900 text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer shadow-2xs"
+              className="bg-white border border-slate-300 text-slate-900 text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none cursor-pointer shadow-2xs"
             >
               {[currentYear, (Number(currentYear) - 1).toString(), (Number(currentYear) + 1).toString()].map(y => (
                 <option key={y} value={y} className="text-slate-900 font-bold">{y} Goals</option>
@@ -217,7 +222,7 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
         </div>
 
         {/* Content Body */}
-        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto flex-1">
           
           {/* Goals Settings / Display Box */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
@@ -247,7 +252,7 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
                       step="1000"
                       value={editCommission}
                       onChange={(e) => setEditCommission(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
+                      className="w-full bg-white border border-slate-300 rounded-xl pl-7 pr-3 py-2 text-xs font-mono font-normal text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
                       placeholder="150000"
                       required
                     />
@@ -264,7 +269,7 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
                     step="1"
                     value={editDeals}
                     onChange={(e) => setEditDeals(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-normal text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]"
                     placeholder="12"
                     required
                   />
@@ -283,13 +288,13 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-white border border-slate-200/80 rounded-xl p-3">
                   <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Target Net Income</div>
-                  <div className="text-lg font-black font-mono text-[#1B3A5C] mt-0.5">
+                  <div className="text-lg font-normal font-mono text-[#1B3A5C] mt-0.5">
                     {formatCurrency(goals.targetCommission)}
                   </div>
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-xl p-3">
                   <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Units to Close Goal</div>
-                  <div className="text-lg font-black font-mono text-[#1B3A5C] mt-0.5">
+                  <div className="text-lg font-normal font-mono text-[#1B3A5C] mt-0.5">
                     {goals.targetDeals} {goals.targetDeals === 1 ? 'unit' : 'units'}
                   </div>
                 </div>
