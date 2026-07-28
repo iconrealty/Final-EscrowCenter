@@ -54,9 +54,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, pass: string, name: string) => {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     if (cred.user) {
-      await updateProfile(cred.user, { displayName: name });
-      await cred.user.reload();
-      setUser(auth.currentUser);
+      try {
+        await updateProfile(cred.user, { displayName: name });
+        await cred.user.reload();
+      } catch (e) {
+        console.warn("Could not reload user profile after signup", e);
+      }
+      setUser(auth.currentUser || cred.user);
     }
   };
 
@@ -64,23 +68,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
 
-    // Detect Safari or iOS devices where popups open separate tabs due to Intelligent Tracking Prevention (ITP)
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
-
-    if (isSafari || isIOS || isStandalone) {
-      // Use seamless redirect flow on Safari / iOS / PWA Home Screen
-      await signInWithRedirect(auth, provider);
-    } else {
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (err: any) {
-        if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
-          await signInWithRedirect(auth, provider);
-        } else {
-          throw err;
-        }
+    try {
+      const res = await signInWithPopup(auth, provider);
+      if (res?.user) {
+        setUser(res.user);
+      }
+    } catch (err: any) {
+      console.warn("signInWithPopup error or blocked, trying fallback:", err);
+      if (
+        err.code === 'auth/popup-blocked' || 
+        err.code === 'auth/popup-closed-by-user' ||
+        err.code === 'auth/cancelled-popup-request' ||
+        err.code === 'auth/operation-not-supported-in-this-environment'
+      ) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        throw err;
       }
     }
   };
