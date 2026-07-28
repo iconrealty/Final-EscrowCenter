@@ -365,9 +365,6 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
 
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
                 <span>$0</span>
-                <span className="text-slate-800">
-                  Pending in Escrow: +{formatCurrency(pendingCommission)} ({projectedCommPercent}% Total Pipeline)
-                </span>
                 <span>{formatCurrency(goals.targetCommission)}</span>
               </div>
             </div>
@@ -457,9 +454,6 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
 
               <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
                 <span>0 units</span>
-                <span className="text-slate-800">
-                  Pending in Escrow: +{pendingDeals} {pendingDeals === 1 ? 'unit' : 'units'} ({projectedDealsPercent}% Total Pipeline)
-                </span>
                 <span>{goals.targetDeals} {goals.targetDeals === 1 ? 'unit' : 'units'}</span>
               </div>
             </div>
@@ -480,7 +474,7 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
                       : 'Goal Met!'}
                   </div>
                 </div>
-                <div className="text-[10px] font-medium text-slate-400 mt-2">
+                <div className="text-[10px] font-medium text-[#1B3A5C] mt-2">
                   {remainingUnitsNeeded > 0
                     ? `${remainingUnitsNeeded} ${remainingUnitsNeeded === 1 ? 'unit' : 'units'} left (${monthsRemaining} ${monthsRemaining === 1 ? 'month' : 'months'} remaining)`
                     : 'Target closed units reached'}
@@ -497,7 +491,7 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
                       : 'Goal Met!'}
                   </div>
                 </div>
-                <div className="text-[10px] font-medium text-slate-400 mt-2">
+                <div className="text-[10px] font-medium text-[#1B3A5C] mt-2">
                   {remainingCommissionNeeded > 0
                     ? `${formatCurrency(remainingCommissionNeeded)} left (${monthsRemaining} ${monthsRemaining === 1 ? 'month' : 'months'} remaining)`
                     : 'Target net income reached'}
