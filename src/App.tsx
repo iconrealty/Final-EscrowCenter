@@ -17,6 +17,7 @@ import { ConfirmModal } from './components/modals/ConfirmModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { ClientUpdatesModal } from './components/modals/ClientUpdatesModal';
 import { MilestonesContingenciesModal } from './components/modals/MilestonesContingenciesModal';
+import { GoalsModal } from './components/modals/GoalsModal';
 
 import { useEscrows } from './hooks/useEscrows';
 import { Escrow } from './types';
@@ -39,6 +40,7 @@ function App() {
   const [clientUpdateEscrow, setClientUpdateEscrow] = useState<Escrow | null>(null);
   const [updateTasksEscrow, setUpdateTasksEscrow] = useState<Escrow | null>(null);
   const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string; wishType?: 'anniversary' | 'birthday' } | null>(null);
+  const [isGoalsOpen, setIsGoalsOpen] = useState(false);
 
   
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -117,10 +119,11 @@ function App() {
           }} 
           onImportEscrows={importEscrows}
           onOpenAuth={() => setIsAuthOpen(true)}
+          onOpenGoals={() => setIsGoalsOpen(true)}
           escrows={escrows}
         />
         
-        <StatsBar escrows={escrows} />
+        <StatsBar escrows={escrows} onOpenGoals={() => setIsGoalsOpen(true)} />
 
         <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
           {activeTab === 'active' && (
@@ -281,6 +284,13 @@ function App() {
           message="Are you sure you want to delete this escrow? This action cannot be undone."
           onConfirm={handleDelete}
           onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
+
+      {isGoalsOpen && (
+        <GoalsModal 
+          escrows={escrows} 
+          onClose={() => setIsGoalsOpen(false)} 
         />
       )}
 

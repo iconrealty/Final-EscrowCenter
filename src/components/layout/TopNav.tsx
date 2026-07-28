@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Plus, Download, Upload, Cloud, CloudOff, LogOut, User, FileSpreadsheet, ChevronDown } from 'lucide-react';
+import { Plus, Download, Upload, Cloud, CloudOff, LogOut, User, FileSpreadsheet, ChevronDown, Target } from 'lucide-react';
 import { downloadCsvTemplate, parseCsv, downloadEscrowsCsv } from '../../utils/csvUtils';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -11,10 +11,11 @@ interface TopNavProps {
   onNewEscrow: () => void;
   onImportEscrows: (data: any[]) => Promise<any>;
   onOpenAuth: () => void;
+  onOpenGoals?: () => void;
   escrows: Escrow[];
 }
 
-export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, onOpenAuth, escrows }: TopNavProps) {
+export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, onOpenAuth, onOpenGoals, escrows }: TopNavProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, signOut } = useAuth();
   const { success: showSuccess, error: showError, warning: showWarning } = useToast();
