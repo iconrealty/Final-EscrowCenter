@@ -109,6 +109,22 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
 
   const avgCommission = closedDeals > 0 ? closedCommission / closedDeals : 0;
 
+  const closedVolume = closedEscrows.reduce((sum, e) => sum + (e.price || 0), 0);
+  const closedAvgPricePoint = closedDeals > 0 ? (closedVolume / closedDeals) : 0;
+
+  const targetNetCommPerUnit = goals.targetDeals > 0 ? (goals.targetCommission / goals.targetDeals) : 0;
+
+  // Effective commission rate based on actual closed volume or total escrows volume (default 2.5%)
+  const allEscrowsVolume = escrows.reduce((sum, e) => sum + (e.price || 0), 0);
+  const allEscrowsCommission = escrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);
+  const effectiveCommRate = closedVolume > 0 && closedCommission > 0
+    ? (closedCommission / closedVolume)
+    : (allEscrowsVolume > 0 && allEscrowsCommission > 0 ? (allEscrowsCommission / allEscrowsVolume) : 0.025);
+
+  const targetAvgPricePoint = effectiveCommRate > 0 && targetNetCommPerUnit > 0
+    ? Math.round(targetNetCommPerUnit / effectiveCommRate)
+    : 0;
+
   // Percentage calculations
   const commPercent = goals.targetCommission > 0 ? Math.min(100, Math.round((closedCommission / goals.targetCommission) * 100)) : 0;
   const projectedCommPercent = goals.targetCommission > 0 ? Math.min(100, Math.round((projectedTotalCommission / goals.targetCommission) * 100)) : 0;
@@ -463,7 +479,7 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
           <div className="bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl p-5 space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Agent Performance Analysis</h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               {/* Units Needed / Month */}
               <div className="bg-white border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
                 <div>
@@ -495,6 +511,23 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
                   {remainingCommissionNeeded > 0
                     ? `${formatCurrency(remainingCommissionNeeded)} left (${monthsRemaining} ${monthsRemaining === 1 ? 'month' : 'months'} remaining)`
                     : 'Target net income reached'}
+                </div>
+              </div>
+
+              {/* Average Price Point */}
+              <div className="bg-white border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase">Avg. Price Point / Unit</div>
+                  <div className="text-base font-semibold text-indigo-700 mt-1">
+                    {targetAvgPricePoint > 0 
+                      ? formatCurrency(targetAvgPricePoint) 
+                      : (closedAvgPricePoint > 0 ? formatCurrency(closedAvgPricePoint) : '$0')}
+                  </div>
+                </div>
+                <div className="text-[10px] font-medium text-[#1B3A5C] mt-2">
+                  {targetNetCommPerUnit > 0
+                    ? `${formatCurrency(targetNetCommPerUnit)} avg net comm / unit (${goals.targetDeals} ${goals.targetDeals === 1 ? 'unit' : 'units'})`
+                    : (closedAvgPricePoint > 0 ? `Based on ${closedDeals} closed ${closedDeals === 1 ? 'unit' : 'units'}` : 'Set annual goals to calculate')}
                 </div>
               </div>
             </div>
