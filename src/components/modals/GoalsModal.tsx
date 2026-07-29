@@ -1,45 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { Escrow } from '../../types';
+import { Escrow, AgentGoals } from '../../types';
+import { useGoals, getStoredGoalsLocal, saveStoredGoalsLocal } from '../../hooks/useGoals';
 
-export interface AgentGoals {
-  year: string;
-  targetCommission: number;
-  targetDeals: number;
-}
-
-const DEFAULT_GOALS: AgentGoals = {
-  year: new Date().getFullYear().toString(),
-  targetCommission: 150000,
-  targetDeals: 12,
-};
-
+// Backwards compatibility re-exports
+export type { AgentGoals };
 export const STORAGE_KEY_GOALS = 'munr_agent_goals';
-
-export function getStoredGoals(year: string = new Date().getFullYear().toString()): AgentGoals {
-  try {
-    const raw = localStorage.getItem(`${STORAGE_KEY_GOALS}_${year}`);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return {
-        year,
-        targetCommission: Number(parsed.targetCommission) || 150000,
-        targetDeals: Number(parsed.targetDeals) || 12,
-      };
-    }
-  } catch (e) {
-    console.error('Error reading goals:', e);
-  }
-  return { ...DEFAULT_GOALS, year };
-}
-
-export function saveStoredGoals(goals: AgentGoals) {
-  try {
-    localStorage.setItem(`${STORAGE_KEY_GOALS}_${goals.year}`, JSON.stringify(goals));
-  } catch (e) {
-    console.error('Error saving goals:', e);
-  }
-}
+export const getStoredGoals = getStoredGoalsLocal;
+export const saveStoredGoals = saveStoredGoalsLocal;
 
 interface GoalsModalProps {
   escrows: Escrow[];
@@ -47,33 +15,32 @@ interface GoalsModalProps {
 }
 
 export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
+  const { getGoals, updateGoals } = useGoals();
   const currentYear = new Date().getFullYear().toString();
   const [selectedYear, setSelectedYear] = useState<string>(currentYear);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [goals, setGoals] = useState<AgentGoals>(() => getStoredGoals(selectedYear));
+  const goals = getGoals(selectedYear);
 
   // Temporary edit values
   const [editCommission, setEditCommission] = useState(goals.targetCommission.toString());
   const [editDeals, setEditDeals] = useState(goals.targetDeals.toString());
 
   useEffect(() => {
-    const loaded = getStoredGoals(selectedYear);
-    setGoals(loaded);
+    const loaded = getGoals(selectedYear);
     setEditCommission(loaded.targetCommission.toString());
     setEditDeals(loaded.targetDeals.toString());
     setIsEditing(false);
-  }, [selectedYear]);
+  }, [selectedYear, goals.targetCommission, goals.targetDeals]);
 
-  const handleSaveGoals = (e: React.FormEvent) => {
+  const handleSaveGoals = async (e: React.FormEvent) => {
     e.preventDefault();
     const updated: AgentGoals = {
       year: selectedYear,
       targetCommission: Math.max(0, Number(editCommission) || 0),
       targetDeals: Math.max(0, Number(editDeals) || 0),
     };
-    saveStoredGoals(updated);
-    setGoals(updated);
+    await updateGoals(updated);
     setIsEditing(false);
   };
 

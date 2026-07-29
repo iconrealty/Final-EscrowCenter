@@ -9,7 +9,7 @@ interface SalesSummaryProps {
 }
 
 export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'total' | 'monthly' | 'commission' | 'source'>('total');
+  const [activeSubTab, setActiveSubTab] = useState<'total' | 'monthly' | 'commission' | 'source'>('monthly');
   const [commissionGroup, setCommissionGroup] = useState<'monthly' | 'yearly'>('monthly');
   const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null);
 

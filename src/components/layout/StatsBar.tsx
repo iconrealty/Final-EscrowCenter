@@ -1,6 +1,6 @@
 import React from 'react';
 import { Escrow } from '../../types';
-import { getStoredGoals } from '../modals/GoalsModal';
+import { useGoals } from '../../hooks/useGoals';
 
 interface StatsBarProps {
   escrows: Escrow[];
@@ -9,7 +9,8 @@ interface StatsBarProps {
 
 export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
   const actualYear = new Date().getFullYear().toString();
-  const storedGoals = getStoredGoals(actualYear);
+  const { getGoals } = useGoals();
+  const storedGoals = getGoals(actualYear);
 
   const getEscrowYear = (escrow: Escrow): string => {
     if (escrow.coeDate) {

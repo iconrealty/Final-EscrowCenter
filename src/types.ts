@@ -1,3 +1,9 @@
+export interface AgentGoals {
+  year: string;
+  targetCommission: number;
+  targetDeals: number;
+}
+
 export interface EscrowDocument {
   id: string;
   name: string;
