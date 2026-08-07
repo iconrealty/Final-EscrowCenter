@@ -13,7 +13,8 @@ export function EscrowCard({
   onViewDetails,
   onSendUpdate,
   onUpdateTasks,
-  onOpenContacts
+  onOpenContacts,
+  onOpenDocuments
 }: { 
   key?: string | number;
   escrow: Escrow; 
@@ -24,6 +25,7 @@ export function EscrowCard({
   onSendUpdate: () => void;
   onUpdateTasks: () => void;
   onOpenContacts?: () => void;
+  onOpenDocuments?: () => void;
 }) {
   const daysToCoe = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
@@ -283,7 +285,7 @@ export function EscrowCard({
         </div>
 
         {/* Quick Access Buttons */}
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -307,10 +309,18 @@ export function EscrowCard({
               e.stopPropagation();
               onOpenContacts?.();
             }}
-            className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center gap-1 transition-all active:scale-[0.98] cursor-pointer"
+            className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
           >
-            <Users size={13} />
             <span>Contacts</span>
+          </button>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenDocuments?.();
+            }}
+            className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
+          >
+            <span>Documents</span>
           </button>
         </div>
 

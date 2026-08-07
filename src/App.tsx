@@ -19,6 +19,7 @@ import { ClientUpdatesModal } from './components/modals/ClientUpdatesModal';
 import { MilestonesContingenciesModal } from './components/modals/MilestonesContingenciesModal';
 import { GoalsModal } from './components/modals/GoalsModal';
 import { ContactsModal } from './components/modals/ContactsModal';
+import { DocumentsModal } from './components/modals/DocumentsModal';
 
 import { useEscrows } from './hooks/useEscrows';
 import { Escrow } from './types';
@@ -41,6 +42,7 @@ function App() {
   const [clientUpdateEscrow, setClientUpdateEscrow] = useState<Escrow | null>(null);
   const [updateTasksEscrow, setUpdateTasksEscrow] = useState<Escrow | null>(null);
   const [contactsEscrow, setContactsEscrow] = useState<Escrow | null>(null);
+  const [documentsEscrow, setDocumentsEscrow] = useState<Escrow | null>(null);
   const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string; wishType?: 'anniversary' | 'birthday' } | null>(null);
   const [isGoalsOpen, setIsGoalsOpen] = useState(false);
 
@@ -158,6 +160,7 @@ function App() {
                       onSendUpdate={() => setClientUpdateEscrow(escrow)}
                       onUpdateTasks={() => setUpdateTasksEscrow(escrow)}
                       onOpenContacts={() => setContactsEscrow(escrow)}
+                      onOpenDocuments={() => setDocumentsEscrow(escrow)}
                     />
 
                   ))}
@@ -259,6 +262,14 @@ function App() {
         <ContactsModal 
           escrow={escrows.find(e => e.id === contactsEscrow.id) || contactsEscrow} 
           onClose={() => setContactsEscrow(null)} 
+        />
+      )}
+
+      {documentsEscrow && (
+        <DocumentsModal 
+          escrow={escrows.find(e => e.id === documentsEscrow.id) || documentsEscrow} 
+          onClose={() => setDocumentsEscrow(null)}
+          onUpdateEscrow={(id, data) => editEscrow(id, data)}
         />
       )}
 
