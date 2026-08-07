@@ -132,9 +132,9 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
   contactsList.push(
     {
       id: 'agent',
-      role: 'Real Estate Agent',
+      role: 'Other Agent',
       badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-      badgeText: 'Agent',
+      badgeText: 'Other Agent',
       name: escrow.agentName || 'Not specified',
       company: escrow.collaborator ? `Collaborator: ${escrow.collaborator}` : undefined,
       phone: escrow.agentPhone,

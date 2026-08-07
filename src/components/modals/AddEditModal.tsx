@@ -389,21 +389,21 @@ export function AddEditModal({
             </div>
 
             <div className="md:col-span-2 mt-2">
-              <h3 className="text-sm font-bold text-[#1d1d1f] border-b border-[#e5e5ea] pb-1.5 mb-1">Agent Details</h3>
+              <h3 className="text-sm font-bold text-[#1d1d1f] border-b border-[#e5e5ea] pb-1.5 mb-1">Other Agent Details</h3>
             </div>
             
             <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">Agent Name</label>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Other Agent Name</label>
               <input type="text" value={formData.agentName} onChange={e => setFormData({...formData, agentName: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">Agent Phone</label>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Other Agent Phone</label>
               <input type="tel" value={formData.agentPhone} placeholder="e.g. 310-555-0155" onChange={e => setFormData({...formData, agentPhone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-[#334155] mb-1">Agent Email</label>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Other Agent Email</label>
               <input type="email" value={formData.agentEmail} placeholder="e.g. agent@email.com" onChange={e => setFormData({...formData, agentEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
