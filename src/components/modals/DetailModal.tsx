@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Escrow, CONTINGENCIES, getContingencyDaysLeft } from '../../types';
-import { X, Pencil, Trash2, MessageSquare, Mail, Phone, ExternalLink } from 'lucide-react';
+import { X, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
@@ -39,61 +39,7 @@ export function DetailModal({
     ? escrow.price * (Number(escrow.commissionPercent) / 100)
     : 0;
 
-  const formatDateDisplay = (dateStr?: string) => {
-    if (!dateStr) return '-';
-    try {
-      const str = dateStr.trim();
-      if (/\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
-        const [m, d, y] = str.split('/');
-        return format(new Date(Number(y), Number(m) - 1, Number(d)), 'MMM d, yyyy');
-      }
-      return format(parseISO(str), 'MMM d, yyyy');
-    } catch {
-      return dateStr;
-    }
-  };
-
   const hasClient2 = !!(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim());
-
-  const contacts = [
-    {
-      role: 'Client 1',
-      name: `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || '-',
-      phone: escrow.clientPhone,
-      email: escrow.clientEmail,
-      birthday: escrow.clientBirthday,
-    },
-    {
-      role: 'Client 2',
-      name: `${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`.trim() || '-',
-      phone: escrow.client2Phone,
-      email: escrow.client2Email,
-      birthday: escrow.client2Birthday,
-    },
-    {
-      role: 'Agent',
-      name: escrow.agentName || '-',
-      phone: escrow.agentPhone,
-      email: escrow.agentEmail,
-    },
-    {
-      role: 'Lender',
-      name: escrow.lenderName || '-',
-      phone: escrow.lenderPhone,
-      email: escrow.lenderEmail,
-    },
-    {
-      role: 'Escrow Officer',
-      name: escrow.escrowOfficer || '-',
-      phone: escrow.escrowPhone,
-      email: escrow.escrowEmail,
-    },
-  ];
-
-  const activeContacts = contacts.filter(c => {
-    if (c.role === 'Client 2' && !hasClient2) return false;
-    return true;
-  });
 
   return (
     <div 
@@ -227,90 +173,6 @@ export function DetailModal({
                 </span>
               </div>
 
-            </div>
-          </section>
-
-          {/* Key Contacts Section */}
-          <section id="detail-contacts">
-            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-[#86868b] mb-4 pb-2 border-b border-[#e5e5ea]">
-              Key Contacts
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-              {activeContacts.map((c) => {
-                const hasPhone = c.phone && c.phone.trim() !== '' && c.phone !== '-';
-                const hasEmail = c.email && c.email.trim() !== '' && c.email !== '-';
-                return (
-                  <div 
-                    key={c.role} 
-                    className="flex items-start justify-between py-3 border-b border-[#fafafa] bg-white sm:bg-transparent p-4 sm:p-0 rounded-2xl sm:rounded-none shadow-sm sm:shadow-none border sm:border-0 border-[#e5e5ea]"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[9px] font-semibold uppercase tracking-widest text-[#86868b] block mb-0.5">
-                        {c.role}
-                      </span>
-                      <h4 className="text-sm font-medium text-[#1d1d1f] truncate" title={c.name}>
-                        {c.name}
-                      </h4>
-                      <div className="mt-1 space-y-0.5">
-                        {hasPhone ? (
-                          <p className="text-xs text-[#515154] font-normal select-all">
-                            {c.phone}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-[#c1c1c4] italic font-normal">
-                            No Phone Number
-                          </p>
-                        )}
-                        {hasEmail ? (
-                          <p className="text-xs text-[#515154] font-normal select-all truncate" title={c.email}>
-                            {c.email}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-[#c1c1c4] italic font-normal">
-                            No Email Address
-                          </p>
-                        )}
-                        {c.birthday && c.birthday.trim() !== '' ? (
-                          <p className="text-xs text-[#1B3A5C] font-semibold pt-0.5" title="Client Birthday">
-                            Birthday: {formatDateDisplay(c.birthday)}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 shrink-0 self-center">
-                      {hasPhone ? (
-                        <>
-                          <a
-                            href={`tel:${c.phone!.replace(/\D/g, '')}`}
-                            className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-white sm:hover:bg-slate-100 rounded-full transition-all active:scale-[0.95]"
-                            title={`Call ${c.role}`}
-                          >
-                            <Phone size={14} />
-                          </a>
-                          <a
-                            href={`sms:${c.phone!.replace(/\D/g, '')}`}
-                            className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-white sm:hover:bg-slate-100 rounded-full transition-all active:scale-[0.95]"
-                            title={`Text ${c.role}`}
-                          >
-                            <MessageSquare size={14} />
-                          </a>
-                        </>
-                      ) : null}
-
-                      {hasEmail ? (
-                        <a
-                          href={`mailto:${c.email}`}
-                          className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-white sm:hover:bg-slate-100 rounded-full transition-all active:scale-[0.95]"
-                          title={`Email ${c.role}`}
-                        >
-                          <Mail size={14} />
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </section>
 
