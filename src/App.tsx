@@ -18,6 +18,7 @@ import { AuthModal } from './components/modals/AuthModal';
 import { ClientUpdatesModal } from './components/modals/ClientUpdatesModal';
 import { MilestonesContingenciesModal } from './components/modals/MilestonesContingenciesModal';
 import { GoalsModal } from './components/modals/GoalsModal';
+import { ContactsModal } from './components/modals/ContactsModal';
 
 import { useEscrows } from './hooks/useEscrows';
 import { Escrow } from './types';
@@ -39,6 +40,7 @@ function App() {
   const [detailEscrow, setDetailEscrow] = useState<Escrow | null>(null);
   const [clientUpdateEscrow, setClientUpdateEscrow] = useState<Escrow | null>(null);
   const [updateTasksEscrow, setUpdateTasksEscrow] = useState<Escrow | null>(null);
+  const [contactsEscrow, setContactsEscrow] = useState<Escrow | null>(null);
   const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string; wishType?: 'anniversary' | 'birthday' } | null>(null);
   const [isGoalsOpen, setIsGoalsOpen] = useState(false);
 
@@ -155,6 +157,7 @@ function App() {
                       onViewDetails={() => setDetailEscrow(escrow)}
                       onSendUpdate={() => setClientUpdateEscrow(escrow)}
                       onUpdateTasks={() => setUpdateTasksEscrow(escrow)}
+                      onOpenContacts={() => setContactsEscrow(escrow)}
                     />
 
                   ))}
@@ -195,6 +198,7 @@ function App() {
                   } 
                   onSelectEscrow={(escrow) => setDetailEscrow(escrow)} 
                   onDeleteEscrow={(id) => setConfirmDeleteId(id)}
+                  onOpenContacts={(escrow) => setContactsEscrow(escrow)}
                   summaryFilter={summaryFilter}
                   onFilterChange={setSummaryFilter}
                 />
@@ -247,6 +251,14 @@ function App() {
           onToggleTask={toggleTask}
           onUpdateTasks={(id, tasks) => editEscrow(id, { tasks })}
           onUpdateEscrow={(id, data) => editEscrow(id, data)}
+          onOpenContacts={() => setContactsEscrow(detailEscrow)}
+        />
+      )}
+
+      {contactsEscrow && (
+        <ContactsModal 
+          escrow={escrows.find(e => e.id === contactsEscrow.id) || contactsEscrow} 
+          onClose={() => setContactsEscrow(null)} 
         />
       )}
 

@@ -108,6 +108,35 @@ export const DEFAULT_CONTINGENCY_DAYS: Record<string, number> = {
   'L9': 7,
 };
 
+export function adjustWeekendToMonday(date: Date): Date {
+  const day = date.getDay(); // 0 = Sunday, 6 = Saturday
+  if (day === 6) {
+    return addDays(date, 2); // Saturday -> Monday
+  } else if (day === 0) {
+    return addDays(date, 1); // Sunday -> Monday
+  }
+  return date;
+}
+
+export function getContingencyDueDate(escrow: Escrow, taskKey: string): Date | null {
+  const days = escrow.contingencyDays?.[taskKey] ?? DEFAULT_CONTINGENCY_DAYS[taskKey] ?? 7;
+  const startDateStr = escrow.contingencyStartDate || escrow.acceptanceDate || escrow.lastUpdated || escrow.coeDate;
+  if (!startDateStr) {
+    return null;
+  }
+
+  try {
+    const startDate = parseISO(startDateStr);
+    if (isNaN(startDate.getTime())) {
+      return null;
+    }
+    const initialDeadline = addDays(startDate, days);
+    return adjustWeekendToMonday(initialDeadline);
+  } catch (e) {
+    return null;
+  }
+}
+
 export function isContingencyUrgent(escrow: Escrow, taskKey: string): boolean {
   if (escrow.status !== 'Open') return false;
   if (escrow.tasks[taskKey]) return false; // Already done
@@ -119,20 +148,10 @@ export function isContingencyUrgent(escrow: Escrow, taskKey: string): boolean {
 }
 
 export function getContingencyDaysLeft(escrow: Escrow, taskKey: string): number | null {
-  const days = escrow.contingencyDays?.[taskKey] ?? DEFAULT_CONTINGENCY_DAYS[taskKey] ?? 7;
-  const startDateStr = escrow.contingencyStartDate || escrow.acceptanceDate || escrow.lastUpdated || escrow.coeDate;
-  if (!startDateStr) {
+  const dueDate = getContingencyDueDate(escrow, taskKey);
+  if (!dueDate) {
+    const days = escrow.contingencyDays?.[taskKey] ?? DEFAULT_CONTINGENCY_DAYS[taskKey] ?? 7;
     return days;
   }
-
-  try {
-    const startDate = parseISO(startDateStr);
-    if (isNaN(startDate.getTime())) {
-      return days;
-    }
-    const deadline = addDays(startDate, days);
-    return differenceInCalendarDays(deadline, new Date());
-  } catch (e) {
-    return days;
-  }
+  return differenceInCalendarDays(dueDate, new Date());
 }

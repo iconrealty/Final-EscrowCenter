@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Escrow, CONTINGENCIES, getContingencyDaysLeft } from '../../types';
-import { X, Pencil, Trash2, MessageSquare, Mail, Phone, ExternalLink } from 'lucide-react';
+import { X, Pencil, Trash2, MessageSquare, Mail, Phone, ExternalLink, Users } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
@@ -14,7 +14,8 @@ export function DetailModal({
   onDelete,
   onToggleTask,
   onUpdateTasks,
-  onUpdateEscrow
+  onUpdateEscrow,
+  onOpenContacts
 }: { 
   escrow: Escrow; 
   onClose: () => void; 
@@ -23,6 +24,7 @@ export function DetailModal({
   onToggleTask: (id: string, key: string) => void;
   onUpdateTasks: (id: string, tasks: Record<string, boolean>) => void;
   onUpdateEscrow: (id: string, data: Partial<Escrow>) => void;
+  onOpenContacts?: () => void;
 }) {
   const { user } = useAuth();
 
@@ -125,6 +127,16 @@ export function DetailModal({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {onOpenContacts && (
+              <button
+                onClick={onOpenContacts}
+                className="px-3 py-1.5 text-xs font-bold text-[#1B3A5C] bg-blue-50 hover:bg-blue-100 rounded-full transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 border border-blue-200/80 shadow-2xs"
+                title="View Transaction Contacts"
+              >
+                <Users size={14} />
+                <span className="hidden sm:inline">Contacts</span>
+              </button>
+            )}
             <button 
               onClick={() => {
                 const url = generateCognitoUrl(escrow, user);

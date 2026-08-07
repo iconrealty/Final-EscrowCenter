@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Escrow, ALL_TASKS } from '../../types';
-import { Trash2, Calendar, User, CheckCircle2, ChevronRight, ChevronDown } from 'lucide-react';
+import { Trash2, Calendar, User, CheckCircle2, ChevronRight, ChevronDown, Users } from 'lucide-react';
 import { format, parseISO, differenceInCalendarDays } from 'date-fns';
 import { StatusBadge } from '../shared/StatusBadge';
 
@@ -8,6 +8,7 @@ interface ChecklistTableProps {
   escrows: Escrow[];
   onSelectEscrow: (escrow: Escrow) => void;
   onDeleteEscrow: (id: string) => void;
+  onOpenContacts?: (escrow: Escrow) => void;
   summaryFilter?: 'All' | 'Open' | 'Closed';
   onFilterChange?: (filter: 'All' | 'Open' | 'Closed') => void;
 }
@@ -16,6 +17,7 @@ export function ChecklistTable({
   escrows, 
   onSelectEscrow, 
   onDeleteEscrow,
+  onOpenContacts,
   summaryFilter,
   onFilterChange 
 }: ChecklistTableProps) {
@@ -199,13 +201,27 @@ export function ChecklistTable({
                 </div>
 
                 {/* Client column */}
-                <div className="col-span-2 mt-2 md:mt-0 flex items-center gap-1.5 text-xs text-[#334155] min-w-0">
+                <div className="col-span-2 mt-2 md:mt-0 flex items-center gap-1.5 text-xs text-[#334155] min-w-0 flex-wrap">
                   <User size={13} className="text-[#86868b] shrink-0 md:hidden" />
                   <span className="truncate font-medium md:font-semibold">
                     {escrow.clientFirstName || escrow.clientLastName
                       ? `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim()
                       : 'Unknown Client'}
                   </span>
+                  {onOpenContacts && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenContacts(escrow);
+                      }}
+                      className="text-[10px] font-bold text-[#1B3A5C] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200/80 inline-flex items-center gap-0.5 cursor-pointer transition-colors shadow-2xs active:scale-95 shrink-0"
+                      title="View Contacts"
+                    >
+                      <Users size={10} />
+                      <span>Contacts</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* COE Date Column */}

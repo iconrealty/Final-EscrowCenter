@@ -1,5 +1,5 @@
 import React from 'react';
-import { Escrow, MILESTONES, CONTINGENCIES, isContingencyUrgent, getContingencyDaysLeft, ALL_TASKS } from '../../types';
+import { Escrow, MILESTONES, CONTINGENCIES, isContingencyUrgent, getContingencyDaysLeft, getContingencyDueDate, ALL_TASKS } from '../../types';
 import { X, Check } from 'lucide-react';
 import { MilestoneChip } from '../escrows/MilestoneChip';
 import { ContingencyChip } from '../escrows/ContingencyChip';
@@ -156,6 +156,7 @@ export function MilestonesContingenciesModal({
                   isDone={escrow.tasks[c.key]}
                   isOverdue={isContingencyUrgent(escrow, c.key)}
                   daysLeft={getContingencyDaysLeft(escrow, c.key)}
+                  dueDate={getContingencyDueDate(escrow, c.key)}
                   onClick={() => onToggleTask(escrow.id, c.key)}
                 />
               ))}

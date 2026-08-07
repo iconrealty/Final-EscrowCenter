@@ -3,7 +3,7 @@ import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Users } from 'lucide-react';
 
 export function EscrowCard({ 
   escrow, 
@@ -12,7 +12,8 @@ export function EscrowCard({
   onEdit,
   onViewDetails,
   onSendUpdate,
-  onUpdateTasks
+  onUpdateTasks,
+  onOpenContacts
 }: { 
   key?: string | number;
   escrow: Escrow; 
@@ -22,6 +23,7 @@ export function EscrowCard({
   onViewDetails: () => void;
   onSendUpdate: () => void;
   onUpdateTasks: () => void;
+  onOpenContacts?: () => void;
 }) {
   const daysToCoe = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
@@ -66,7 +68,19 @@ export function EscrowCard({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenContacts?.();
+            }}
+            className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 text-[#1B3A5C] border border-blue-200/80 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs active:scale-95"
+            title="View Contacts"
+          >
+            <Users size={11} />
+            <span>Contacts</span>
+          </button>
           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
             {escrow.leadSource || 'Zillow'}
           </span>
@@ -173,7 +187,7 @@ export function EscrowCard({
               <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
                 Next Step
               </span>
-              {nextMilestone ? (
+              {nextMilestone && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -183,17 +197,6 @@ export function EscrowCard({
                   className="text-[10px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
                 >
                   Update Tasks &rarr;
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUpdateTasks();
-                  }}
-                  className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 cursor-pointer hover:bg-emerald-100"
-                >
-                  0 Pending
                 </button>
               )}
             </div>
@@ -292,7 +295,7 @@ export function EscrowCard({
         </div>
 
         {/* Quick Access Buttons */}
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-3 gap-2">
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -310,6 +313,16 @@ export function EscrowCard({
             className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
           >
             <span>Tasks Update</span>
+          </button>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenContacts?.();
+            }}
+            className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center gap-1 transition-all active:scale-[0.98] cursor-pointer"
+          >
+            <Users size={13} />
+            <span>Contacts</span>
           </button>
         </div>
 

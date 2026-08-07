@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { format } from 'date-fns';
 
 export function ContingencyChip({ 
   taskKey,
@@ -8,7 +8,8 @@ export function ContingencyChip({
   isOverdue, 
   onClick,
   readOnly = false,
-  daysLeft = null
+  daysLeft = null,
+  dueDate = null
 }: { 
   key?: string | number;
   taskKey: string;
@@ -18,6 +19,7 @@ export function ContingencyChip({
   onClick?: () => void;
   readOnly?: boolean;
   daysLeft?: number | null;
+  dueDate?: Date | null;
 }) {
   let btnClasses = "flex items-center gap-2 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase border transition-all duration-200 select-none ";
   let dotClasses = "w-1.5 h-1.5 rounded-full ";
@@ -56,9 +58,11 @@ export function ContingencyChip({
     }
   }
 
+  const tooltipTitle = dueDate ? `Due: ${format(dueDate, 'EEE, MMM d, yyyy')}` : undefined;
+
   if (readOnly) {
     return (
-      <div className={btnClasses}>
+      <div className={btnClasses} title={tooltipTitle}>
         <span className={dotClasses}></span>
         {formattedLabel}
       </div>
@@ -66,7 +70,7 @@ export function ContingencyChip({
   }
 
   return (
-    <button onClick={onClick} className={`${btnClasses} cursor-pointer`}>
+    <button onClick={onClick} className={`${btnClasses} cursor-pointer`} title={tooltipTitle}>
       <span className={dotClasses}></span>
       {formattedLabel}
     </button>

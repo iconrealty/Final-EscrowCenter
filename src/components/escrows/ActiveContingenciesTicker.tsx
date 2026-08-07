@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { CONTINGENCIES, Escrow, getContingencyDaysLeft, isContingencyUrgent } from '../../types';
+import { CONTINGENCIES, Escrow, getContingencyDaysLeft, getContingencyDueDate, isContingencyUrgent } from '../../types';
 import { CheckCircle2 } from 'lucide-react';
+import { format } from 'date-fns';
 
 export function ActiveContingenciesTicker({
   escrow,
@@ -41,9 +42,6 @@ export function ActiveContingenciesTicker({
           <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
             Active Contingencies
           </span>
-          <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-            0 Pending
-          </span>
         </div>
         <div 
           onClick={(e) => {
@@ -69,6 +67,7 @@ export function ActiveContingenciesTicker({
 
   const currentItem = activeContingencies[currentIndex];
   const daysLeft = currentItem ? getContingencyDaysLeft(escrow, currentItem.key) : null;
+  const dueDate = currentItem ? getContingencyDueDate(escrow, currentItem.key) : null;
   const isUrgent = currentItem ? isContingencyUrgent(escrow, currentItem.key) : false;
 
   const renderDaysText = () => {
@@ -122,7 +121,7 @@ export function ActiveContingenciesTicker({
           onUpdateTasks?.();
         }}
         className={`flex items-center justify-between text-white border p-2.5 rounded-xl shadow-xs transition-all cursor-pointer group/step select-none ${boxBgClass}`}
-        title="Active contingency (cycles every 3s). Click to manage tasks."
+        title={dueDate ? `${currentItem?.label} - Due: ${format(dueDate, 'EEE, MMM d, yyyy')} (${daysLeft}d left). Click to manage tasks.` : 'Active contingency. Click to manage tasks.'}
       >
         <div key={animateKey} className="flex items-center gap-2 min-w-0 animate-fadeIn">
           <span className="w-2 h-2 rounded-full bg-white shrink-0 shadow-2xs animate-pulse" />
