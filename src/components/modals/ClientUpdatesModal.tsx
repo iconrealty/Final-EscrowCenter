@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Escrow } from '../../types';
 import { X, MessageSquare, Mail, Copy, Check, ChevronDown } from 'lucide-react';
-import { EmailRedirectModal } from './EmailRedirectModal';
 import { parseISO, format } from 'date-fns';
 import { motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
@@ -169,7 +168,6 @@ export function ClientUpdatesModal({
   const [editedText, setEditedText] = useState('');
   const [copied, setCopied] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [emailRedirectData, setEmailRedirectData] = useState<{ email: string; name?: string; subject?: string; body?: string } | null>(null);
 
   // States for Master Customization
   const [isEditingMaster, setIsEditingMaster] = useState(false);
@@ -446,36 +444,15 @@ export function ClientUpdatesModal({
                       <span>Text {isEscrowOfficerTemplate ? 'Escrow Officer' : 'Client'}</span>
                     </a>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!recipientEmail) return;
-                        const subject = getPopulatedSubject(selectedTemplate.subject);
-                        const pref = localStorage.getItem('preferredEmailService');
-                        if (pref === 'gmail') {
-                          window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(recipientEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(editedText)}`, '_blank', 'noopener,noreferrer');
-                        } else if (pref === 'outlook') {
-                          window.open(`https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(recipientEmail)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(editedText)}`, '_blank', 'noopener,noreferrer');
-                        } else if (pref === 'yahoo') {
-                          window.open(`https://compose.mail.yahoo.com/?to=${encodeURIComponent(recipientEmail)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(editedText)}`, '_blank', 'noopener,noreferrer');
-                        } else if (pref === 'mailto') {
-                          window.location.href = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(editedText)}`;
-                        } else {
-                          setEmailRedirectData({
-                            email: recipientEmail,
-                            name: recipientName,
-                            subject: subject,
-                            body: editedText
-                          });
-                        }
-                      }}
+                    <a
+                      href={`mailto:${recipientEmail || ''}?subject=${encodeURIComponent(getPopulatedSubject(selectedTemplate.subject))}&body=${encodeURIComponent(editedText)}`}
                       className={`px-4 py-3 sm:py-2 text-white rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 w-full sm:w-auto ${
                         recipientEmail ? 'bg-[#1B3A5C] hover:bg-[#11253C] cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
                       }`}
                     >
                       <Mail size={13} />
                       <span>Email {isEscrowOfficerTemplate ? 'Escrow Officer' : 'Client'}</span>
-                    </button>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -588,16 +565,6 @@ export function ClientUpdatesModal({
           )}
         </div>
       </motion.div>
-
-      {emailRedirectData && (
-        <EmailRedirectModal
-          email={emailRedirectData.email}
-          recipientName={emailRedirectData.name}
-          subject={emailRedirectData.subject}
-          body={emailRedirectData.body}
-          onClose={() => setEmailRedirectData(null)}
-        />
-      )}
     </div>
   );
 }
