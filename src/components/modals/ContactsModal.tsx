@@ -24,24 +24,71 @@ interface ContactItem {
 export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const handleCopy = (text: string, fieldId: string) => {
+  const copyToClipboard = async (text: string): Promise<boolean> => {
+    if (!text) return false;
+    // Normalize newlines to avoid platform-specific character corruptions
+    const normalizedText = text.replace(/\r\n/g, '\n').trim();
+
+    // Try standard navigator.clipboard API if available and secure
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(normalizedText);
+        return true;
+      } catch (err) {
+        console.warn('navigator.clipboard failed, attempting fallback:', err);
+      }
+    }
+
+    // Fallback for iOS Safari / Mobile webviews / Sandboxed iframe environments
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = normalizedText;
+      // Position off-screen without scrolling page
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.padding = '0';
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+      textArea.style.background = 'transparent';
+      textArea.style.fontSize = '16px'; // Prevent iOS zoom
+
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      textArea.setSelectionRange(0, 999999); // Essential for iOS Safari selection
+
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return successful;
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      return false;
+    }
+  };
+
+  const handleCopy = async (text: string, fieldId: string) => {
     if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedField(fieldId);
-    setTimeout(() => {
-      setCopiedField(null);
-    }, 2000);
+    const success = await copyToClipboard(text);
+    if (success) {
+      setCopiedField(fieldId);
+      setTimeout(() => {
+        setCopiedField(null);
+      }, 2000);
+    }
   };
 
   const getContactFormattedString = (contact: ContactItem) => {
     const lines = [
-      `Role: ${contact.role}`,
+      contact.role,
       `Name: ${contact.name}`,
       `Phone: ${contact.phone || 'N/A'}`,
       `Email: ${contact.email || 'N/A'}`
     ];
     if (contact.company) lines.push(contact.company);
-    if (contact.extraInfo) lines.push(contact.extraInfo);
     return lines.join('\n');
   };
 
