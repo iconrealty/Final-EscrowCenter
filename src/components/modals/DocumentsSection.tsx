@@ -25,56 +25,91 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
     fileInputRef.current?.click();
   };
 
-  const uploadFile = (file: File) => {
-    if (!user) return;
+  const uploadFiles = async (files: File[]) => {
+    if (!user || files.length === 0) return;
     
     setUploading(true);
     setProgress(0);
-    
-    const docId = generateSafeId();
-    const storageRef = ref(storage, `users/${user.uid}/escrows/${escrow.id}/documents/${docId}_${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setProgress(p);
-      },
-      (error) => {
-        console.error("Upload failed:", error);
-        setUploading(false);
-        setProgress(0);
-        alert("Failed to upload file. Please check your storage rules.");
-      },
-      async () => {
-        try {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          const newDoc: EscrowDocument = {
-            id: docId,
-            name: file.name,
-            url: downloadURL,
-            uploadedAt: new Date().toISOString(),
-            size: file.size,
-            type: file.type,
-          };
-          const existingDocs = escrow.documents || [];
-          onUpdate({ documents: [...existingDocs, newDoc] });
-        } catch (err) {
-           console.error("Error getting download URL", err);
-        } finally {
-          setUploading(false);
-          setProgress(0);
-          if (fileInputRef.current) fileInputRef.current.value = '';
-        }
+    const validFiles = Array.from(files);
+    const totalBytes = validFiles.reduce((acc, f) => acc + f.size, 0);
+    const bytesTransferredMap: Record<number, number> = {};
+
+    const updateCombinedProgress = () => {
+      if (totalBytes <= 0) {
+        setProgress(100);
+        return;
       }
-    );
+      const sumTransferred = Object.values(bytesTransferredMap).reduce((a, b) => a + b, 0);
+      const p = Math.min(100, (sumTransferred / totalBytes) * 100);
+      setProgress(p);
+    };
+
+    let hasError = false;
+
+    const uploadPromises = validFiles.map((file, index) => {
+      return new Promise<EscrowDocument | null>((resolve) => {
+        const docId = generateSafeId();
+        const storageRef = ref(storage, `users/${user.uid}/escrows/${escrow.id}/documents/${docId}_${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        bytesTransferredMap[index] = 0;
+
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            bytesTransferredMap[index] = snapshot.bytesTransferred;
+            updateCombinedProgress();
+          },
+          (error) => {
+            console.error(`Upload failed for ${file.name}:`, error);
+            hasError = true;
+            resolve(null);
+          },
+          async () => {
+            try {
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              const doc: EscrowDocument = {
+                id: docId,
+                name: file.name,
+                url: downloadURL,
+                uploadedAt: new Date().toISOString(),
+                size: file.size,
+                type: file.type,
+              };
+              bytesTransferredMap[index] = file.size;
+              updateCombinedProgress();
+              resolve(doc);
+            } catch (err) {
+              console.error(`Error getting download URL for ${file.name}:`, err);
+              resolve(null);
+            }
+          }
+        );
+      });
+    });
+
+    const results = await Promise.all(uploadPromises);
+    const successfulDocs = results.filter((d): d is EscrowDocument => d !== null);
+
+    if (successfulDocs.length > 0) {
+      const existingDocs = escrow.documents || [];
+      onUpdate({ documents: [...existingDocs, ...successfulDocs] });
+    }
+
+    if (hasError) {
+      alert("One or more files failed to upload. Please check your storage rules or connection.");
+    }
+
+    setUploading(false);
+    setProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    uploadFile(file);
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0 || !user) return;
+    uploadFiles(files);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -97,9 +132,9 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
 
     if (!user) return;
 
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      uploadFile(file);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) {
+      uploadFiles(files);
     }
   };
 
@@ -157,6 +192,7 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
           onChange={handleFileChange}
           className="hidden"
           accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+          multiple
         />
         <button
           onClick={handleUploadClick}
@@ -166,7 +202,7 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
               ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
               : 'text-[#1B3A5C] bg-[#1B3A5C]/10 hover:bg-[#1B3A5C]/20 active:scale-95'
           }`}
-          title={!user ? "Login required to upload" : "Upload Document"}
+          title={!user ? "Login required to upload" : "Upload Documents"}
         >
           {uploading ? (
             <>
@@ -176,7 +212,7 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
           ) : (
             <>
               <Upload size={14} />
-              <span>Upload File</span>
+              <span>Upload Files</span>
             </>
           )}
         </button>
@@ -206,10 +242,10 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
         </div>
         <p className="text-xs font-semibold text-[#1B3A5C]">
           {isDragging 
-            ? "Release to upload document" 
+            ? "Release to upload files" 
             : uploading 
             ? `Uploading... ${Math.round(progress)}%` 
-            : "Drag & drop PDF / docs here or click to browse"}
+            : "Drag & drop multiple files here or click to browse"}
         </p>
         <p className="text-[10px] text-[#86868b] mt-0.5">
           Supports PDF, Word, PNG, JPG (up to 25MB)

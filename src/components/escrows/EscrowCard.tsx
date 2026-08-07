@@ -69,18 +69,6 @@ export function EscrowCard({
           )}
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenContacts?.();
-            }}
-            className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 text-[#1B3A5C] border border-blue-200/80 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs active:scale-95"
-            title="View Contacts"
-          >
-            <Users size={11} />
-            <span>Contacts</span>
-          </button>
           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
             {escrow.leadSource || 'Zillow'}
           </span>
