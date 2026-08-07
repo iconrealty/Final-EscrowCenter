@@ -33,6 +33,28 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
     }, 2000);
   };
 
+  const getContactFormattedString = (contact: ContactItem) => {
+    const lines = [
+      `Role: ${contact.role}`,
+      `Name: ${contact.name}`,
+      `Phone: ${contact.phone || 'N/A'}`,
+      `Email: ${contact.email || 'N/A'}`
+    ];
+    if (contact.company) lines.push(contact.company);
+    if (contact.extraInfo) lines.push(contact.extraInfo);
+    return lines.join('\n');
+  };
+
+  const handleCopyContact = (contact: ContactItem) => {
+    const text = getContactFormattedString(contact);
+    handleCopy(text, `${contact.id}-full`);
+  };
+
+  const handleCopyAllContacts = () => {
+    const allText = contactsList.map(c => getContactFormattedString(c)).join('\n\n---\n\n');
+    handleCopy(allText, 'all-contacts');
+  };
+
   const hasClient2 = !!(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim());
 
   const contactsList: ContactItem[] = [
@@ -130,13 +152,33 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
               </h2>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-full transition-all cursor-pointer shrink-0 ml-2"
-            title="Close"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0 ml-2">
+            <button
+              onClick={handleCopyAllContacts}
+              className="px-3 py-1.5 text-xs font-bold text-[#1B3A5C] bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+              title="Copy Name, Phone & Email for all contacts"
+            >
+              {copiedField === 'all-contacts' ? (
+                <>
+                  <Check size={13} className="text-emerald-600" />
+                  <span className="text-emerald-700">All Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={13} />
+                  <span className="hidden sm:inline">Copy All Contacts</span>
+                  <span className="sm:hidden">Copy All</span>
+                </>
+              )}
+            </button>
+            <button 
+              onClick={onClose} 
+              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-full transition-all cursor-pointer"
+              title="Close"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}
@@ -261,6 +303,26 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
                         <span>No email provided</span>
                       </div>
                     )}
+
+                    {/* Copy Contact Info Button (Name, Phone, Email) */}
+                    <button
+                      type="button"
+                      onClick={() => handleCopyContact(contact)}
+                      className="w-full mt-1.5 py-1.5 px-3 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-[#1B3A5C] border border-slate-200/80 hover:border-blue-200/90 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                      title="Copy Name, Phone and Email for this contact"
+                    >
+                      {copiedField === `${contact.id}-full` ? (
+                        <>
+                          <Check size={13} className="text-emerald-600" />
+                          <span className="text-emerald-700">Contact Info Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={13} />
+                          <span>Copy Contact (Name, Phone, Email)</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               );
