@@ -39,11 +39,15 @@ export const CSV_HEADERS = [
 ];
 
 function parseDateToIso(dateStr: string): string {
-  if (!dateStr) return new Date().toISOString().split('T')[0];
+  if (!dateStr || !dateStr.trim()) return '';
   const trimmed = dateStr.trim();
   // If YYYY-MM-DD or YYYY/MM/DD
   if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(trimmed)) {
-    return trimmed.replace(/\//g, '-');
+    const parts = trimmed.split(/[-/]/);
+    const year = parts[0];
+    const month = parts[1].padStart(2, '0');
+    const day = parts[2].padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
   // If MM/DD/YYYY or MM-DD-YYYY
   if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(trimmed)) {
@@ -60,7 +64,7 @@ function parseDateToIso(dateStr: string): string {
       return d.toISOString().split('T')[0];
     }
   } catch (e) {}
-  return new Date().toISOString().split('T')[0];
+  return '';
 }
 
 export function generateCsvTemplate(): string {
@@ -403,12 +407,12 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       clientLastName,
       clientPhone: getVal(['client phone']),
       clientEmail: getVal(['client email']),
-      clientBirthday: getVal(['client birthday', 'client birthdate', 'birthday', 'dob', 'client dob']),
+      clientBirthday: parseDateToIso(getVal(['client birthday', 'client birthdate', 'birthday', 'dob', 'client dob'])),
       client2FirstName: getVal(['client 2 first name', 'client2 first name']),
       client2LastName: getVal(['client 2 last name', 'client2 last name']),
       client2Phone: getVal(['client 2 phone', 'client2 phone']),
       client2Email: getVal(['client 2 email', 'client2 email']),
-      client2Birthday: getVal(['client 2 birthday', 'client 2 birthdate', 'client 2 dob', 'client2 birthday', 'client2 birthdate', 'client2 dob']),
+      client2Birthday: parseDateToIso(getVal(['client 2 birthday', 'client 2 birthdate', 'client 2 dob', 'client2 birthday', 'client2 birthdate', 'client2 dob'])),
       agentName: getVal(['agent name']),
       agentEmail: getVal(['agent email']),
       agentPhone: getVal(['agent phone']),
@@ -422,8 +426,8 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       price: Number(String(getVal(['sale price', 'price', 'amount']) || '').replace(/[^0-9.]/g, '')) || 0,
       commissionPercent: getVal(['commission percent', 'commission %', 'commission_percent']) ? Number(String(getVal(['commission percent', 'commission %', 'commission_percent'])).replace(/[^0-9.]/g, '')) : undefined,
       netCommission: Number(String(getVal(['net commission', 'commission']) || '').replace(/[^0-9.]/g, '')) || 0,
-      acceptanceDate: rawAcceptance ? parseDateToIso(rawAcceptance) : new Date().toISOString().split('T')[0],
-      coeDate: rawCoe ? parseDateToIso(rawCoe) : new Date().toISOString().split('T')[0],
+      acceptanceDate: (rawAcceptance && parseDateToIso(rawAcceptance)) || new Date().toISOString().split('T')[0],
+      coeDate: (rawCoe && parseDateToIso(rawCoe)) || new Date().toISOString().split('T')[0],
       status: parsedStatus,
       representation,
       leadSource,
@@ -574,8 +578,8 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     clientLastName: clientLastName || '',
     clientPhone: getVal(['mobile phone number', 'client phone', 'phone', 'contact phone']),
     clientEmail: getVal(['contact email', 'client email', 'email']),
-    clientBirthday: getVal(['client birthday', 'client birthdate', 'client dob', 'birthday', 'dob']),
-    client2Birthday: getVal(['client 2 birthday', 'client 2 birthdate', 'client 2 dob', 'client2 birthday', 'client2 birthdate', 'client2 dob']),
+    clientBirthday: parseDateToIso(getVal(['client birthday', 'client birthdate', 'client dob', 'birthday', 'dob'])),
+    client2Birthday: parseDateToIso(getVal(['client 2 birthday', 'client 2 birthdate', 'client 2 dob', 'client2 birthday', 'client2 birthdate', 'client2 dob'])),
     agentName: agentName || '',
     agentEmail: getVal(['agent email', 'agent_email']),
     agentPhone: getVal(['agent phone', 'agent_phone']),
