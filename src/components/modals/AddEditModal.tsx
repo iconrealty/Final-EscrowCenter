@@ -118,41 +118,86 @@ export function AddEditModal({
         });
       }
 
+      const todayStr = new Date().toISOString().split('T')[0];
+      const cleanBday1 = (escrow.clientBirthday && escrow.clientBirthday !== escrow.acceptanceDate && escrow.clientBirthday !== todayStr) ? escrow.clientBirthday : '';
+      const cleanBday2 = (escrow.client2Birthday && escrow.client2Birthday !== escrow.acceptanceDate && escrow.client2Birthday !== todayStr) ? escrow.client2Birthday : '';
+
       setFormData({
         escrowNumber: escrow.escrowNumber || '',
         escrowCompany: escrow.escrowCompany || '',
-        address: escrow.address,
+        address: escrow.address || '',
         clientFirstName: escrow.clientFirstName || '',
         clientLastName: escrow.clientLastName || '',
         clientPhone: escrow.clientPhone || '',
         clientEmail: escrow.clientEmail || '',
-        clientBirthday: escrow.clientBirthday || '',
+        clientBirthday: cleanBday1,
         client2FirstName: escrow.client2FirstName || '',
         client2LastName: escrow.client2LastName || '',
         client2Phone: escrow.client2Phone || '',
         client2Email: escrow.client2Email || '',
-        client2Birthday: escrow.client2Birthday || '',
-        collaborator: escrow.collaborator,
-        escrowOfficer: escrow.escrowOfficer,
+        client2Birthday: cleanBday2,
+        collaborator: escrow.collaborator || '',
+        escrowOfficer: escrow.escrowOfficer || '',
         escrowPhone: escrow.escrowPhone || '',
         escrowEmail: escrow.escrowEmail || '',
-        agentName: escrow.agentName,
+        agentName: escrow.agentName || '',
         agentPhone: escrow.agentPhone || '',
         agentEmail: escrow.agentEmail || '',
         lenderName: escrow.lenderName || '',
         lenderPhone: escrow.lenderPhone || '',
         lenderEmail: escrow.lenderEmail || '',
-        price: escrow.price.toString(),
-        netCommission: escrow.netCommission.toString(),
+        price: escrow.price ? escrow.price.toString() : '',
+        netCommission: escrow.netCommission ? escrow.netCommission.toString() : '',
         commissionPercent: escrow.commissionPercent?.toString() || '',
-        acceptanceDate: escrow.acceptanceDate || new Date().toISOString().split('T')[0],
-        contingencyStartDate: escrow.contingencyStartDate || escrow.acceptanceDate || new Date().toISOString().split('T')[0],
-        coeDate: escrow.coeDate,
-        status: escrow.status,
+        acceptanceDate: escrow.acceptanceDate || todayStr,
+        contingencyStartDate: escrow.contingencyStartDate || escrow.acceptanceDate || todayStr,
+        coeDate: escrow.coeDate || format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
+        status: escrow.status || 'Open',
         representation: escrow.representation || 'Buyer',
         leadSource: (escrow.leadSource as any) || 'Zillow',
-        notes: escrow.notes,
+        notes: escrow.notes || '',
         contingencyDays: stringifiedDays
+      });
+    } else {
+      const today = new Date();
+      const oneMonthLater = addMonths(today, 1);
+      setFormData({
+        escrowNumber: '',
+        escrowCompany: '',
+        address: '',
+        clientFirstName: '',
+        clientLastName: '',
+        clientPhone: '',
+        clientEmail: '',
+        clientBirthday: '',
+        client2FirstName: '',
+        client2LastName: '',
+        client2Phone: '',
+        client2Email: '',
+        client2Birthday: '',
+        collaborator: '',
+        escrowOfficer: '',
+        escrowPhone: '',
+        escrowEmail: '',
+        agentName: '',
+        agentPhone: '',
+        agentEmail: '',
+        lenderName: '',
+        lenderPhone: '',
+        lenderEmail: '',
+        price: '',
+        netCommission: '',
+        commissionPercent: '',
+        acceptanceDate: format(today, 'yyyy-MM-dd'),
+        coeDate: format(oneMonthLater, 'yyyy-MM-dd'),
+        contingencyStartDate: format(today, 'yyyy-MM-dd'),
+        status: 'Open',
+        representation: 'Buyer',
+        leadSource: 'Zillow',
+        notes: '',
+        contingencyDays: {
+          'L1': '14', 'L2': '10', 'L3': '7', 'L4': '7', 'L5': '7', 'L6': '7', 'L7': '7', 'L8': '7', 'L9': '7'
+        }
       });
     }
   }, [escrow]);
