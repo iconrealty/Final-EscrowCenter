@@ -215,8 +215,16 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
         });
       };
 
-      processBday(escrow.clientBirthday, false);
-      processBday(escrow.client2Birthday, true);
+      const sanitizeBday = (bday?: string, acceptance?: string, coe?: string) => {
+        if (!bday || !bday.trim()) return undefined;
+        const str = bday.trim();
+        if (acceptance && str === acceptance.trim()) return undefined;
+        if (coe && str === coe.trim()) return undefined;
+        return str;
+      };
+
+      processBday(sanitizeBday(escrow.clientBirthday, escrow.acceptanceDate, escrow.coeDate), false);
+      processBday(sanitizeBday(escrow.client2Birthday, escrow.acceptanceDate, escrow.coeDate), true);
     });
 
     return list;

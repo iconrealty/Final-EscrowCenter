@@ -103,6 +103,17 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
 
   const hasClient2 = !!(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim());
 
+  const sanitizeBday = (bday?: string, acceptance?: string, coe?: string) => {
+    if (!bday || !bday.trim()) return undefined;
+    const str = bday.trim();
+    if (acceptance && str === acceptance.trim()) return undefined;
+    if (coe && str === coe.trim()) return undefined;
+    return str;
+  };
+
+  const bday1Clean = sanitizeBday(escrow.clientBirthday, escrow.acceptanceDate, escrow.coeDate);
+  const bday2Clean = sanitizeBday(escrow.client2Birthday, escrow.acceptanceDate, escrow.coeDate);
+
   const contactsList: ContactItem[] = [
     {
       id: 'client1',
@@ -112,7 +123,7 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       name: `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || 'Not specified',
       phone: escrow.clientPhone,
       email: escrow.clientEmail,
-      extraInfo: escrow.clientBirthday ? `Birthday: ${escrow.clientBirthday}` : undefined,
+      extraInfo: bday1Clean ? `Birthday: ${bday1Clean}` : undefined,
     },
   ];
 
@@ -125,7 +136,7 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       name: `${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`.trim() || 'Not specified',
       phone: escrow.client2Phone,
       email: escrow.client2Email,
-      extraInfo: escrow.client2Birthday ? `Birthday: ${escrow.client2Birthday}` : undefined,
+      extraInfo: bday2Clean ? `Birthday: ${bday2Clean}` : undefined,
     });
   }
 

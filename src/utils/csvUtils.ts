@@ -426,8 +426,8 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       price: Number(String(getVal(['sale price', 'price', 'amount']) || '').replace(/[^0-9.]/g, '')) || 0,
       commissionPercent: getVal(['commission percent', 'commission %', 'commission_percent']) ? Number(String(getVal(['commission percent', 'commission %', 'commission_percent'])).replace(/[^0-9.]/g, '')) : undefined,
       netCommission: Number(String(getVal(['net commission', 'commission']) || '').replace(/[^0-9.]/g, '')) || 0,
-      acceptanceDate: (rawAcceptance && parseDateToIso(rawAcceptance)) || new Date().toISOString().split('T')[0],
-      coeDate: (rawCoe && parseDateToIso(rawCoe)) || new Date().toISOString().split('T')[0],
+      acceptanceDate: (rawAcceptance && parseDateToIso(rawAcceptance)) || '',
+      coeDate: (rawCoe && parseDateToIso(rawCoe)) || '',
       status: parsedStatus,
       representation,
       leadSource,
@@ -513,11 +513,11 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
 
   const acceptanceDate = rawAcceptance && rawAcceptance.toLowerCase() !== 'none' && rawAcceptance.toLowerCase() !== '--'
     ? parseDateToIso(rawAcceptance) 
-    : new Date().toISOString().split('T')[0];
+    : '';
     
   const coeDate = rawCoe && rawCoe.toLowerCase() !== 'none' && rawCoe.toLowerCase() !== '--'
     ? parseDateToIso(rawCoe) 
-    : new Date().toISOString().split('T')[0];
+    : '';
 
   // Price
   const rawPrice = getVal(['transaction amount', 'sale price', 'price', 'amount', 'purchase price']);

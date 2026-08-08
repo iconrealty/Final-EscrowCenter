@@ -14,9 +14,6 @@ export function AddEditModal({
   onSave: (data: any) => void;
 }) {
   const [formData, setFormData] = useState(() => {
-    const today = new Date();
-    const oneMonthLater = addMonths(today, 1);
-    
     return {
       escrowNumber: '',
       escrowCompany: '',
@@ -44,9 +41,9 @@ export function AddEditModal({
       price: '',
       netCommission: '',
       commissionPercent: '',
-      acceptanceDate: format(today, 'yyyy-MM-dd'),
-      coeDate: format(oneMonthLater, 'yyyy-MM-dd'),
-      contingencyStartDate: format(today, 'yyyy-MM-dd'),
+      acceptanceDate: '',
+      coeDate: '',
+      contingencyStartDate: '',
       status: 'Open',
       representation: 'Buyer' as 'Buyer' | 'Seller' | 'Dual',
       leadSource: 'Zillow' as 'Zillow' | 'Self' | 'Other',
@@ -99,7 +96,7 @@ export function AddEditModal({
       netCommission: parsed.netCommission ? parsed.netCommission.toString() : prev.netCommission,
       commissionPercent: parsed.commissionPercent ? parsed.commissionPercent.toString() : prev.commissionPercent,
       acceptanceDate: parsed.acceptanceDate || prev.acceptanceDate,
-      contingencyStartDate: parsed.acceptanceDate || prev.acceptanceDate,
+      contingencyStartDate: parsed.contingencyStartDate || parsed.acceptanceDate || prev.contingencyStartDate,
       coeDate: parsed.coeDate || prev.coeDate,
       status: parsed.status || prev.status,
       notes: parsed.notes ? (prev.notes ? `${prev.notes}\n\n${parsed.notes}` : parsed.notes) : prev.notes,
@@ -118,9 +115,17 @@ export function AddEditModal({
         });
       }
 
-      const todayStr = new Date().toISOString().split('T')[0];
-      const cleanBday1 = (escrow.clientBirthday && escrow.clientBirthday !== escrow.acceptanceDate && escrow.clientBirthday !== todayStr) ? escrow.clientBirthday : '';
-      const cleanBday2 = (escrow.client2Birthday && escrow.client2Birthday !== escrow.acceptanceDate && escrow.client2Birthday !== todayStr) ? escrow.client2Birthday : '';
+      const sanitizeBday = (bday?: string, acceptance?: string, coe?: string) => {
+        if (!bday || typeof bday !== 'string') return '';
+        const str = bday.trim();
+        if (!str) return '';
+        if (acceptance && typeof acceptance === 'string' && str === acceptance.trim()) return '';
+        if (coe && typeof coe === 'string' && str === coe.trim()) return '';
+        return str;
+      };
+
+      const cleanBday1 = sanitizeBday(escrow.clientBirthday, escrow.acceptanceDate, escrow.coeDate);
+      const cleanBday2 = sanitizeBday(escrow.client2Birthday, escrow.acceptanceDate, escrow.coeDate);
 
       setFormData({
         escrowNumber: escrow.escrowNumber || '',
@@ -149,9 +154,9 @@ export function AddEditModal({
         price: escrow.price ? escrow.price.toString() : '',
         netCommission: escrow.netCommission ? escrow.netCommission.toString() : '',
         commissionPercent: escrow.commissionPercent?.toString() || '',
-        acceptanceDate: escrow.acceptanceDate || todayStr,
-        contingencyStartDate: escrow.contingencyStartDate || escrow.acceptanceDate || todayStr,
-        coeDate: escrow.coeDate || format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
+        acceptanceDate: escrow.acceptanceDate || '',
+        contingencyStartDate: escrow.contingencyStartDate || '',
+        coeDate: escrow.coeDate || '',
         status: escrow.status || 'Open',
         representation: escrow.representation || 'Buyer',
         leadSource: (escrow.leadSource as any) || 'Zillow',
@@ -159,8 +164,6 @@ export function AddEditModal({
         contingencyDays: stringifiedDays
       });
     } else {
-      const today = new Date();
-      const oneMonthLater = addMonths(today, 1);
       setFormData({
         escrowNumber: '',
         escrowCompany: '',
@@ -188,9 +191,9 @@ export function AddEditModal({
         price: '',
         netCommission: '',
         commissionPercent: '',
-        acceptanceDate: format(today, 'yyyy-MM-dd'),
-        coeDate: format(oneMonthLater, 'yyyy-MM-dd'),
-        contingencyStartDate: format(today, 'yyyy-MM-dd'),
+        acceptanceDate: '',
+        coeDate: '',
+        contingencyStartDate: '',
         status: 'Open',
         representation: 'Buyer',
         leadSource: 'Zillow',
@@ -222,28 +225,10 @@ export function AddEditModal({
   };
 
   const handleAcceptanceDateChange = (val: string) => {
-    setFormData(prev => {
-      const newAcceptance = val;
-      let newCoe = prev.coeDate;
-      
-      try {
-        if (newAcceptance) {
-          const date = new Date(newAcceptance + 'T00:00:00');
-          if (!isNaN(date.getTime())) {
-            newCoe = format(addMonths(date, 1), 'yyyy-MM-dd');
-          }
-        }
-      } catch (e) {
-        console.error("Failed to calculate COE date", e);
-      }
-
-      return {
-        ...prev,
-        acceptanceDate: newAcceptance,
-        contingencyStartDate: prev.contingencyStartDate === prev.acceptanceDate ? newAcceptance : prev.contingencyStartDate,
-        coeDate: newCoe
-      };
-    });
+    setFormData(prev => ({
+      ...prev,
+      acceptanceDate: val,
+    }));
   };
 
   const handleDayChange = (key: string, value: string) => {
@@ -351,13 +336,13 @@ export function AddEditModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">Acceptance Date *</label>
-              <input required type="date" value={formData.acceptanceDate} onChange={e => handleAcceptanceDateChange(e.target.value)} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+              <label className="block text-xs font-bold text-[#334155] mb-1">Acceptance Date</label>
+              <input type="date" value={formData.acceptanceDate || ''} onChange={e => handleAcceptanceDateChange(e.target.value)} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">COE Date *</label>
-              <input required type="date" value={formData.coeDate} onChange={e => setFormData({...formData, coeDate: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+              <label className="block text-xs font-bold text-[#334155] mb-1">COE Date</label>
+              <input type="date" value={formData.coeDate || ''} onChange={e => setFormData({...formData, coeDate: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>
@@ -401,7 +386,7 @@ export function AddEditModal({
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client Birthday</label>
-              <input type="date" value={formData.clientBirthday} onChange={e => setFormData({...formData, clientBirthday: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+              <input type="date" value={formData.clientBirthday || ''} onChange={e => setFormData({...formData, clientBirthday: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2 mt-2">
@@ -430,7 +415,7 @@ export function AddEditModal({
 
             <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Client 2 Birthday</label>
-              <input type="date" value={formData.client2Birthday} onChange={e => setFormData({...formData, client2Birthday: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+              <input type="date" value={formData.client2Birthday || ''} onChange={e => setFormData({...formData, client2Birthday: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2 mt-2">
@@ -510,11 +495,11 @@ export function AddEditModal({
                 <label className="block text-xs font-bold text-[#334155] mb-1">Contingencies Start Date</label>
                 <input 
                   type="date" 
-                  value={formData.contingencyStartDate || formData.acceptanceDate} 
+                  value={formData.contingencyStartDate || ''} 
                   onChange={e => setFormData({...formData, contingencyStartDate: e.target.value})} 
                   className="w-full sm:w-1/2 border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" 
                 />
-                <p className="text-[10px] text-slate-500 mt-1">By default, this is the acceptance date.</p>
+                <p className="text-[10px] text-slate-500 mt-1">Leave empty or set to custom date. If empty, falls back to Acceptance Date when calculating milestones.</p>
               </div>
 
               <div className="flex flex-wrap gap-2">

@@ -146,8 +146,16 @@ export function MorningBriefingWidget({
         });
       };
 
-      checkBirthday(escrow.clientBirthday, false);
-      checkBirthday(escrow.client2Birthday, true);
+      const sanitizeBday = (bday?: string, acceptance?: string, coe?: string) => {
+        if (!bday || !bday.trim()) return undefined;
+        const str = bday.trim();
+        if (acceptance && str === acceptance.trim()) return undefined;
+        if (coe && str === coe.trim()) return undefined;
+        return str;
+      };
+
+      checkBirthday(sanitizeBday(escrow.clientBirthday, escrow.acceptanceDate, escrow.coeDate), false);
+      checkBirthday(sanitizeBday(escrow.client2Birthday, escrow.acceptanceDate, escrow.coeDate), true);
     });
 
     list.sort((a, b) => a.daysSinceEvent - b.daysSinceEvent);

@@ -53,6 +53,15 @@ export function useEscrows() {
           !e.id?.toString().startsWith('seed-')
         );
 
+        const sanitizeBday = (bday: any, acceptance?: any, coe?: any) => {
+          if (!bday || typeof bday !== 'string') return '';
+          const str = bday.trim();
+          if (!str) return '';
+          if (acceptance && typeof acceptance === 'string' && str === acceptance.trim()) return '';
+          if (coe && typeof coe === 'string' && str === coe.trim()) return '';
+          return str;
+        };
+
         parsed = parsed.map((e: any) => {
           if (!e.clientFirstName && !e.clientLastName) {
             const rawName = e.clientName || '';
@@ -65,6 +74,8 @@ export function useEscrows() {
               e.tasks.Insurance = e.tasks.INS;
             }
           }
+          e.clientBirthday = sanitizeBday(e.clientBirthday, e.acceptanceDate, e.coeDate);
+          e.client2Birthday = sanitizeBday(e.client2Birthday, e.acceptanceDate, e.coeDate);
           return e;
         });
 
@@ -93,9 +104,21 @@ export function useEscrows() {
         if (tasks.INS !== undefined && tasks.Insurance === undefined) {
           tasks.Insurance = tasks.INS;
         }
+
+        const sanitizeBday = (bday: any, acceptance?: any, coe?: any) => {
+          if (!bday || typeof bday !== 'string') return '';
+          const str = bday.trim();
+          if (!str) return '';
+          if (acceptance && typeof acceptance === 'string' && str === acceptance.trim()) return '';
+          if (coe && typeof coe === 'string' && str === coe.trim()) return '';
+          return str;
+        };
+
         loadedEscrows.push({
           id: doc.id,
           ...data,
+          clientBirthday: sanitizeBday(data.clientBirthday, data.acceptanceDate, data.coeDate),
+          client2Birthday: sanitizeBday(data.client2Birthday, data.acceptanceDate, data.coeDate),
           tasks
         } as Escrow);
       });
@@ -284,8 +307,8 @@ export function useEscrows() {
         lenderEmail: data.lenderEmail || '',
         price: data.price || 0,
         netCommission: data.netCommission || 0,
-        acceptanceDate: data.acceptanceDate || new Date().toISOString().split('T')[0],
-        coeDate: data.coeDate || new Date().toISOString(),
+        acceptanceDate: data.acceptanceDate || '',
+        coeDate: data.coeDate || '',
         notes: data.notes || '',
         status: data.status || 'Open',
         contingencyDays: data.contingencyDays || {
