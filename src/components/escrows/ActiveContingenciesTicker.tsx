@@ -71,11 +71,14 @@ export function ActiveContingenciesTicker({
   const isUrgent = currentItem ? isContingencyUrgent(escrow, currentItem.key) : false;
 
   const renderDaysText = () => {
-    if (daysLeft === null || daysLeft === undefined) return 'Active';
-    if (daysLeft < 0) return `${Math.abs(daysLeft)}d overdue`;
-    if (daysLeft === 0) return 'Due today';
-    if (daysLeft === 1) return '1d left';
-    return `${daysLeft}d left`;
+    const expDateStr = dueDate ? format(dueDate, 'MMM d') : null;
+    if (daysLeft === null || daysLeft === undefined) {
+      return expDateStr ? `Exp: ${expDateStr}` : 'Active';
+    }
+    if (daysLeft < 0) return expDateStr ? `${expDateStr} (${Math.abs(daysLeft)}d overdue)` : `${Math.abs(daysLeft)}d overdue`;
+    if (daysLeft === 0) return expDateStr ? `${expDateStr} (Due today)` : 'Due today';
+    if (daysLeft === 1) return expDateStr ? `${expDateStr} (1d left)` : '1d left';
+    return expDateStr ? `${expDateStr} (${daysLeft}d left)` : `${daysLeft}d left`;
   };
 
   // Color styles matching Next Step box formatting

@@ -41,21 +41,25 @@ export function ContingencyChip({
     dotClasses += "bg-[#e5e5ea]";
   }
 
+  const expDateStr = dueDate ? format(dueDate, 'MMM d') : null;
+
   let formattedLabel = `${taskKey} - ${label}`;
   if (isDone) {
-    formattedLabel = `DONE - ${taskKey} - ${label}`;
+    formattedLabel = `DONE - ${taskKey} - ${label}${expDateStr ? ` (Exp: ${expDateStr})` : ''}`;
   } else if (daysLeft !== null && daysLeft !== undefined) {
     if (daysLeft > 1) {
-      formattedLabel += ` (${daysLeft} days left)`;
+      formattedLabel += expDateStr ? ` (${expDateStr} • ${daysLeft}d left)` : ` (${daysLeft} days left)`;
     } else if (daysLeft === 1) {
-      formattedLabel += ` (1 day left)`;
+      formattedLabel += expDateStr ? ` (${expDateStr} • 1d left)` : ` (1 day left)`;
     } else if (daysLeft === 0) {
-      formattedLabel += ` (Due today)`;
+      formattedLabel += expDateStr ? ` (${expDateStr} • Due today)` : ` (Due today)`;
     } else if (daysLeft === -1) {
-      formattedLabel += ` (1 day overdue)`;
+      formattedLabel += expDateStr ? ` (${expDateStr} • 1d overdue)` : ` (1 day overdue)`;
     } else {
-      formattedLabel += ` (${Math.abs(daysLeft)} days overdue)`;
+      formattedLabel += expDateStr ? ` (${expDateStr} • ${Math.abs(daysLeft)}d overdue)` : ` (${Math.abs(daysLeft)} days overdue)`;
     }
+  } else if (expDateStr) {
+    formattedLabel += ` (Exp: ${expDateStr})`;
   }
 
   const tooltipTitle = dueDate ? `Due: ${format(dueDate, 'EEE, MMM d, yyyy')}` : undefined;

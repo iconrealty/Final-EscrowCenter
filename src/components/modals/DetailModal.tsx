@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Escrow, CONTINGENCIES, getContingencyDaysLeft } from '../../types';
+import { Escrow, CONTINGENCIES, getContingencyDaysLeft, getContingencyDueDate } from '../../types';
 import { X, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
@@ -185,33 +185,35 @@ export function DetailModal({
               {CONTINGENCIES.map((c) => {
                 const isCompleted = !!escrow.tasks[c.key];
                 const daysLeft = getContingencyDaysLeft(escrow, c.key);
+                const dueDate = getContingencyDueDate(escrow, c.key);
+                const expDateStr = dueDate ? format(dueDate, 'MMM d') : null;
                 const isOverdue = !isCompleted && daysLeft !== null && daysLeft < 0;
                 const isUrgent = !isCompleted && daysLeft !== null && daysLeft <= 2 && daysLeft >= 0;
 
                 let statusText = '';
                 let statusColorClass = '';
                 if (isCompleted) {
-                  statusText = 'Completed';
+                  statusText = expDateStr ? `Done (${expDateStr})` : 'Completed';
                   statusColorClass = 'text-white bg-emerald-700 border-emerald-800 font-bold';
                 } else if (daysLeft !== null) {
                   if (daysLeft > 1) {
-                    statusText = `${daysLeft} days left`;
+                    statusText = expDateStr ? `${expDateStr} • ${daysLeft}d left` : `${daysLeft} days left`;
                     statusColorClass = isUrgent ? 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold' : 'text-slate-600 bg-slate-100/50 border-slate-200';
                   } else if (daysLeft === 1) {
-                    statusText = `1 day left`;
+                    statusText = expDateStr ? `${expDateStr} • 1d left` : `1 day left`;
                     statusColorClass = 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold';
                   } else if (daysLeft === 0) {
-                    statusText = `Due today`;
+                    statusText = expDateStr ? `${expDateStr} • Due today` : `Due today`;
                     statusColorClass = 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold';
                   } else if (daysLeft === -1) {
-                    statusText = `1 day overdue`;
+                    statusText = expDateStr ? `${expDateStr} • 1d overdue` : `1 day overdue`;
                     statusColorClass = 'text-rose-600 bg-rose-50 border-rose-100 font-bold animate-pulse';
                   } else {
-                    statusText = `${Math.abs(daysLeft)} days overdue`;
+                    statusText = expDateStr ? `${expDateStr} • ${Math.abs(daysLeft)}d overdue` : `${Math.abs(daysLeft)} days overdue`;
                     statusColorClass = 'text-rose-600 bg-rose-50 border-rose-100 font-bold animate-pulse';
                   }
                 } else {
-                  statusText = 'Pending';
+                  statusText = expDateStr ? `Exp: ${expDateStr}` : 'Pending';
                   statusColorClass = 'text-slate-400 bg-slate-50 border-slate-100';
                 }
 

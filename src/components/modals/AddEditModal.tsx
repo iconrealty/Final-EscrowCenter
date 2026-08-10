@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Escrow, CONTINGENCIES } from '../../types';
+import { Escrow, CONTINGENCIES, adjustWeekendToMonday } from '../../types';
 import { X, Sparkles } from 'lucide-react';
-import { addMonths, format } from 'date-fns';
+import { addMonths, addDays, parseISO, format } from 'date-fns';
 import { parseSisuText } from '../../utils/csvUtils';
 
 export function AddEditModal({ 
@@ -508,6 +508,20 @@ export function AddEditModal({
                   const isAppraisal = c.key === 'L2';
                   const dotColor = isLoan ? 'bg-[#1B3A5C]' : isAppraisal ? 'bg-indigo-500' : 'bg-amber-500';
                   
+                  const daysNum = Number(formData.contingencyDays[c.key]) || 0;
+                  const startDateStr = formData.contingencyStartDate || formData.acceptanceDate;
+                  let expDateStr = '';
+                  if (startDateStr) {
+                    try {
+                      const sDate = parseISO(startDateStr);
+                      if (!isNaN(sDate.getTime())) {
+                        const rawEnd = addDays(sDate, daysNum);
+                        const adjustedEnd = adjustWeekendToMonday(rawEnd);
+                        expDateStr = format(adjustedEnd, 'MMM d');
+                      }
+                    } catch (e) {}
+                  }
+
                   return (
                     <div 
                       key={c.key} 
@@ -515,6 +529,11 @@ export function AddEditModal({
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
                       <span className="text-xs font-medium text-[#48484a]">{c.key} - {c.label}</span>
+                      {expDateStr && (
+                        <span className="text-[10px] font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-1.5 py-0.5 rounded-md">
+                          {expDateStr}
+                        </span>
+                      )}
                       <div className="flex items-center bg-white border border-[#e5e5ea] rounded-md px-1 py-0.5 ml-1 shadow-sm focus-within:border-[#1B3A5C]">
                         <input 
                           type="number" 
