@@ -75,10 +75,29 @@ export function ActiveContingenciesTicker({
     if (daysLeft === null || daysLeft === undefined) {
       return expDateStr ? `Exp: ${expDateStr}` : 'Active';
     }
-    if (daysLeft < 0) return expDateStr ? `${expDateStr} (${Math.abs(daysLeft)}d overdue)` : `${Math.abs(daysLeft)}d overdue`;
-    if (daysLeft === 0) return expDateStr ? `${expDateStr} (Due today)` : 'Due today';
-    if (daysLeft === 1) return expDateStr ? `${expDateStr} (1d left)` : '1d left';
-    return expDateStr ? `${expDateStr} (${daysLeft}d left)` : `${daysLeft}d left`;
+
+    let parenColor = 'text-emerald-700';
+    if (daysLeft <= 2) {
+      parenColor = 'text-rose-600';
+    } else if (daysLeft >= 3 && daysLeft <= 5) {
+      parenColor = 'text-amber-600';
+    }
+
+    let statusMsg = '';
+    if (daysLeft < 0) statusMsg = `${Math.abs(daysLeft)}d overdue`;
+    else if (daysLeft === 0) statusMsg = 'Due today';
+    else if (daysLeft === 1) statusMsg = '1d left';
+    else statusMsg = `${daysLeft}d left`;
+
+    if (expDateStr) {
+      return (
+        <span className="inline-flex items-center gap-1">
+          <span className="text-[#334155]">{expDateStr}</span>
+          <span className={`font-extrabold ${parenColor}`}>({statusMsg})</span>
+        </span>
+      );
+    }
+    return <span className={`font-extrabold ${parenColor}`}>{statusMsg}</span>;
   };
 
   // Color styles matching Next Step box formatting

@@ -43,40 +43,70 @@ export function ContingencyChip({
 
   const expDateStr = dueDate ? format(dueDate, 'MMM d') : null;
 
-  let formattedLabel = `${taskKey} - ${label}`;
+  let mainLabel = `${taskKey} - ${label}`;
+  let parenText = '';
+
   if (isDone) {
-    formattedLabel = `DONE - ${taskKey} - ${label}${expDateStr ? ` (Exp: ${expDateStr})` : ''}`;
+    mainLabel = `DONE - ${taskKey} - ${label}`;
+    if (expDateStr) {
+      parenText = `(Exp: ${expDateStr})`;
+    }
   } else if (daysLeft !== null && daysLeft !== undefined) {
     if (daysLeft > 1) {
-      formattedLabel += expDateStr ? ` (${expDateStr} • ${daysLeft}d left)` : ` (${daysLeft} days left)`;
+      parenText = expDateStr ? `(${expDateStr} • ${daysLeft}d left)` : `(${daysLeft} days left)`;
     } else if (daysLeft === 1) {
-      formattedLabel += expDateStr ? ` (${expDateStr} • 1d left)` : ` (1 day left)`;
+      parenText = expDateStr ? `(${expDateStr} • 1d left)` : `(1 day left)`;
     } else if (daysLeft === 0) {
-      formattedLabel += expDateStr ? ` (${expDateStr} • Due today)` : ` (Due today)`;
+      parenText = expDateStr ? `(${expDateStr} • Due today)` : `(Due today)`;
     } else if (daysLeft === -1) {
-      formattedLabel += expDateStr ? ` (${expDateStr} • 1d overdue)` : ` (1 day overdue)`;
+      parenText = expDateStr ? `(${expDateStr} • 1d overdue)` : `(1 day overdue)`;
     } else {
-      formattedLabel += expDateStr ? ` (${expDateStr} • ${Math.abs(daysLeft)}d overdue)` : ` (${Math.abs(daysLeft)} days overdue)`;
+      parenText = expDateStr ? `(${expDateStr} • ${Math.abs(daysLeft)}d overdue)` : `(${Math.abs(daysLeft)} days overdue)`;
     }
   } else if (expDateStr) {
-    formattedLabel += ` (Exp: ${expDateStr})`;
+    parenText = `(Exp: ${expDateStr})`;
+  }
+
+  // Parenthesis color logic:
+  // - Green if time is ok (>= 6 days left)
+  // - Orange if between 4-5 days remaining (3 to 5 days left)
+  // - Red if expired (< 0) or expiring on less than 2 days (<= 2 days)
+  let parenColorClass = '';
+  if (isDone) {
+    parenColorClass = 'text-emerald-300 font-extrabold';
+  } else if (daysLeft !== null && daysLeft !== undefined) {
+    if (daysLeft <= 2) {
+      parenColorClass = 'text-rose-600 font-extrabold';
+    } else if (daysLeft >= 3 && daysLeft <= 5) {
+      parenColorClass = 'text-amber-600 font-extrabold';
+    } else {
+      parenColorClass = 'text-emerald-600 font-extrabold';
+    }
+  } else if (expDateStr) {
+    parenColorClass = 'text-emerald-600 font-extrabold';
   }
 
   const tooltipTitle = dueDate ? `Due: ${format(dueDate, 'EEE, MMM d, yyyy')}` : undefined;
 
+  const content = (
+    <>
+      <span className={dotClasses}></span>
+      <span>{mainLabel}</span>
+      {parenText && <span className={`ml-0.5 ${parenColorClass}`}>{parenText}</span>}
+    </>
+  );
+
   if (readOnly) {
     return (
       <div className={btnClasses} title={tooltipTitle}>
-        <span className={dotClasses}></span>
-        {formattedLabel}
+        {content}
       </div>
     );
   }
 
   return (
     <button onClick={onClick} className={`${btnClasses} cursor-pointer`} title={tooltipTitle}>
-      <span className={dotClasses}></span>
-      {formattedLabel}
+      {content}
     </button>
   );
 }
