@@ -10,51 +10,45 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 const TEMPLATES = [
   {
     id: 'opening',
-    label: 'New Escrow Opened (Buyer)',
+    label: 'Escrow Opened (Buyer)',
     subject: 'Escrow Opened: [Address]',
     text: 'Hi [ClientName], Escrow has officially been opened 🎉\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nEscrow will be sending you wire instructions shortly for the initial deposit (3%). Please follow the instructions carefully. If you have any questions at any time, I’m always available.\n\nInspection: I’m coordinating the inspection, tentatively for Wednesday afternoon. I’ll confirm availability and keep you posted.'
   },
   {
     id: 'opening_listing',
-    label: 'New Escrow Opened (Listing)',
+    label: 'Escrow Opened (Listing)',
     subject: 'Escrow Opened: [Address]',
     text: 'Hi [ClientName], Escrow has officially been opened 🎉\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nWe will be coordinating the next steps with the buyer\'s side. If you have any questions at any time, I’m always available.'
   },
   {
     id: 'first_escrow_email',
-    label: 'First Escrow Email',
+    label: 'First Escrow Email (Buyer)',
     subject: 'First Escrow Email - [Address]',
     text: 'Hi [Esrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the buyer and Transaction Coordinator information.\n\nBuyers\nName: [Buyer Name]\nEmail: [Buyer Email]\nPhone: [Buyer Phone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
   },
   {
+    id: 'inspection_day',
+    label: 'Schedule Inspection',
+    subject: 'Schedule Inspection - [Address]',
+    text: 'Hi [ClientFirstName],\n\nThe inspection usually takes about 1.5 hours, and I recommend that you be present for at least the last 30 minutes so the inspector can walk you through the main findings. \nAt the same time, we’ll be conducting our initial visual home inspection.'
+  },
+  {
     id: 'request_open_escrow_listing',
-    label: 'Request to Open Escrow(Listing)',
+    label: 'Request to Open Escrow (Listing side)',
     subject: 'Request to Open Escrow: [Address]',
     text: 'Hi [Esrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nSellers\nName: [ClientName]\nEmail: [Buyer Email]\nPhone: [Buyer Phone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
   },
   {
     id: 'emd',
-    label: 'Earnest Money (EMD) Received',
+    label: 'EMD Received by Escrow',
     subject: 'EMD Received - [Address]',
     text: 'Hi [ClientName], this is to confirm that your Earnest Money Deposit (EMD) has been successfully received by [EscrowOfficer]. That is another major milestone complete! I will keep you posted on the next steps. - [AgentName]'
   },
   {
     id: 'insurance',
-    label: 'Get Insurance',
+    label: 'Get Insurance (Buyer)',
     subject: 'Home Insurance Quotes - [Address]',
     text: 'Hi [ClientName],\n\nNow its time to get quotes on Home insurance, you can try first with your actual insurance company if you need any additional quotes please let me know. - [AgentName]'
-  },
-  {
-    id: 'inspection_day',
-    label: 'Inspection Day',
-    subject: 'Inspection Day - [Address]',
-    text: 'Hi [ClientFirstName],\n\nThe inspection usually takes about 1.5 hours, and I recommend that you be present for at least the last 30 minutes so the inspector can walk you through the main findings. \nAt the same time, we’ll be conducting our initial visual home inspection.'
-  },
-  {
-    id: 'inspection',
-    label: 'Home Inspection',
-    subject: 'Home Inspection Update - [Address]',
-    text: 'Hi [ClientName], our home inspection for [Address] is now complete. I will review the report in detail so we can decide on any Request for Repairs (RR) if necessary. I will call you shortly to discuss. - [AgentName]'
   },
   {
     id: 'appraisal',
@@ -64,26 +58,26 @@ const TEMPLATES = [
   },
   {
     id: 'disclosures',
-    label: 'Disclosures Reviewed',
+    label: 'Disclosures Reviewed (Buyer)',
     subject: 'Disclosures Completed - [Address]',
     text: 'Hi [ClientName], we have successfully completed the review and signature of all seller disclosures for [Address]. Thank you for your prompt responses! - [AgentName]'
   },
   {
     id: 'loan_approval',
-    label: 'Loan Final Approval Secured',
-    subject: 'Loan Final Approval Secured - [Address]',
+    label: 'Signing Appointment',
+    subject: 'Signing Appointment - [Address]',
     text: 'Hi [ClientName], congratulations! Your lender has issued the Final Loan Approval! This is a major milestone and means we are almost at the finish line. Next up will be signing our final loan documents. - [AgentName]'
   },
   {
     id: 'contingencies',
-    label: 'Contingencies Removed',
-    subject: 'Contingencies Removed - [Address]',
+    label: 'Contingencies Removal',
+    subject: 'Contingencies Removal - [Address]',
     text: 'Hi [ClientName], we have officially removed the contingencies for your escrow on [Address]! This is a huge milestone that secures our position and brings us one step closer to closing on [COE]. - [AgentName]'
   },
   {
     id: 'signing',
-    label: 'Docs Signed',
-    subject: 'Signing Complete - [Address]',
+    label: 'Signed Docs sent to lender',
+    subject: 'Signed Docs Sent to Lender - [Address]',
     text: 'Hi [ClientName], great job signing the final escrow and loan documents today! We are now waiting on the final lender review, funding, and recording. - [AgentName]'
   },
   {
