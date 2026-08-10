@@ -145,7 +145,7 @@ function App() {
               />
               
               {filteredEscrows.length > 0 ? (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-7 sm:gap-8">
                   {filteredEscrows.map((escrow, index) => (
                     <EscrowCard 
                       key={escrow.id} 

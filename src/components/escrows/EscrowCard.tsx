@@ -55,17 +55,17 @@ export function EscrowCard({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-[#e5e5ea] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col">
+    <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:shadow-[0_10px_30px_rgba(27,58,92,0.12)] hover:border-[#1B3A5C]/40 transition-all duration-200 flex flex-col relative group/card">
       {/* Upper Area: Escrow Number, Days Left and Actions */}
-      <div className="px-4 py-3.5 flex justify-between items-center bg-slate-50/50 border-b border-[#e5e5ea]">
+      <div className="px-4 py-3.5 flex justify-between items-center bg-slate-100/80 border-b border-slate-200/90">
         <div className="flex items-center gap-2">
           {typeof index === 'number' && (
-            <span className="font-mono text-xs font-extrabold text-white bg-[#1B3A5C] px-2 py-0.5 rounded-md shadow-xs shrink-0">
+            <span className="font-mono text-xs font-extrabold text-white bg-[#1B3A5C] px-2.5 py-0.5 rounded-lg shadow-xs shrink-0 tracking-wide">
               #{index + 1}
             </span>
           )}
           {escrow.escrowNumber && (
-            <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md shrink-0">
+            <span className="font-mono text-xs font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-md shrink-0">
               Escrow #{escrow.escrowNumber}
             </span>
           )}
