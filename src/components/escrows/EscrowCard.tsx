@@ -55,17 +55,17 @@ export function EscrowCard({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:shadow-[0_10px_30px_rgba(27,58,92,0.12)] hover:border-[#1B3A5C]/40 transition-all duration-200 flex flex-col relative group/card">
+    <div className="bg-white rounded-2xl border-2 border-slate-200/90 overflow-hidden shadow-[0_8px_25px_rgba(15,23,42,0.09)] hover:shadow-[0_12px_36px_rgba(27,58,92,0.15)] hover:border-[#1B3A5C]/50 transition-all duration-200 flex flex-col relative group/card">
       {/* Upper Area: Escrow Number, Days Left and Actions */}
-      <div className="px-4 py-3.5 flex justify-between items-center bg-slate-100/80 border-b border-slate-200/90">
+      <div className="px-4 py-3.5 flex justify-between items-center bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 border-b-2 border-slate-200/90">
         <div className="flex items-center gap-2">
           {typeof index === 'number' && (
-            <span className="font-mono text-xs font-extrabold text-white bg-[#1B3A5C] px-2.5 py-0.5 rounded-lg shadow-xs shrink-0 tracking-wide">
+            <span className="font-mono text-xs font-black text-white bg-[#1B3A5C] px-3 py-1 rounded-lg shadow-sm shrink-0 tracking-wide border border-[#1B3A5C]">
               #{index + 1}
             </span>
           )}
           {escrow.escrowNumber && (
-            <span className="font-mono text-xs font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-md shrink-0">
+            <span className="font-mono text-xs font-bold text-slate-800 bg-slate-200/90 border border-slate-300/70 px-2.5 py-1 rounded-md shrink-0 shadow-2xs">
               Escrow #{escrow.escrowNumber}
             </span>
           )}
@@ -327,7 +327,7 @@ export function EscrowCard({
       </div>
 
       {/* Footer Actions */}
-      <div className="px-4 py-3 flex justify-between items-center bg-slate-50 border-t border-[#e5e5ea]">
+      <div className="px-4 py-3 flex justify-between items-center bg-slate-100/70 border-t border-slate-200/90">
         <div className="text-[10px] italic text-[#86868b]">
           Last updated: {escrow.lastUpdated ? formatDistanceToNow(parseISO(String(escrow.lastUpdated)), { addSuffix: true }) : 'Unknown'}
         </div>
