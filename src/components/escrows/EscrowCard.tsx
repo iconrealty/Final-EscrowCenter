@@ -57,24 +57,24 @@ export function EscrowCard({
   return (
     <div className="bg-white rounded-2xl border-2 border-slate-200/90 overflow-hidden shadow-[0_8px_25px_rgba(15,23,42,0.09)] hover:shadow-[0_12px_36px_rgba(27,58,92,0.15)] hover:border-[#1B3A5C]/50 transition-all duration-200 flex flex-col relative group/card">
       {/* Upper Area: Escrow Number, Days Left and Actions */}
-      <div className="px-4 py-3.5 flex justify-between items-center bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 border-b-2 border-slate-200/90">
-        <div className="flex items-center gap-2">
+      <div className="px-3.5 sm:px-4 py-2.5 sm:py-3.5 flex flex-wrap sm:flex-nowrap justify-between items-center gap-2 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 border-b-2 border-slate-200/90">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap shrink-0">
           {typeof index === 'number' && (
-            <span className="font-mono text-xs font-black text-white bg-[#1B3A5C] px-3 py-1 rounded-lg shadow-sm shrink-0 tracking-wide border border-[#1B3A5C]">
+            <span className="font-mono text-xs font-black text-white bg-[#1B3A5C] px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg shadow-sm shrink-0 tracking-wide border border-[#1B3A5C]">
               #{index + 1}
             </span>
           )}
           {escrow.escrowNumber && (
-            <span className="font-mono text-xs font-bold text-slate-800 bg-slate-200/90 border border-slate-300/70 px-2.5 py-1 rounded-md shrink-0 shadow-2xs">
+            <span className="font-mono text-[11px] sm:text-xs font-bold text-slate-800 bg-slate-200/90 border border-slate-300/70 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md shrink-0 shadow-2xs" title={`Escrow #${escrow.escrowNumber}`}>
               Escrow #{escrow.escrowNumber}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap shrink-0">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
             {escrow.leadSource || 'Zillow'}
           </span>
-          <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+          <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 sm:px-2.5 py-0.5 rounded-full ${
             escrow.representation === 'Seller'
               ? 'bg-[#1B3A5C] text-white'
               : escrow.representation === 'Dual'
