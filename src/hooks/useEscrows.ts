@@ -302,6 +302,7 @@ export function useEscrows() {
         agentName: data.agentName || '',
         agentPhone: data.agentPhone || '',
         agentEmail: data.agentEmail || '',
+        cooperatingBrokerage: data.cooperatingBrokerage || '',
         lenderName: data.lenderName || '',
         lenderPhone: data.lenderPhone || '',
         lenderEmail: data.lenderEmail || '',

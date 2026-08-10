@@ -95,12 +95,43 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     },
     "OtherAgentsPhoneNumber": escrow.agentPhone || "",
     "OtherAgentsEmail": escrow.agentEmail || "",
+    "OtherAgentsBrokerage": escrow.cooperatingBrokerage || "",
     "OtherAgentName": {
       "First": agentFirstName,
       "Last": agentLastName
     },
     "OtherAgentPhoneNumber": escrow.agentPhone || "",
     "OtherAgentEmail": escrow.agentEmail || "",
+    "OtherAgentBrokerage": escrow.cooperatingBrokerage || "",
+    "CooperatingBrokerage": escrow.cooperatingBrokerage || "",
+    "OtherBrokerage": escrow.cooperatingBrokerage || "",
+    
+    // Smart Defaults requested for Cognito Form fields
+    "HowManyOffersDidYouSubmitIncludingThisOneForThisClientBeforeYouReceivedAnAcceptance": "1",
+    "HowManyOffersDidYouSubmit": "1",
+    "HowManyOffersDidYouSubmit1": "1",
+    "OffersSubmitted": "1",
+    "HowManyOffers": "1",
+    "Offers": "1",
+    "NumberOfOffersSubmitted": "1",
+
+    "IsThereAnOutsideReferral": "No",
+    "OutsideReferral": "No",
+    "IsThereAnOutsideReferral1": "No",
+    "Referral": "No",
+
+    "WillYourClientBeInTownDuringTheEntireEscrowIfNotYouNeedToSetUpApptForThemToSignWithEscrowOutOfTheCountry": "Yes",
+    "WillYourClientBeInTownDuringTheEntireEscrow": "Yes",
+    "WillClientBeInTown": "Yes",
+    "ClientInTown": "Yes",
+    "InTown": "Yes",
+
+    "HowWouldYourClientToBeCommunicated": ["Text", "Call", "Email"],
+    "HowWouldYourClientLikeToBeCommunicated": ["Text", "Call", "Email"],
+    "CommunicationPreference": ["Text", "Call", "Email"],
+    "HowWouldYourClientToBeCommunicated1": "Text, Call, Email",
+    "CommunicationMode": "Text, Call, Email",
+
     "UnderContractDate": formattedUnderContract,
     "UnderContract": formattedUnderContract,
     "ContractDate": formattedUnderContract,

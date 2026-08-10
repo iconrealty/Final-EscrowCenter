@@ -147,7 +147,9 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       badgeText: 'Other Agent',
       name: escrow.agentName || 'Not specified',
-      company: escrow.collaborator ? `Collaborator: ${escrow.collaborator}` : undefined,
+      company: escrow.cooperatingBrokerage 
+        ? `Brokerage: ${escrow.cooperatingBrokerage}` 
+        : (escrow.collaborator ? `Collaborator: ${escrow.collaborator}` : undefined),
       phone: escrow.agentPhone,
       email: escrow.agentEmail,
     },

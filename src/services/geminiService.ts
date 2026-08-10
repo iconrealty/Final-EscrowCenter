@@ -54,7 +54,7 @@ async function parseEscrow(data: string, mimeType: string): Promise<any> {
 If a field is missing, return an empty string or 0.
 
 Fields (JSON keys):
-address, clientFirstName, clientLastName, agentName, agentPhone, agentEmail, lenderName, lenderPhone, lenderEmail, escrowOfficer, escrowEmail, price (number), acceptanceDate (YYYY-MM-DD), coeDate (YYYY-MM-DD), status (Open/Closed/Cancelled), notes
+address, clientFirstName, clientLastName, agentName, agentPhone, agentEmail, cooperatingBrokerage, lenderName, lenderPhone, lenderEmail, escrowOfficer, escrowEmail, price (number), acceptanceDate (YYYY-MM-DD), coeDate (YYYY-MM-DD), status (Open/Closed/Cancelled), notes
 
 Return ONLY a valid JSON object.`,
   };
@@ -74,6 +74,7 @@ Return ONLY a valid JSON object.`,
             agentName: { type: Type.STRING },
             agentPhone: { type: Type.STRING },
             agentEmail: { type: Type.STRING },
+            cooperatingBrokerage: { type: Type.STRING },
             lenderName: { type: Type.STRING },
             lenderPhone: { type: Type.STRING },
             lenderEmail: { type: Type.STRING },

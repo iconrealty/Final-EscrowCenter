@@ -35,6 +35,7 @@ export function AddEditModal({
       agentName: '',
       agentPhone: '',
       agentEmail: '',
+      cooperatingBrokerage: '',
       lenderName: '',
       lenderPhone: '',
       lenderEmail: '',
@@ -85,6 +86,7 @@ export function AddEditModal({
       agentName: parsed.agentName || prev.agentName,
       agentEmail: parsed.agentEmail || prev.agentEmail,
       agentPhone: parsed.agentPhone || prev.agentPhone,
+      cooperatingBrokerage: parsed.cooperatingBrokerage || prev.cooperatingBrokerage,
       lenderName: parsed.lenderName || prev.lenderName,
       lenderPhone: parsed.lenderPhone || prev.lenderPhone,
       lenderEmail: parsed.lenderEmail || prev.lenderEmail,
@@ -148,6 +150,7 @@ export function AddEditModal({
         agentName: escrow.agentName || '',
         agentPhone: escrow.agentPhone || '',
         agentEmail: escrow.agentEmail || '',
+        cooperatingBrokerage: escrow.cooperatingBrokerage || '',
         lenderName: escrow.lenderName || '',
         lenderPhone: escrow.lenderPhone || '',
         lenderEmail: escrow.lenderEmail || '',
@@ -185,6 +188,7 @@ export function AddEditModal({
         agentName: '',
         agentPhone: '',
         agentEmail: '',
+        cooperatingBrokerage: '',
         lenderName: '',
         lenderPhone: '',
         lenderEmail: '',
@@ -432,9 +436,14 @@ export function AddEditModal({
               <input type="tel" value={formData.agentPhone} placeholder="e.g. 310-555-0155" onChange={e => setFormData({...formData, agentPhone: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-xs font-bold text-[#334155] mb-1">Other Agent Email</label>
               <input type="email" value={formData.agentEmail} placeholder="e.g. agent@email.com" onChange={e => setFormData({...formData, agentEmail: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Other Agent Brokerage</label>
+              <input type="text" value={formData.cooperatingBrokerage} placeholder="e.g. Compass, Coldwell Banker" onChange={e => setFormData({...formData, cooperatingBrokerage: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div className="md:col-span-2 mt-2">

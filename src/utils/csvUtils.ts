@@ -583,6 +583,7 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     agentName: agentName || '',
     agentEmail: getVal(['agent email', 'agent_email']),
     agentPhone: getVal(['agent phone', 'agent_phone']),
+    cooperatingBrokerage: getVal(['cooperating brokerage', 'other agent brokerage', 'other brokerage', 'agent brokerage', 'co-brokerage']),
     lenderName: getVal(['mortgage company', 'lender name', 'lender', 'mortgage']),
     lenderPhone: getVal(['lender phone', 'lender_phone']),
     lenderEmail: getVal(['lender email', 'lender_email']),
