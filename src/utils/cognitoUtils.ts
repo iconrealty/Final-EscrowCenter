@@ -29,7 +29,6 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
   let currentUserName = (user?.displayName || "").trim();
   let currentUserEmail = (user?.email || "").trim();
 
-  // If logged-in user has no displayName or email, try to get them from the escrow's primary agent
   if (!currentUserName && escrow.agentName) {
     currentUserName = escrow.agentName.trim();
   }
@@ -37,161 +36,101 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     currentUserEmail = escrow.agentEmail.trim();
   }
 
-  // Absolute final fallback
-  if (!currentUserName) {
-    currentUserName = "Paul Muner";
-  }
-  if (!currentUserEmail) {
-    currentUserEmail = "paulmuner@gmail.com";
-  }
-
-  const currentUserFirstName = currentUserName.split(' ')[0] || "";
-  const currentUserLastName = currentUserName.split(' ').slice(1).join(' ') || "";
+  const currentUserFirstName = currentUserName ? currentUserName.split(' ')[0] : '';
+  const currentUserLastName = currentUserName ? currentUserName.split(' ').slice(1).join(' ') : '';
 
   const formattedUnderContract = formatDateForCognito(escrow.acceptanceDate);
   const formattedForecastedClose = formatDateForCognito(escrow.coeDate);
 
-  // Construct comprehensive entry JSON object matching Cognito Forms internal field names
-  const entryData: Record<string, any> = {
-    // Agent / User Name
-    "YourName": {
-      "First": currentUserFirstName,
-      "Last": currentUserLastName
-    },
-    "YourEmail": currentUserEmail,
-    "AgentName": {
-      "First": currentUserFirstName,
-      "Last": currentUserLastName
-    },
-    "AgentEmail": currentUserEmail,
+  // Build clean, focused JSON entry payload matching Cognito Forms schema
+  const entryData: Record<string, any> = {};
 
-    // Transaction Type
-    "TransactionType": escrow.representation || "Buyer",
-    "Representation": escrow.representation || "Buyer",
+  if (currentUserFirstName || currentUserLastName) {
+    entryData["YourName"] = { "First": currentUserFirstName, "Last": currentUserLastName };
+  }
+  if (currentUserEmail) {
+    entryData["YourEmail"] = currentUserEmail;
+  }
 
-    // Clients
-    "ClientName": {
-      "First": client1FirstName,
-      "Last": client1LastName
-    },
-    "ClientsName": {
-      "First": client1FirstName,
-      "Last": client1LastName
-    },
-    "Client1Name": {
-      "First": client1FirstName,
-      "Last": client1LastName
-    },
-    "ClientEmail": escrow.clientEmail || "",
-    "ClientsEmail": escrow.clientEmail || "",
-    "ClientSEmail": escrow.clientEmail || "",
-    "ClientPhone": escrow.clientPhone || "",
-    "ClientsPhone": escrow.clientPhone || "",
-    "ClientSPhone": escrow.clientPhone || "",
-    
-    "ClientsAddress": {
-      "Line1": escrow.address || ""
-    },
-    "ClientSAddress": {
-      "Line1": escrow.address || ""
-    },
-    "ClientAddress": {
-      "Line1": escrow.address || ""
-    },
+  if (escrow.representation) {
+    entryData["TransactionType"] = escrow.representation;
+  }
 
-    "Client2Name": {
-      "First": client2FirstName,
-      "Last": client2LastName
-    },
-    "Client2Email": escrow.client2Email || "",
-    "Client2Phone": escrow.client2Phone || "",
+  if (client1FirstName || client1LastName) {
+    entryData["ClientName"] = { "First": client1FirstName, "Last": client1LastName };
+  }
+  if (escrow.clientEmail) {
+    entryData["ClientEmail"] = escrow.clientEmail;
+  }
+  if (escrow.clientPhone) {
+    entryData["ClientPhone"] = escrow.clientPhone;
+  }
 
-    // Property Address
-    "PropertyAddress": {
-      "Line1": escrow.address || ""
-    },
-    "Address": {
-      "Line1": escrow.address || ""
-    },
+  if (client2FirstName || client2LastName) {
+    entryData["Client2Name"] = { "First": client2FirstName, "Last": client2LastName };
+  }
+  if (escrow.client2Email) {
+    entryData["Client2Email"] = escrow.client2Email;
+  }
+  if (escrow.client2Phone) {
+    entryData["Client2Phone"] = escrow.client2Phone;
+  }
 
-    // Transaction & Commission Amounts
-    "TransactionAmount": escrow.price || 0,
-    "PurchasePrice": escrow.price || 0,
-    "Price": escrow.price || 0,
-    "YourCommission": escrow.commissionPercent || 0,
-    "YourCommissionPercent": escrow.commissionPercent || 0,
-    "YourCommissionPercentage": escrow.commissionPercent || 0,
+  if (escrow.address) {
+    entryData["PropertyAddress"] = { "Line1": escrow.address };
+  }
 
-    // Other / Cooperating Agent
-    "OtherAgentsName": {
-      "First": agentFirstName,
-      "Last": agentLastName
-    },
-    "OtherAgentName": {
-      "First": agentFirstName,
-      "Last": agentLastName
-    },
-    "CooperatingAgentName": {
-      "First": agentFirstName,
-      "Last": agentLastName
-    },
-    "OtherAgentsPhoneNumber": escrow.agentPhone || "",
-    "OtherAgentPhoneNumber": escrow.agentPhone || "",
-    "OtherAgentsEmail": escrow.agentEmail || "",
-    "OtherAgentEmail": escrow.agentEmail || "",
-    
-    // Other Agent's Brokerage
-    "OtherAgentsBrokerage": escrow.cooperatingBrokerage || "",
-    "OtherAgentBrokerage": escrow.cooperatingBrokerage || "",
-    "CooperatingBrokerage": escrow.cooperatingBrokerage || "",
-    "OtherBrokerage": escrow.cooperatingBrokerage || "",
-    "OtherAgentsBrokerageName": escrow.cooperatingBrokerage || "",
+  if (escrow.price) {
+    entryData["TransactionAmount"] = escrow.price;
+  }
+  if (escrow.commissionPercent) {
+    entryData["YourCommission"] = escrow.commissionPercent;
+  }
 
-    // Smart Defaults requested for Cognito Form fields
-    "HowManyOffersDidYouSubmitIncludingThisOneForThisClientBeforeYouReceivedAnAcceptance": 1,
-    "HowManyOffersDidYouSubmit": 1,
-    "HowManyOffersDidYouSubmit1": 1,
-    "OffersSubmitted": 1,
-    "HowManyOffers": 1,
-    "Offers": 1,
-    "NumberOfOffersSubmitted": 1,
+  if (agentFirstName || agentLastName) {
+    entryData["OtherAgentsName"] = { "First": agentFirstName, "Last": agentLastName };
+  }
+  if (escrow.agentPhone) {
+    entryData["OtherAgentsPhoneNumber"] = escrow.agentPhone;
+  }
+  if (escrow.agentEmail) {
+    entryData["OtherAgentsEmail"] = escrow.agentEmail;
+  }
+  if (escrow.cooperatingBrokerage) {
+    entryData["OtherAgentsBrokerage"] = escrow.cooperatingBrokerage;
+  }
 
-    "IsThereAnOutsideReferral": "No",
-    "OutsideReferral": "No",
-    "IsThereAnOutsideReferral1": "No",
-    "Referral": "No",
+  // Pre-fill answers requested by user
+  entryData["HowManyOffersDidYouSubmitIncludingThisOneForThisClientBeforeYouReceivedAnAcceptance"] = 1;
+  entryData["IsThereAnOutsideReferral"] = "No";
+  entryData["WillYourClientBeInTownDuringTheEntireEscrowIfNotYouNeedToSetUpApptForThemToSignWithEscrowOutOfTheCountry"] = "Yes";
 
-    "WillYourClientBeInTownDuringTheEntireEscrowIfNotYouNeedToSetUpApptForThemToSignWithEscrowOutOfTheCountry": "Yes",
-    "WillYourClientBeInTownDuringTheEntireEscrow": "Yes",
-    "WillClientBeInTown": "Yes",
-    "ClientInTown": "Yes",
-    "InTown": "Yes",
+  if (formattedUnderContract) {
+    entryData["UnderContractDate"] = formattedUnderContract;
+  }
+  if (formattedForecastedClose) {
+    entryData["ForecastedCloseDate"] = formattedForecastedClose;
+  }
 
-    "HowWouldYourClientToBeCommunicated": ["Text", "Call", "Email"],
-    "HowWouldYourClientLikeToBeCommunicated": ["Text", "Call", "Email"],
-    "CommunicationPreference": ["Text", "Call", "Email"],
+  if (escrow.lenderName) {
+    entryData["LenderUsed"] = escrow.lenderName;
+  }
+  if (escrow.lenderPhone) {
+    entryData["LenderPhoneNumber"] = escrow.lenderPhone;
+  }
+  if (escrow.lenderEmail) {
+    entryData["LenderEmail"] = escrow.lenderEmail;
+  }
 
-    // Contract Dates
-    "UnderContractDate": formattedUnderContract,
-    "UnderContract": formattedUnderContract,
-    "ContractDate": formattedUnderContract,
-    "AcceptanceDate": formattedUnderContract,
-    "ForecastedCloseDate": formattedForecastedClose,
-    "ForecastedClose": formattedForecastedClose,
-    "CloseDate": formattedForecastedClose,
-    "COEDate": formattedForecastedClose,
-
-    // Lender & Escrow Details
-    "LenderUsed": escrow.lenderName || "",
-    "LenderName": escrow.lenderName || "",
-    "LenderPhoneNumber": escrow.lenderPhone || "",
-    "LenderPhone": escrow.lenderPhone || "",
-    "LenderEmail": escrow.lenderEmail || "",
-    "EscrowCompany": escrow.escrowCompany || "",
-    "EscrowContactNumber": escrow.escrowPhone || "",
-    "EscrowPhone": escrow.escrowPhone || "",
-    "EscrowEmail": escrow.escrowEmail || "",
-  };
+  if (escrow.escrowCompany) {
+    entryData["EscrowCompany"] = escrow.escrowCompany;
+  }
+  if (escrow.escrowPhone) {
+    entryData["EscrowContactNumber"] = escrow.escrowPhone;
+  }
+  if (escrow.escrowEmail) {
+    entryData["EscrowEmail"] = escrow.escrowEmail;
+  }
 
   const jsonString = JSON.stringify(entryData);
   const encodedJson = encodeURIComponent(jsonString);
