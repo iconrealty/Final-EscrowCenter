@@ -42,7 +42,7 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
   const formattedUnderContract = formatDateForCognito(escrow.acceptanceDate);
   const formattedForecastedClose = formatDateForCognito(escrow.coeDate);
 
-  // Build clean, focused JSON entry payload matching Cognito Forms schema
+  // Build concise JSON entry payload matching standard Cognito Forms internal field names
   const entryData: Record<string, any> = {};
 
   if (currentUserFirstName || currentUserLastName) {
