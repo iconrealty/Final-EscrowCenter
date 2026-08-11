@@ -23,6 +23,7 @@ export const CSV_HEADERS = [
   'Co-Agent Name',
   'Co-Agent Email',
   'Co-Agent Phone',
+  'Cooperating Brokerage',
   'Lender Name',
   'Lender Email',
   'Lender Phone',
@@ -31,6 +32,7 @@ export const CSV_HEADERS = [
   'Escrow Officer Phone',
   'Escrow Company',
   'Acceptance Date',
+  'Contingency Start Date',
   'Close of Escrow',
   'Sale Price',
   'Commission Percent',
@@ -80,16 +82,19 @@ export function generateCsvTemplate(): string {
       '"Curley"', // Client Last Name
       '""', // Client Phone
       '""', // Client Email
+      '""', // Client Birthday
       '""', // Client 2 First Name
       '""', // Client 2 Last Name
       '""', // Client 2 Phone
       '""', // Client 2 Email
+      '""', // Client 2 Birthday
       '"Paul Muner"', // Agent Name
       '""', // Agent Email
       '""', // Agent Phone
       '""', // Co-Agent Name
       '""', // Co-Agent Email
       '""', // Co-Agent Phone
+      '"Icon Realty Partners"', // Cooperating Brokerage
       '""', // Lender Name
       '""', // Lender Email
       '""', // Lender Phone
@@ -98,6 +103,7 @@ export function generateCsvTemplate(): string {
       '""', // Escrow Officer Phone
       '"Escrow Logix, Inc."', // Escrow Company
       '"05/05/2026"', // Acceptance Date
+      '"05/05/2026"', // Contingency Start Date
       '"06/05/2026"', // Close of Escrow
       '"$840,000.00"', // Sale Price
       '"3.0"', // Commission Percent
@@ -115,8 +121,10 @@ export function generateCsvTemplate(): string {
       '"Campa"',
       '""',
       '""',
+      '""',
       '"Maria"',
       '"Campa"',
+      '""',
       '""',
       '""',
       '"Paul Muner"',
@@ -125,6 +133,7 @@ export function generateCsvTemplate(): string {
       '""',
       '""',
       '""',
+      '"Coldwell Banker"',
       '""',
       '""',
       '""',
@@ -132,6 +141,7 @@ export function generateCsvTemplate(): string {
       '""',
       '""',
       '"Cloud Escrow"',
+      '"06/01/2026"',
       '"06/01/2026"',
       '"07/15/2026"',
       '"$585,000.00"',
@@ -154,12 +164,15 @@ export function generateCsvTemplate(): string {
       '""',
       '""',
       '""',
+      '""',
+      '""',
       '"Paul Muner"',
       '""',
       '""',
       '""',
       '""',
       '""',
+      '"RE/MAX"',
       '""',
       '""',
       '""',
@@ -167,6 +180,7 @@ export function generateCsvTemplate(): string {
       '""',
       '""',
       '"First American Title"',
+      '"07/01/2026"',
       '"07/01/2026"',
       '"08/10/2026"',
       '"$650,000.00"',
@@ -234,6 +248,7 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       escapeCsv(e.collaborator || ''), // Co-Agent Name
       escapeCsv(''), // Co-Agent Email
       escapeCsv(''), // Co-Agent Phone
+      escapeCsv(e.cooperatingBrokerage || ''),
       escapeCsv(e.lenderName || ''),
       escapeCsv(e.lenderEmail || ''),
       escapeCsv(e.lenderPhone || ''),
@@ -242,6 +257,7 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       escapeCsv(e.escrowPhone || ''), // Escrow Officer Phone
       escapeCsv(e.escrowCompany || ''),
       escapeCsv(e.acceptanceDate || ''),
+      escapeCsv(e.contingencyStartDate || ''),
       escapeCsv(e.coeDate || ''),
       escapeCsv(e.price ? `$${e.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'),
       escapeCsv(e.commissionPercent !== undefined ? e.commissionPercent : ''),
@@ -379,8 +395,10 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
     }
 
     // Dates parsing
-    const rawAcceptance = getVal(['acceptance date', 'acceptance']);
-    const rawCoe = getVal(['close of escrow', 'coe', 'close date']);
+    const rawAcceptance = getVal(['acceptance date', 'acceptance', 'under contract date']);
+    const rawContingencyStart = getVal(['contingency start date', 'contingency start', 'contingency_start_date']);
+    const rawCoe = getVal(['close of escrow', 'coe', 'close date', 'forecasted closed date']);
+    const cooperatingBrokerage = getVal(['cooperating brokerage', 'cooperating_brokerage', 'co-brokerage', 'other agent brokerage', 'other brokerage', 'agent brokerage']);
 
     // Representation mapping
     const rawRep = getVal(['representation', 'rep']);
@@ -416,6 +434,7 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       agentName: getVal(['agent name']),
       agentEmail: getVal(['agent email']),
       agentPhone: getVal(['agent phone']),
+      cooperatingBrokerage,
       lenderName: getVal(['lender name']),
       lenderPhone: getVal(['lender phone']),
       lenderEmail: getVal(['lender email']),
@@ -427,6 +446,7 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       commissionPercent: getVal(['commission percent', 'commission %', 'commission_percent']) ? Number(String(getVal(['commission percent', 'commission %', 'commission_percent'])).replace(/[^0-9.]/g, '')) : undefined,
       netCommission: Number(String(getVal(['net commission', 'commission']) || '').replace(/[^0-9.]/g, '')) || 0,
       acceptanceDate: (rawAcceptance && parseDateToIso(rawAcceptance)) || '',
+      contingencyStartDate: (rawContingencyStart && parseDateToIso(rawContingencyStart)) || (rawAcceptance && parseDateToIso(rawAcceptance)) || '',
       coeDate: (rawCoe && parseDateToIso(rawCoe)) || '',
       status: parsedStatus,
       representation,

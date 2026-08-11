@@ -307,15 +307,19 @@ export function useEscrows() {
         lenderPhone: data.lenderPhone || '',
         lenderEmail: data.lenderEmail || '',
         price: data.price || 0,
+        commissionPercent: data.commissionPercent,
         netCommission: data.netCommission || 0,
         acceptanceDate: data.acceptanceDate || '',
+        contingencyStartDate: data.contingencyStartDate || data.acceptanceDate || '',
         coeDate: data.coeDate || '',
         notes: data.notes || '',
         status: data.status || 'Open',
+        representation: data.representation || 'Buyer',
+        leadSource: data.leadSource || 'Zillow',
         contingencyDays: data.contingencyDays || {
           'L1': 14, 'L2': 10, 'L3': 7, 'L4': 7, 'L5': 7, 'L6': 7, 'L7': 7, 'L8': 7, 'L9': 7
         },
-        tasks: ALL_TASKS.reduce((acc, task) => ({ ...acc, [task.key]: false }), {}),
+        tasks: data.tasks || ALL_TASKS.reduce((acc, task) => ({ ...acc, [task.key]: false }), {}),
         lastUpdated: new Date().toISOString(),
       };
     });
