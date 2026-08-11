@@ -6,7 +6,8 @@ function formatDateForCognito(dateStr?: string): string {
   try {
     const date = parseISO(dateStr);
     if (!isNaN(date.getTime())) {
-      return format(date, 'MM/dd/yyyy');
+      // Cognito Forms JSON entry requires ISO standard YYYY-MM-DD for date fields
+      return format(date, 'yyyy-MM-dd');
     }
   } catch (e) {
     console.error('Error formatting date for Cognito:', e);
@@ -50,70 +51,110 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
   const formattedUnderContract = formatDateForCognito(escrow.acceptanceDate);
   const formattedForecastedClose = formatDateForCognito(escrow.coeDate);
 
-  // Try to match Cognito Form expected field names based on the user's form prompt.
-  // Note: Cognito Forms usually strips spaces and special characters for field names.
-  // We use objects for Name and Address fields since Cognito Forms uses complex fields for these.
-  const entryData: any = {
+  // Construct comprehensive entry JSON object matching Cognito Forms internal field names
+  const entryData: Record<string, any> = {
+    // Agent / User Name
     "YourName": {
       "First": currentUserFirstName,
       "Last": currentUserLastName
     },
     "YourEmail": currentUserEmail,
+    "AgentName": {
+      "First": currentUserFirstName,
+      "Last": currentUserLastName
+    },
+    "AgentEmail": currentUserEmail,
+
+    // Transaction Type
     "TransactionType": escrow.representation || "Buyer",
+    "Representation": escrow.representation || "Buyer",
+
+    // Clients
     "ClientName": {
       "First": client1FirstName,
       "Last": client1LastName
     },
-    "ClientSEmail": escrow.clientEmail || "",
-    "ClientsEmail": escrow.clientEmail || "",
+    "ClientsName": {
+      "First": client1FirstName,
+      "Last": client1LastName
+    },
+    "Client1Name": {
+      "First": client1FirstName,
+      "Last": client1LastName
+    },
     "ClientEmail": escrow.clientEmail || "",
-    "ClientSPhone": escrow.clientPhone || "",
-    "ClientsPhone": escrow.clientPhone || "",
+    "ClientsEmail": escrow.clientEmail || "",
+    "ClientSEmail": escrow.clientEmail || "",
     "ClientPhone": escrow.clientPhone || "",
+    "ClientsPhone": escrow.clientPhone || "",
+    "ClientSPhone": escrow.clientPhone || "",
+    
     "ClientsAddress": {
       "Line1": escrow.address || ""
     },
     "ClientSAddress": {
       "Line1": escrow.address || ""
     },
+    "ClientAddress": {
+      "Line1": escrow.address || ""
+    },
+
     "Client2Name": {
       "First": client2FirstName,
       "Last": client2LastName
     },
     "Client2Email": escrow.client2Email || "",
     "Client2Phone": escrow.client2Phone || "",
+
+    // Property Address
     "PropertyAddress": {
       "Line1": escrow.address || ""
     },
-    "TransactionAmount": escrow.price ? escrow.price.toString() : "",
-    "YourCommission": escrow.commissionPercent ? escrow.commissionPercent.toString() : "",
-    "YourCommissionPercent": escrow.commissionPercent ? escrow.commissionPercent.toString() : "",
-    "YourCommissionPercentage": escrow.commissionPercent ? escrow.commissionPercent.toString() : "",
+    "Address": {
+      "Line1": escrow.address || ""
+    },
+
+    // Transaction & Commission Amounts
+    "TransactionAmount": escrow.price || 0,
+    "PurchasePrice": escrow.price || 0,
+    "Price": escrow.price || 0,
+    "YourCommission": escrow.commissionPercent || 0,
+    "YourCommissionPercent": escrow.commissionPercent || 0,
+    "YourCommissionPercentage": escrow.commissionPercent || 0,
+
+    // Other / Cooperating Agent
     "OtherAgentsName": {
       "First": agentFirstName,
       "Last": agentLastName
     },
-    "OtherAgentsPhoneNumber": escrow.agentPhone || "",
-    "OtherAgentsEmail": escrow.agentEmail || "",
-    "OtherAgentsBrokerage": escrow.cooperatingBrokerage || "",
     "OtherAgentName": {
       "First": agentFirstName,
       "Last": agentLastName
     },
+    "CooperatingAgentName": {
+      "First": agentFirstName,
+      "Last": agentLastName
+    },
+    "OtherAgentsPhoneNumber": escrow.agentPhone || "",
     "OtherAgentPhoneNumber": escrow.agentPhone || "",
+    "OtherAgentsEmail": escrow.agentEmail || "",
     "OtherAgentEmail": escrow.agentEmail || "",
+    
+    // Other Agent's Brokerage
+    "OtherAgentsBrokerage": escrow.cooperatingBrokerage || "",
     "OtherAgentBrokerage": escrow.cooperatingBrokerage || "",
     "CooperatingBrokerage": escrow.cooperatingBrokerage || "",
     "OtherBrokerage": escrow.cooperatingBrokerage || "",
-    
+    "OtherAgentsBrokerageName": escrow.cooperatingBrokerage || "",
+
     // Smart Defaults requested for Cognito Form fields
-    "HowManyOffersDidYouSubmitIncludingThisOneForThisClientBeforeYouReceivedAnAcceptance": "1",
-    "HowManyOffersDidYouSubmit": "1",
-    "HowManyOffersDidYouSubmit1": "1",
-    "OffersSubmitted": "1",
-    "HowManyOffers": "1",
-    "Offers": "1",
-    "NumberOfOffersSubmitted": "1",
+    "HowManyOffersDidYouSubmitIncludingThisOneForThisClientBeforeYouReceivedAnAcceptance": 1,
+    "HowManyOffersDidYouSubmit": 1,
+    "HowManyOffersDidYouSubmit1": 1,
+    "OffersSubmitted": 1,
+    "HowManyOffers": 1,
+    "Offers": 1,
+    "NumberOfOffersSubmitted": 1,
 
     "IsThereAnOutsideReferral": "No",
     "OutsideReferral": "No",
@@ -129,21 +170,26 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     "HowWouldYourClientToBeCommunicated": ["Text", "Call", "Email"],
     "HowWouldYourClientLikeToBeCommunicated": ["Text", "Call", "Email"],
     "CommunicationPreference": ["Text", "Call", "Email"],
-    "HowWouldYourClientToBeCommunicated1": "Text, Call, Email",
-    "CommunicationMode": "Text, Call, Email",
 
+    // Contract Dates
     "UnderContractDate": formattedUnderContract,
     "UnderContract": formattedUnderContract,
     "ContractDate": formattedUnderContract,
+    "AcceptanceDate": formattedUnderContract,
     "ForecastedCloseDate": formattedForecastedClose,
     "ForecastedClose": formattedForecastedClose,
     "CloseDate": formattedForecastedClose,
     "COEDate": formattedForecastedClose,
+
+    // Lender & Escrow Details
     "LenderUsed": escrow.lenderName || "",
+    "LenderName": escrow.lenderName || "",
     "LenderPhoneNumber": escrow.lenderPhone || "",
+    "LenderPhone": escrow.lenderPhone || "",
     "LenderEmail": escrow.lenderEmail || "",
     "EscrowCompany": escrow.escrowCompany || "",
     "EscrowContactNumber": escrow.escrowPhone || "",
+    "EscrowPhone": escrow.escrowPhone || "",
     "EscrowEmail": escrow.escrowEmail || "",
   };
 
