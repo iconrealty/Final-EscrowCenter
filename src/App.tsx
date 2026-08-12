@@ -217,10 +217,8 @@ function App() {
               <CalendarView 
                 escrows={escrows} 
                 onSelectEscrow={(escrow) => {
-                  setActiveTab('active');
-                  setFilter(escrow.status === 'Cancelled' ? 'Cancelled' : escrow.status || 'All');
-                  setSelectedYear('All');
-                  setSearch(escrow.address || '');
+                  setEditingEscrow(escrow);
+                  setIsAddEditOpen(true);
                 }} 
               />
             </div>
