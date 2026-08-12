@@ -133,11 +133,12 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     return { volume, count, commission };
   }, [monthlyEscrows]);
 
-  // Group Commissions by Month
+  // Group Commissions by Month (filtered by selectedYear)
   const commissionByMonth = useMemo(() => {
     const groups: { [key: string]: { key: string; label: string; amount: number; count: number; escrows: Escrow[] } } = {};
+    const escrowsToUse = selectedYear === 'all' ? closedEscrows : closedEscrows.filter(e => getEscrowYear(e) === selectedYear);
     
-    closedEscrows.forEach((escrow) => {
+    escrowsToUse.forEach((escrow) => {
       if (escrow.coeDate && escrow.coeDate.length >= 7) {
         const ym = escrow.coeDate.substring(0, 7);
         if (/^\d{4}-\d{2}$/.test(ym)) {
@@ -161,13 +162,14 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     });
 
     return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
-  }, [closedEscrows]);
+  }, [closedEscrows, selectedYear]);
 
   // Group Commissions by Year
   const commissionByYear = useMemo(() => {
     const groups: { [key: string]: { key: string; label: string; amount: number; count: number; escrows: Escrow[] } } = {};
+    const escrowsToUse = selectedYear === 'all' ? closedEscrows : closedEscrows.filter(e => getEscrowYear(e) === selectedYear);
     
-    closedEscrows.forEach((escrow) => {
+    escrowsToUse.forEach((escrow) => {
       if (escrow.coeDate && escrow.coeDate.length >= 4) {
         const yr = escrow.coeDate.substring(0, 4);
         if (/^\d{4}$/.test(yr)) {
@@ -182,7 +184,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     });
 
     return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
-  }, [closedEscrows]);
+  }, [closedEscrows, selectedYear]);
 
   const commissionGroupsToRender = useMemo(() => {
     return commissionGroup === 'monthly' ? commissionByMonth : commissionByYear;
@@ -258,12 +260,26 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     }
   };
 
+  const activeYearLabel = useMemo(() => {
+    if (activeSubTab === 'monthly') {
+      if (selectedMonth === 'all') return 'All Time';
+      return formatMonthName(selectedMonth);
+    }
+    return selectedYear === 'all' ? 'All Time' : selectedYear;
+  }, [activeSubTab, selectedMonth, selectedYear]);
+
   return (
     <div className="bg-white rounded-2xl border border-[#e5e5ea] overflow-hidden flex flex-col h-full shadow-sm">
       {/* Tesla / Apple-inspired Minimalist Header with Sub-tabs */}
       <div className="px-4 sm:px-5 py-3 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0 overflow-hidden">
-        <div>
-          <h2 className="font-bold text-[#1d1d1f] text-xs uppercase tracking-wider leading-none">Sales Summary</h2>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="font-bold text-[#1d1d1f] text-xs uppercase tracking-wider leading-none">
+            Sales Summary
+          </h2>
+          <span className="text-slate-300 font-normal text-xs">•</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#1B3A5C] text-white text-[10px] font-mono font-bold tracking-wide uppercase shadow-2xs">
+            {activeYearLabel}
+          </span>
         </div>
 
         {/* Minimal Sub-tabs */}

@@ -14,6 +14,7 @@ import { AnniversaryWishModal } from './components/anniversaries/AnniversaryWish
 import { AddEditModal } from './components/modals/AddEditModal';
 import { DetailModal } from './components/modals/DetailModal';
 import { ConfirmModal } from './components/modals/ConfirmModal';
+import { ClearAllModal } from './components/modals/ClearAllModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { ClientUpdatesModal } from './components/modals/ClientUpdatesModal';
 import { MilestonesContingenciesModal } from './components/modals/MilestonesContingenciesModal';
@@ -313,9 +314,8 @@ function App() {
       )}
 
       {isConfirmClearAllOpen && (
-        <ConfirmModal 
-          title="Clear All Escrows"
-          message="Are you sure you want to delete ALL escrows from this account? This action cannot be undone and will erase all escrow records."
+        <ClearAllModal 
+          totalCount={escrows.length}
           onConfirm={async () => {
             await clearAllEscrows();
             setIsConfirmClearAllOpen(false);

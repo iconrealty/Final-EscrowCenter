@@ -84,8 +84,12 @@ export function ChecklistTable({
   return (
     <div className="bg-[#FFFFFF] rounded-2xl border border-[#e5e5ea] overflow-hidden shadow-sm">
       <div className="p-4 sm:p-5 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="font-bold text-[#1d1d1f] text-sm sm:text-base tracking-tight">Escrow List</h2>
+          <span className="text-slate-300 font-normal text-xs">•</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#1B3A5C] text-white text-[10px] font-mono font-bold tracking-wide uppercase shadow-2xs">
+            {selectedYear === 'all' ? 'All Time' : selectedYear}
+          </span>
         </div>
         
         <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-auto">
