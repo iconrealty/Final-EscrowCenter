@@ -355,7 +355,7 @@ export function AddEditModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1">Commission (%)</label>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Gross Commission (%)</label>
               <input type="number" step="0.01" value={formData.commissionPercent} onChange={e => setFormData({...formData, commissionPercent: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 

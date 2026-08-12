@@ -282,7 +282,7 @@ export function EscrowTableModal({
                   <th className="py-2.5 px-3 w-[180px]">Client Name</th>
                   <th className="py-2.5 px-3 w-[120px]">Status</th>
                   <th className="py-2.5 px-3 w-[110px]">Side</th>
-                  <th className="py-2.5 px-3 w-[120px]">Comm. (%)</th>
+                  <th className="py-2.5 px-3 w-[120px]">Gross Comm. (%)</th>
                   <th className="py-2.5 px-3 w-[130px]">Net Comm ($)</th>
                   <th className="py-2.5 px-3 w-[135px]">COE Date</th>
                   <th className="py-2.5 px-3 w-[80px] text-right">Actions</th>
