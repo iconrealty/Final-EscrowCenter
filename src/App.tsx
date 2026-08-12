@@ -21,6 +21,7 @@ import { MilestonesContingenciesModal } from './components/modals/MilestonesCont
 import { GoalsModal } from './components/modals/GoalsModal';
 import { ContactsModal } from './components/modals/ContactsModal';
 import { DocumentsModal } from './components/modals/DocumentsModal';
+import { EscrowTableModal } from './components/modals/EscrowTableModal';
 
 import { useEscrows } from './hooks/useEscrows';
 import { Escrow } from './types';
@@ -46,6 +47,7 @@ function App() {
   const [documentsEscrow, setDocumentsEscrow] = useState<Escrow | null>(null);
   const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string; wishType?: 'anniversary' | 'birthday' } | null>(null);
   const [isGoalsOpen, setIsGoalsOpen] = useState(false);
+  const [isTableManagerOpen, setIsTableManagerOpen] = useState(false);
 
   
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -127,6 +129,7 @@ function App() {
           onClearAllEscrows={() => setIsConfirmClearAllOpen(true)}
           onOpenAuth={() => setIsAuthOpen(true)}
           onOpenGoals={() => setIsGoalsOpen(true)}
+          onOpenTableManager={() => setIsTableManagerOpen(true)}
           escrows={escrows}
         />
         
@@ -337,6 +340,19 @@ function App() {
 
       {isAuthOpen && (
         <AuthModal onClose={() => setIsAuthOpen(false)} />
+      )}
+
+      {isTableManagerOpen && (
+        <EscrowTableModal
+          isOpen={isTableManagerOpen}
+          onClose={() => setIsTableManagerOpen(false)}
+          escrows={escrows}
+          onEditEscrow={(escrow) => {
+            setEditingEscrow(escrow);
+            setIsAddEditOpen(true);
+          }}
+          onDeleteEscrow={(id) => deleteEscrow(id)}
+        />
       )}
 
       {/* Mobile Bottom Navigation Bar */}

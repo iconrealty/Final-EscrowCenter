@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Plus, Download, Upload, Cloud, CloudOff, LogOut, User, FileSpreadsheet, ChevronDown, Target, Trash2 } from 'lucide-react';
+import { Plus, Download, Upload, Cloud, CloudOff, LogOut, User, FileSpreadsheet, ChevronDown, Target, Trash2, Table } from 'lucide-react';
 import { downloadCsvTemplate, parseCsv, downloadEscrowsCsv } from '../../utils/csvUtils';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -13,10 +13,11 @@ interface TopNavProps {
   onClearAllEscrows?: () => void;
   onOpenAuth: () => void;
   onOpenGoals?: () => void;
+  onOpenTableManager?: () => void;
   escrows: Escrow[];
 }
 
-export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, onClearAllEscrows, onOpenAuth, onOpenGoals, escrows }: TopNavProps) {
+export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, onClearAllEscrows, onOpenAuth, onOpenGoals, onOpenTableManager, escrows }: TopNavProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, signOut } = useAuth();
   const { success: showSuccess, error: showError, warning: showWarning } = useToast();
@@ -254,7 +255,22 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
                 className="fixed inset-0 z-40" 
                 onClick={() => setShowCsvDropdown(false)}
               />
-              <div className="absolute right-0 mt-2 w-52 bg-white border border-[#e5e5ea] rounded-2xl shadow-lg py-2 z-50 animate-scale-up">
+              <div className="absolute right-0 mt-2 w-56 bg-white border border-[#e5e5ea] rounded-2xl shadow-lg py-2 z-50 animate-scale-up">
+                {onOpenTableManager && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setShowCsvDropdown(false);
+                        onOpenTableManager();
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold text-[#1B3A5C] hover:bg-[#1B3A5C]/5 flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <Table size={15} className="text-[#1B3A5C]" />
+                      <span>Escrow Table Manager</span>
+                    </button>
+                    <div className="h-px bg-slate-100 my-1.5" />
+                  </>
+                )}
                 <button
                   onClick={() => {
                     setShowCsvDropdown(false);

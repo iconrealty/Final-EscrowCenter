@@ -107,7 +107,7 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0 || !user) return;
     uploadFiles(files);
   };
@@ -132,7 +132,7 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
 
     if (!user) return;
 
-    const files = Array.from(e.dataTransfer.files || []);
+    const files = Array.from(e.dataTransfer.files || []) as File[];
     if (files.length > 0) {
       uploadFiles(files);
     }
