@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export function FilterBar({ 
@@ -129,8 +129,18 @@ export function FilterBar({
           placeholder="Search address or client..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-white border border-[#e5e5ea] shadow-sm rounded-xl pl-10 pr-4 py-2 text-xs text-[#1d1d1f] placeholder-[#86868b]/70 focus:outline-none focus:border-[#1B3A5C]/40 focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all"
+          className="w-full bg-white border border-[#e5e5ea] shadow-sm rounded-xl pl-10 pr-8 py-2 text-xs text-[#1d1d1f] placeholder-[#86868b]/70 focus:outline-none focus:border-[#1B3A5C]/40 focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all"
         />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+            title="Clear search"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
     </div>
   );

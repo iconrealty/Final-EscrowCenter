@@ -216,7 +216,12 @@ function App() {
             <div className="max-w-7xl mx-auto h-full">
               <CalendarView 
                 escrows={escrows} 
-                onSelectEscrow={(escrow) => setDetailEscrow(escrow)} 
+                onSelectEscrow={(escrow) => {
+                  setActiveTab('active');
+                  setFilter(escrow.status === 'Cancelled' ? 'Cancelled' : escrow.status || 'All');
+                  setSelectedYear('All');
+                  setSearch(escrow.address || '');
+                }} 
               />
             </div>
           )}
