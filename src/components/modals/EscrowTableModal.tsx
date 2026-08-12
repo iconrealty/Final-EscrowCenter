@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Search, Edit3, Trash2, Calendar, Download, Building, CheckCircle2, Clock, XCircle, ChevronDown, Filter, RefreshCw } from 'lucide-react';
+import { X, Search, Edit3, Trash2, Calendar, Download, Building, Check, Sparkles } from 'lucide-react';
 import { Escrow } from '../../types';
 import { downloadEscrowsCsv } from '../../utils/csvUtils';
 
@@ -7,6 +7,7 @@ interface EscrowTableModalProps {
   isOpen: boolean;
   onClose: () => void;
   escrows: Escrow[];
+  onUpdateEscrow: (id: string, updates: Partial<Escrow>) => void;
   onEditEscrow: (escrow: Escrow) => void;
   onDeleteEscrow: (escrowId: string) => void;
 }
@@ -15,6 +16,7 @@ export function EscrowTableModal({
   isOpen,
   onClose,
   escrows,
+  onUpdateEscrow,
   onEditEscrow,
   onDeleteEscrow,
 }: EscrowTableModalProps) {
@@ -22,6 +24,7 @@ export function EscrowTableModal({
   const [selectedYear, setSelectedYear] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Open' | 'Closed' | 'Cancelled'>('All');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [lastSavedId, setLastSavedId] = useState<string | null>(null);
 
   // Helper function to extract exact year from escrow (COE date or acceptance date)
   const getEscrowYear = (e: Escrow): string => {
@@ -96,6 +99,12 @@ export function EscrowTableModal({
     return { totalCount, closedCount, openCount, totalVolume, totalCommission };
   }, [filteredEscrows]);
 
+  const handleFieldChange = (id: string, field: keyof Escrow, value: any) => {
+    onUpdateEscrow(id, { [field]: value });
+    setLastSavedId(id);
+    setTimeout(() => setLastSavedId((prev) => (prev === id ? null : prev)), 1500);
+  };
+
   const confirmDelete = (id: string) => {
     onDeleteEscrow(id);
     setDeletingId(null);
@@ -104,23 +113,29 @@ export function EscrowTableModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
       {/* Modal Container */}
-      <div className="bg-white rounded-3xl border border-[#e5e5ea] shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden animate-scale-up">
+      <div className="bg-white rounded-3xl border border-[#e5e5ea] shadow-2xl w-full max-w-7xl max-h-[94vh] flex flex-col overflow-hidden animate-scale-up">
         
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-4 sm:p-5 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <span className="p-2 rounded-xl bg-[#1B3A5C] text-white shadow-xs">
                 <Building size={18} />
               </span>
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-[#1d1d1f] tracking-tight">
-                  Escrows Table Manager
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg sm:text-xl font-bold text-[#1d1d1f] tracking-tight">
+                    Live Escrow Spreadsheet
+                  </h2>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                    <Sparkles size={12} />
+                    Live Editing
+                  </span>
+                </div>
                 <p className="text-xs text-[#86868b]">
-                  View, filter by year, edit, and manage all your escrow records.
+                  Edit any cell directly in the table — changes save automatically in real-time.
                 </p>
               </div>
             </div>
@@ -130,7 +145,7 @@ export function EscrowTableModal({
             <button
               onClick={() => downloadEscrowsCsv(filteredEscrows)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#e5e5ea] text-xs font-bold text-[#1B3A5C] hover:bg-slate-100 shadow-2xs transition-all cursor-pointer"
-              title="Export filtered table to CSV"
+              title="Export table to CSV"
             >
               <Download size={14} />
               <span>Export CSV</span>
@@ -139,7 +154,7 @@ export function EscrowTableModal({
             <button
               onClick={onClose}
               className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-full transition-colors cursor-pointer"
-              title="Close modal"
+              title="Close table manager"
             >
               <X size={20} />
             </button>
@@ -147,7 +162,7 @@ export function EscrowTableModal({
         </div>
 
         {/* Filter Toolbar */}
-        <div className="p-4 bg-white border-b border-[#e5e5ea] flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        <div className="p-3.5 bg-white border-b border-[#e5e5ea] flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           
           {/* Filters Group */}
           <div className="flex flex-wrap items-center gap-2.5">
@@ -208,7 +223,7 @@ export function EscrowTableModal({
           </div>
         </div>
 
-        {/* Quick Summary Pill Bar */}
+        {/* Quick Summary Bar */}
         <div className="px-4 py-2 bg-slate-50/80 border-b border-[#e5e5ea] flex flex-wrap items-center justify-between text-xs font-medium text-slate-600 gap-2">
           <div className="flex items-center gap-3">
             <span>
@@ -227,7 +242,7 @@ export function EscrowTableModal({
           </div>
         </div>
 
-        {/* Table Content */}
+        {/* Interactive Live Spreadsheet Table */}
         <div className="flex-1 overflow-auto">
           {filteredEscrows.length === 0 ? (
             <div className="py-16 text-center">
@@ -248,120 +263,183 @@ export function EscrowTableModal({
               )}
             </div>
           ) : (
-            <table className="w-full text-left border-collapse min-w-[800px]">
+            <table className="w-full text-left border-collapse min-w-[980px]">
               <thead className="bg-slate-100/90 text-slate-600 text-[11px] font-bold uppercase tracking-wider sticky top-0 z-10 border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-4">Address / Escrow #</th>
-                  <th className="py-3 px-4">Client</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Side</th>
-                  <th className="py-3 px-4">Price</th>
-                  <th className="py-3 px-4">Net Comm.</th>
-                  <th className="py-3 px-4">COE Date</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-2.5 px-3 w-[220px]">Address</th>
+                  <th className="py-2.5 px-3 w-[110px]">Escrow #</th>
+                  <th className="py-2.5 px-3 w-[180px]">Client Name</th>
+                  <th className="py-2.5 px-3 w-[120px]">Status</th>
+                  <th className="py-2.5 px-3 w-[110px]">Side</th>
+                  <th className="py-2.5 px-3 w-[130px]">Price ($)</th>
+                  <th className="py-2.5 px-3 w-[130px]">Net Comm ($)</th>
+                  <th className="py-2.5 px-3 w-[135px]">COE Date</th>
+                  <th className="py-2.5 px-3 w-[80px] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
                 {filteredEscrows.map((escrow) => {
-                  const clientName = `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || '—';
                   const isDeletingThis = deletingId === escrow.id;
+                  const isRecentlySaved = lastSavedId === escrow.id;
 
                   return (
                     <tr
                       key={escrow.id}
-                      className="hover:bg-slate-50/80 transition-colors group"
+                      className={`transition-colors group hover:bg-slate-50/90 ${
+                        isRecentlySaved ? 'bg-emerald-50/60' : ''
+                      }`}
                     >
-                      {/* Address & Escrow # */}
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-[#1d1d1f] group-hover:text-[#1B3A5C] transition-colors">
-                          {escrow.address || 'Untitled Property'}
+                      {/* Address */}
+                      <td className="py-1.5 px-2">
+                        <input
+                          type="text"
+                          value={escrow.address || ''}
+                          onChange={(e) => handleFieldChange(escrow.id, 'address', e.target.value)}
+                          placeholder="Property Address"
+                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-bold text-[#1d1d1f] text-xs transition-all outline-none"
+                        />
+                      </td>
+
+                      {/* Escrow # */}
+                      <td className="py-1.5 px-2">
+                        <input
+                          type="text"
+                          value={escrow.escrowNumber || ''}
+                          onChange={(e) => handleFieldChange(escrow.id, 'escrowNumber', e.target.value)}
+                          placeholder="Escrow #"
+                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono text-slate-600 text-xs transition-all outline-none"
+                        />
+                      </td>
+
+                      {/* Client Name (First & Last) */}
+                      <td className="py-1.5 px-2">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={escrow.clientFirstName || ''}
+                            onChange={(e) => handleFieldChange(escrow.id, 'clientFirstName', e.target.value)}
+                            placeholder="First"
+                            className="w-1/2 px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-medium text-slate-800 text-xs transition-all outline-none"
+                          />
+                          <input
+                            type="text"
+                            value={escrow.clientLastName || ''}
+                            onChange={(e) => handleFieldChange(escrow.id, 'clientLastName', e.target.value)}
+                            placeholder="Last"
+                            className="w-1/2 px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-medium text-slate-800 text-xs transition-all outline-none"
+                          />
                         </div>
-                        {escrow.escrowNumber && (
-                          <div className="text-[10px] text-slate-400 font-mono">
-                            #{escrow.escrowNumber}
-                          </div>
-                        )}
                       </td>
 
-                      {/* Client */}
-                      <td className="py-3 px-4">
-                        <div className="font-medium text-slate-800">{clientName}</div>
-                        {escrow.clientPhone && (
-                          <div className="text-[10px] text-slate-400">{escrow.clientPhone}</div>
-                        )}
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                      {/* Status Dropdown */}
+                      <td className="py-1.5 px-2">
+                        <select
+                          value={escrow.status || 'Open'}
+                          onChange={(e) => handleFieldChange(escrow.id, 'status', e.target.value)}
+                          className={`w-full px-2 py-1 rounded-lg text-xs font-extrabold uppercase tracking-wider border transition-all cursor-pointer outline-none ${
                             escrow.status === 'Closed'
-                              ? 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200 focus:border-emerald-500'
                               : escrow.status === 'Cancelled'
-                              ? 'bg-rose-100 text-rose-800'
-                              : 'bg-amber-100 text-amber-800'
+                              ? 'bg-rose-50 text-rose-800 border-rose-200 focus:border-rose-500'
+                              : 'bg-amber-50 text-amber-800 border-amber-200 focus:border-amber-500'
                           }`}
                         >
-                          {escrow.status === 'Closed' && <CheckCircle2 size={11} />}
-                          {escrow.status === 'Open' && <Clock size={11} />}
-                          {escrow.status === 'Cancelled' && <XCircle size={11} />}
-                          {escrow.status || 'Open'}
-                        </span>
+                          <option value="Open">Open</option>
+                          <option value="Closed">Closed</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </select>
                       </td>
 
-                      {/* Side */}
-                      <td className="py-3 px-4 font-medium text-slate-600">
-                        {escrow.representation || 'Buyer'}
+                      {/* Representation Side */}
+                      <td className="py-1.5 px-2">
+                        <select
+                          value={escrow.representation || 'Buyer'}
+                          onChange={(e) => handleFieldChange(escrow.id, 'representation', e.target.value)}
+                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] text-slate-700 text-xs font-semibold transition-all cursor-pointer outline-none"
+                        >
+                          <option value="Buyer">Buyer</option>
+                          <option value="Seller">Seller</option>
+                          <option value="Dual Agent">Dual Agent</option>
+                        </select>
                       </td>
 
-                      {/* Price */}
-                      <td className="py-3 px-4 font-mono font-bold text-slate-800">
-                        {escrow.price ? `$${escrow.price.toLocaleString('en-US')}` : '$0'}
+                      {/* Price ($) */}
+                      <td className="py-1.5 px-2">
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">$</span>
+                          <input
+                            type="number"
+                            value={escrow.price || ''}
+                            onChange={(e) => handleFieldChange(escrow.id, 'price', parseFloat(e.target.value) || 0)}
+                            placeholder="0"
+                            className="w-full pl-5 pr-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono font-bold text-slate-900 text-xs transition-all outline-none"
+                          />
+                        </div>
                       </td>
 
-                      {/* Net Commission */}
-                      <td className="py-3 px-4 font-mono font-bold text-emerald-700">
-                        {escrow.netCommission ? `$${escrow.netCommission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'}
+                      {/* Net Commission ($) */}
+                      <td className="py-1.5 px-2">
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-emerald-600 font-mono text-xs">$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={escrow.netCommission || ''}
+                            onChange={(e) => handleFieldChange(escrow.id, 'netCommission', parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                            className="w-full pl-5 pr-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 font-mono font-bold text-emerald-700 text-xs transition-all outline-none"
+                          />
+                        </div>
                       </td>
 
                       {/* COE Date */}
-                      <td className="py-3 px-4 font-mono text-slate-600">
-                        {escrow.coeDate || '—'}
+                      <td className="py-1.5 px-2">
+                        <input
+                          type="date"
+                          value={escrow.coeDate || ''}
+                          onChange={(e) => handleFieldChange(escrow.id, 'coeDate', e.target.value)}
+                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono text-slate-700 text-xs transition-all cursor-pointer outline-none"
+                        />
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-1.5 px-3 text-right">
                         {isDeletingThis ? (
-                          <div className="flex items-center justify-end gap-1.5 animate-fade-in">
-                            <span className="text-[11px] font-bold text-rose-600 mr-1">Delete?</span>
+                          <div className="flex items-center justify-end gap-1 animate-fade-in">
                             <button
                               onClick={() => confirmDelete(escrow.id)}
                               className="px-2 py-1 bg-rose-600 text-white text-[10px] font-bold rounded-lg hover:bg-rose-700 cursor-pointer"
+                              title="Confirm delete"
                             >
-                              Yes
+                              Confirm
                             </button>
                             <button
                               onClick={() => setDeletingId(null)}
-                              className="px-2 py-1 bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg hover:bg-slate-300 cursor-pointer"
+                              className="px-1.5 py-1 bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg hover:bg-slate-300 cursor-pointer"
                             >
-                              No
+                              Cancel
                             </button>
                           </div>
                         ) : (
                           <div className="flex items-center justify-end gap-1">
+                            {isRecentlySaved && (
+                              <span className="p-1 text-emerald-600 bg-emerald-100 rounded-full animate-pulse" title="Saved live">
+                                <Check size={12} strokeWidth={3} />
+                              </span>
+                            )}
                             <button
                               onClick={() => onEditEscrow(escrow)}
-                              className="p-1.5 text-slate-500 hover:text-[#1B3A5C] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                              title="Edit Escrow details"
+                              className="p-1.5 text-slate-400 hover:text-[#1B3A5C] hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer"
+                              title="Full Editor Modal"
                             >
-                              <Edit3 size={15} />
+                              <Edit3 size={14} />
                             </button>
                             <button
                               onClick={() => setDeletingId(escrow.id)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                               title="Delete Escrow"
                             >
-                              <Trash2 size={15} />
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         )}
@@ -375,11 +453,14 @@ export function EscrowTableModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-50 border-t border-[#e5e5ea] flex items-center justify-between text-xs text-slate-500">
-          <span>Click <strong className="text-slate-700">Edit</strong> on any row to open the full editor.</span>
+        <div className="p-3.5 bg-slate-50 border-t border-[#e5e5ea] flex items-center justify-between text-xs text-slate-500">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span>Changes made to cells auto-save in real-time.</span>
+          </div>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl transition-colors cursor-pointer"
+            className="px-4 py-2 bg-[#1B3A5C] hover:bg-[#142d48] text-white font-bold rounded-xl transition-colors cursor-pointer shadow-2xs"
           >
             Done
           </button>

@@ -179,7 +179,7 @@ export function useEscrows() {
           const updated = { ...escrowToUpdate, ...data, lastUpdated: new Date().toISOString() };
           
           // Auto-close logic
-          const allTasksDone = ALL_TASKS.every((t) => updated.tasks[t.key]);
+          const allTasksDone = updated.tasks && ALL_TASKS.length > 0 && ALL_TASKS.every((t) => updated.tasks[t.key]);
           if (allTasksDone && updated.status !== 'Cancelled') {
             updated.status = 'Closed';
           }
@@ -195,7 +195,7 @@ export function useEscrows() {
             const updated = { ...escrow, ...data, lastUpdated: new Date().toISOString() };
             
             // Auto-close logic
-            const allTasksDone = ALL_TASKS.every((t) => updated.tasks[t.key]);
+            const allTasksDone = updated.tasks && ALL_TASKS.length > 0 && ALL_TASKS.every((t) => updated.tasks[t.key]);
             if (allTasksDone && updated.status !== 'Cancelled') {
               updated.status = 'Closed';
             }

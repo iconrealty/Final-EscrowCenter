@@ -347,6 +347,7 @@ function App() {
           isOpen={isTableManagerOpen}
           onClose={() => setIsTableManagerOpen(false)}
           escrows={escrows}
+          onUpdateEscrow={(id, updates) => editEscrow(id, updates)}
           onEditEscrow={(escrow) => {
             setEditingEscrow(escrow);
             setIsAddEditOpen(true);
