@@ -27,7 +27,7 @@ import { differenceInCalendarDays, parseISO, getISOWeek, getISOWeekYear } from '
 import { Home, LayoutDashboard, Calendar, Gift } from 'lucide-react';
 
 function App() {
-  const { escrows, addEscrow, editEscrow, deleteEscrow, toggleTask, importEscrows } = useEscrows();
+  const { escrows, addEscrow, editEscrow, deleteEscrow, clearAllEscrows, toggleTask, importEscrows } = useEscrows();
   
   const [activeTab, setActiveTab] = useState('active');
   const [filter, setFilter] = useState('Open');
@@ -48,6 +48,7 @@ function App() {
 
   
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isConfirmClearAllOpen, setIsConfirmClearAllOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const filteredEscrows = useMemo(() => {
@@ -122,6 +123,7 @@ function App() {
             setIsAddEditOpen(true);
           }} 
           onImportEscrows={importEscrows}
+          onClearAllEscrows={() => setIsConfirmClearAllOpen(true)}
           onOpenAuth={() => setIsAuthOpen(true)}
           onOpenGoals={() => setIsGoalsOpen(true)}
           escrows={escrows}
@@ -307,6 +309,19 @@ function App() {
           message="Are you sure you want to delete this escrow? This action cannot be undone."
           onConfirm={handleDelete}
           onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
+
+      {isConfirmClearAllOpen && (
+        <ConfirmModal 
+          title="Clear All Escrows"
+          message="Are you sure you want to delete ALL escrows from this account? This action cannot be undone and will erase all escrow records."
+          onConfirm={async () => {
+            await clearAllEscrows();
+            setIsConfirmClearAllOpen(false);
+            setDetailEscrow(null);
+          }}
+          onCancel={() => setIsConfirmClearAllOpen(false)}
         />
       )}
 

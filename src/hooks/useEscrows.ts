@@ -221,6 +221,27 @@ export function useEscrows() {
     }
   };
 
+  const clearAllEscrows = async () => {
+    if (user) {
+      try {
+        const batch = writeBatch(db);
+        escrows.forEach((escrow) => {
+          const docRef = doc(db, 'users', user.uid, 'escrows', escrow.id);
+          batch.delete(docRef);
+        });
+        await batch.commit();
+        return { success: true };
+      } catch (error: any) {
+        console.error("Error clearing all escrows from Firestore:", error);
+        return { success: false, error: error.message || String(error) };
+      }
+    } else {
+      setEscrows([]);
+      localStorage.removeItem('escrows');
+      return { success: true };
+    }
+  };
+
   const toggleTask = async (escrowId: string, taskKey: string) => {
     if (user) {
       try {
@@ -349,6 +370,7 @@ export function useEscrows() {
     addEscrow, 
     editEscrow, 
     deleteEscrow, 
+    clearAllEscrows,
     toggleTask, 
     importEscrows,
     firestoreLoading
