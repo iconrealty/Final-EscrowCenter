@@ -105,6 +105,17 @@ export function EscrowTableModal({
     setTimeout(() => setLastSavedId((prev) => (prev === id ? null : prev)), 1500);
   };
 
+  const handleNumberFieldChange = (id: string, field: keyof Escrow, rawValue: string) => {
+    if (rawValue === '') {
+      onUpdateEscrow(id, { [field]: undefined });
+    } else {
+      const num = parseFloat(rawValue);
+      onUpdateEscrow(id, { [field]: isNaN(num) ? undefined : num });
+    }
+    setLastSavedId(id);
+    setTimeout(() => setLastSavedId((prev) => (prev === id ? null : prev)), 1500);
+  };
+
   const confirmDelete = (id: string) => {
     onDeleteEscrow(id);
     setDeletingId(null);
@@ -271,7 +282,7 @@ export function EscrowTableModal({
                   <th className="py-2.5 px-3 w-[180px]">Client Name</th>
                   <th className="py-2.5 px-3 w-[120px]">Status</th>
                   <th className="py-2.5 px-3 w-[110px]">Side</th>
-                  <th className="py-2.5 px-3 w-[130px]">Price ($)</th>
+                  <th className="py-2.5 px-3 w-[120px]">Comm. (%)</th>
                   <th className="py-2.5 px-3 w-[130px]">Net Comm ($)</th>
                   <th className="py-2.5 px-3 w-[135px]">COE Date</th>
                   <th className="py-2.5 px-3 w-[80px] text-right">Actions</th>
@@ -363,17 +374,18 @@ export function EscrowTableModal({
                         </select>
                       </td>
 
-                      {/* Price ($) */}
+                      {/* Commission (%) */}
                       <td className="py-1.5 px-2">
                         <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">$</span>
                           <input
                             type="number"
-                            value={escrow.price || ''}
-                            onChange={(e) => handleFieldChange(escrow.id, 'price', parseFloat(e.target.value) || 0)}
-                            placeholder="0"
-                            className="w-full pl-5 pr-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono font-bold text-slate-900 text-xs transition-all outline-none"
+                            step="any"
+                            value={escrow.commissionPercent ?? ''}
+                            onChange={(e) => handleNumberFieldChange(escrow.id, 'commissionPercent', e.target.value)}
+                            placeholder="2.5"
+                            className="w-full pr-6 pl-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono font-bold text-slate-900 text-xs transition-all outline-none"
                           />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">%</span>
                         </div>
                       </td>
 
@@ -383,9 +395,9 @@ export function EscrowTableModal({
                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-emerald-600 font-mono text-xs">$</span>
                           <input
                             type="number"
-                            step="0.01"
-                            value={escrow.netCommission || ''}
-                            onChange={(e) => handleFieldChange(escrow.id, 'netCommission', parseFloat(e.target.value) || 0)}
+                            step="any"
+                            value={escrow.netCommission ?? ''}
+                            onChange={(e) => handleNumberFieldChange(escrow.id, 'netCommission', e.target.value)}
                             placeholder="0.00"
                             className="w-full pl-5 pr-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 font-mono font-bold text-emerald-700 text-xs transition-all outline-none"
                           />
