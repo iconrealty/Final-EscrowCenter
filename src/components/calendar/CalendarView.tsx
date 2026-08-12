@@ -69,16 +69,63 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
   const qIndex = Math.floor(currentMonth / 3); // 0 to 3
   const monthsInQuarter = [qIndex * 3, qIndex * 3 + 1, qIndex * 3 + 2];
 
+  // Escrow counts per period
+  const quarterEscrows = escrows.filter(e => {
+    if (!e.coeDate) return false;
+    const date = parseISO(e.coeDate);
+    return date.getFullYear() === currentYear && monthsInQuarter.includes(date.getMonth());
+  });
+  const quarterClosedCount = quarterEscrows.filter(e => e.status === 'Closed').length;
+
+  const currentMonthEscrows = escrows.filter(e => {
+    if (!e.coeDate) return false;
+    const date = parseISO(e.coeDate);
+    return date.getFullYear() === currentDate.getFullYear() && date.getMonth() === currentDate.getMonth();
+  });
+  const monthClosedCount = currentMonthEscrows.filter(e => e.status === 'Closed').length;
+
+  const yearEscrows = escrows.filter(e => {
+    if (!e.coeDate) return false;
+    const date = parseISO(e.coeDate);
+    return date.getFullYear() === currentYear;
+  });
+  const yearClosedCount = yearEscrows.filter(e => e.status === 'Closed').length;
+
   return (
     <div className="w-full bg-white rounded-3xl border border-[#e5e5ea] shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col min-h-[500px]">
       {/* Header controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 sm:px-8 py-4 sm:py-6 border-b border-[#e5e5ea] bg-white">
-        <div className="flex items-center justify-between sm:justify-start gap-4">
-          <h2 className="text-lg sm:text-2xl font-bold text-[#1d1d1f] tracking-tight min-w-[130px]">
-            {viewMode === 'month' && format(currentDate, 'MMMM yyyy')}
-            {viewMode === 'quarter' && `Q${qIndex + 1} ${currentYear}`}
-            {viewMode === 'year' && format(currentDate, 'yyyy')}
-          </h2>
+        <div className="flex items-center justify-between sm:justify-start gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 className="text-lg sm:text-2xl font-bold text-[#1d1d1f] tracking-tight">
+              {viewMode === 'month' && format(currentDate, 'MMMM yyyy')}
+              {viewMode === 'quarter' && `Q${qIndex + 1} ${currentYear}`}
+              {viewMode === 'year' && format(currentDate, 'yyyy')}
+            </h2>
+
+            <span className="text-slate-300 font-normal text-sm">•</span>
+
+            {viewMode === 'quarter' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1B3A5C] text-white text-xs sm:text-sm font-bold shadow-2xs">
+                <span>{quarterClosedCount} Closed</span>
+                <span className="opacity-80 font-normal text-xs">({quarterEscrows.length} total)</span>
+              </span>
+            )}
+
+            {viewMode === 'month' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1B3A5C] text-white text-xs sm:text-sm font-bold shadow-2xs">
+                <span>{monthClosedCount} Closed</span>
+                <span className="opacity-80 font-normal text-xs">({currentMonthEscrows.length} total)</span>
+              </span>
+            )}
+
+            {viewMode === 'year' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1B3A5C] text-white text-xs sm:text-sm font-bold shadow-2xs">
+                <span>{yearClosedCount} Closed</span>
+                <span className="opacity-80 font-normal text-xs">({yearEscrows.length} total)</span>
+              </span>
+            )}
+          </div>
           
           {/* Mobile switcher */}
           <div className="sm:hidden">
@@ -220,6 +267,7 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
               const monthEscrows = getEscrowsForMonth(currentYear, mIdx).sort(
                 (a, b) => new Date(a.coeDate || 0).getTime() - new Date(b.coeDate || 0).getTime()
               );
+              const mClosedCount = monthEscrows.filter(e => e.status === 'Closed').length;
 
               return (
                 <div 
@@ -236,8 +284,8 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
                     title={`View ${monthNames[mIdx]} in full Month grid`}
                   >
                     <span className="font-bold text-base sm:text-lg tracking-tight">{monthNames[mIdx]}</span>
-                    <span className="text-[11px] font-bold bg-[#1B3A5C]/10 text-[#1B3A5C] group-hover/hdr:bg-[#1B3A5C]/10 group-hover/hdr:text-[#1B3A5C] px-2.5 py-1 rounded-full flex items-center gap-1 transition-colors">
-                      {monthEscrows.length} {monthEscrows.length === 1 ? 'Closing' : 'Closings'}
+                    <span className="text-[11px] font-bold bg-[#1B3A5C]/10 text-[#1B3A5C] px-2.5 py-1 rounded-full flex items-center gap-1 transition-colors">
+                      {mClosedCount} Closed ({monthEscrows.length} total)
                       <ChevronRight size={12} strokeWidth={2.5} />
                     </span>
                   </button>
