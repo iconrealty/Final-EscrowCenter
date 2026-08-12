@@ -113,8 +113,13 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     const volume = filteredClosedEscrows.reduce((sum, e) => sum + (e.price || 0), 0);
     const count = filteredClosedEscrows.length;
     const commission = filteredClosedEscrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);
+    const grossCommission = filteredClosedEscrows.reduce((sum, e) => {
+      if (e.grossCommission !== undefined && e.grossCommission !== null) return sum + e.grossCommission;
+      if (e.price && e.commissionPercent) return sum + (e.price * e.commissionPercent) / 100;
+      return sum;
+    }, 0);
 
-    return { volume, count, commission };
+    return { volume, count, commission, grossCommission };
   }, [filteredClosedEscrows]);
 
   // Calculate Monthly Sales Stats for standard monthly tab
@@ -129,13 +134,18 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     const volume = monthlyEscrows.reduce((sum, e) => sum + (e.price || 0), 0);
     const count = monthlyEscrows.length;
     const commission = monthlyEscrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);
+    const grossCommission = monthlyEscrows.reduce((sum, e) => {
+      if (e.grossCommission !== undefined && e.grossCommission !== null) return sum + e.grossCommission;
+      if (e.price && e.commissionPercent) return sum + (e.price * e.commissionPercent) / 100;
+      return sum;
+    }, 0);
 
-    return { volume, count, commission };
+    return { volume, count, commission, grossCommission };
   }, [monthlyEscrows]);
 
   // Group Commissions by Month (filtered by selectedYear)
   const commissionByMonth = useMemo(() => {
-    const groups: { [key: string]: { key: string; label: string; amount: number; count: number; escrows: Escrow[] } } = {};
+    const groups: { [key: string]: { key: string; label: string; amount: number; grossAmount: number; count: number; escrows: Escrow[] } } = {};
     const escrowsToUse = selectedYear === 'all' ? closedEscrows : closedEscrows.filter(e => getEscrowYear(e) === selectedYear);
     
     escrowsToUse.forEach((escrow) => {
@@ -152,9 +162,10 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             } catch {
               // fallback
             }
-            groups[ym] = { key: ym, label: formattedLabel, amount: 0, count: 0, escrows: [] };
+            groups[ym] = { key: ym, label: formattedLabel, amount: 0, grossAmount: 0, count: 0, escrows: [] };
           }
           groups[ym].amount += escrow.netCommission || 0;
+          groups[ym].grossAmount += (escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0));
           groups[ym].count += 1;
           groups[ym].escrows.push(escrow);
         }
@@ -166,7 +177,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
 
   // Group Commissions by Year
   const commissionByYear = useMemo(() => {
-    const groups: { [key: string]: { key: string; label: string; amount: number; count: number; escrows: Escrow[] } } = {};
+    const groups: { [key: string]: { key: string; label: string; amount: number; grossAmount: number; count: number; escrows: Escrow[] } } = {};
     const escrowsToUse = selectedYear === 'all' ? closedEscrows : closedEscrows.filter(e => getEscrowYear(e) === selectedYear);
     
     escrowsToUse.forEach((escrow) => {
@@ -174,9 +185,10 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
         const yr = escrow.coeDate.substring(0, 4);
         if (/^\d{4}$/.test(yr)) {
           if (!groups[yr]) {
-            groups[yr] = { key: yr, label: `${yr} Year Total`, amount: 0, count: 0, escrows: [] };
+            groups[yr] = { key: yr, label: `${yr} Year Total`, amount: 0, grossAmount: 0, count: 0, escrows: [] };
           }
           groups[yr].amount += escrow.netCommission || 0;
+          groups[yr].grossAmount += (escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0));
           groups[yr].count += 1;
           groups[yr].escrows.push(escrow);
         }
@@ -563,10 +575,16 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             {/* Header with Monthly/Yearly filter */}
             <div className="flex items-center justify-between shrink-0">
               <div>
-                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Commission Revenue</span>
-                <span className="text-[13px] font-bold text-[#059669] font-mono mt-0.5 block">
-                  {formatCurrency(totalStats.commission)} Total
-                </span>
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Net Commission Revenue</span>
+                <div className="flex items-center gap-2.5 mt-0.5">
+                  <span className="text-[12px] font-bold text-[#059669] font-mono block">
+                    Net: {formatCurrency(totalStats.commission)}
+                  </span>
+                  <span className="text-slate-300 font-normal text-xs">•</span>
+                  <span className="text-[12px] font-bold text-[#1B3A5C] font-mono block">
+                    Gross: {formatCurrency(totalStats.grossCommission)}
+                  </span>
+                </div>
               </div>
               
               {/* Selector for grouping: Monthly / Yearly */}
@@ -603,7 +621,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             {/* List Header */}
             <div className="flex items-center justify-between text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
               <span>Period</span>
-              <span>Net Commission</span>
+              <span>Net / Gross Commission</span>
             </div>
 
             {/* Scrollable list of months/years */}
@@ -635,33 +653,46 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                               </span>
                             </div>
                           </div>
-                          <span className="text-xs font-extrabold text-[#059669] font-mono shrink-0">
-                            {formatCurrency(group.amount)}
-                          </span>
+                          <div className="text-right font-mono shrink-0">
+                            <div className="text-xs font-extrabold text-[#059669]">
+                              Net: {formatCurrency(group.amount)}
+                            </div>
+                            <div className="text-[10px] font-bold text-[#1B3A5C]">
+                              Gross: {formatCurrency(group.grossAmount)}
+                            </div>
+                          </div>
                         </button>
 
                         {/* Collapsible list of escrows in that period */}
                         {isExpanded && (
                           <div className="bg-white border-t border-slate-100/60 p-2 flex flex-col gap-1.5 animate-slide-down">
-                            {group.escrows.map((escrow) => (
-                              <div
-                                key={escrow.id}
-                                onClick={() => onSelectEscrow(escrow)}
-                                className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-all duration-150 cursor-pointer"
-                              >
-                                <div className="min-w-0 flex-1 pr-3">
-                                  <div className="text-[11px] font-semibold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
-                                    {escrow.address}
+                            {group.escrows.map((escrow) => {
+                              const grossVal = escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0);
+                              return (
+                                <div
+                                  key={escrow.id}
+                                  onClick={() => onSelectEscrow(escrow)}
+                                  className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-all duration-150 cursor-pointer"
+                                >
+                                  <div className="min-w-0 flex-1 pr-3">
+                                    <div className="text-[11px] font-semibold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
+                                      {escrow.address}
+                                    </div>
+                                    <div className="text-[9px] text-[#86868b] mt-0.5">
+                                      {escrow.clientFirstName} {escrow.clientLastName} • {formatItemDate(escrow.coeDate)}
+                                    </div>
                                   </div>
-                                  <div className="text-[9px] text-[#86868b] mt-0.5">
-                                    {escrow.clientFirstName} {escrow.clientLastName} • {formatItemDate(escrow.coeDate)}
+                                  <div className="text-right font-mono shrink-0">
+                                    <div className="text-[11px] font-bold text-[#059669]">
+                                      Net: {formatCurrency(escrow.netCommission || 0)}
+                                    </div>
+                                    <div className="text-[9px] font-semibold text-[#1B3A5C]">
+                                      Gross: {formatCurrency(grossVal)}
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="text-[11px] font-bold text-[#059669] font-mono shrink-0">
-                                  {formatCurrency(escrow.netCommission || 0)}
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>

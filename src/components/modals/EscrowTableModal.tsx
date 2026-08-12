@@ -374,15 +374,15 @@ export function EscrowTableModal({
                         </select>
                       </td>
 
-                      {/* Commission (%) */}
+                      {/* Gross Commission (%) */}
                       <td className="py-1.5 px-2">
                         <div className="relative">
                           <input
                             type="number"
                             step="any"
-                            value={escrow.commissionPercent ?? ''}
+                            value={escrow.commissionPercent !== undefined && escrow.commissionPercent !== null && escrow.commissionPercent !== 0 ? escrow.commissionPercent : ''}
                             onChange={(e) => handleNumberFieldChange(escrow.id, 'commissionPercent', e.target.value)}
-                            placeholder="2.5"
+                            placeholder=""
                             className="w-full pr-6 pl-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono font-bold text-slate-900 text-xs transition-all outline-none"
                           />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">%</span>
