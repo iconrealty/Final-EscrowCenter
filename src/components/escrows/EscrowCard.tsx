@@ -313,15 +313,26 @@ export function EscrowCard({
           >
             <span>Contacts</span>
           </button>
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenDocuments?.();
-            }}
-            className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
-          >
-            <span>Documents</span>
-          </button>
+          {(() => {
+            const docCount = escrow.documents?.length || 0;
+            const hasDocs = docCount > 0;
+            return (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDocuments?.();
+                }}
+                className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer ${
+                  hasDocs
+                    ? 'bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/90'
+                    : 'bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 animate-pulse'
+                }`}
+                title={hasDocs ? `${docCount} document(s) attached` : 'No documents attached'}
+              >
+                <span>{hasDocs ? `Documents (${docCount})` : 'No Documents'}</span>
+              </button>
+            );
+          })()}
         </div>
 
       </div>
