@@ -21,8 +21,8 @@ export function ContingencyChip({
   daysLeft?: number | null;
   dueDate?: Date | null;
 }) {
-  let btnClasses = "flex items-center gap-2 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase border transition-all duration-200 select-none ";
-  let dotClasses = "w-1.5 h-1.5 rounded-full ";
+  let btnClasses = "inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase border transition-all duration-200 select-none max-w-full ";
+  let dotClasses = "w-1.5 h-1.5 rounded-full shrink-0 ";
 
   if (isDone) {
     btnClasses += "bg-[#1B3A5C] border-[#1B3A5C] text-white shadow-sm";

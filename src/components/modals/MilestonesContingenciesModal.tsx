@@ -128,7 +128,7 @@ export function MilestonesContingenciesModal({
           </div>
 
           {/* Active Contingency Mini Pill Ticker */}
-          <div className="flex justify-start my-1">
+          <div className="w-full my-1">
             <ActiveContingenciesTicker escrow={escrow} />
           </div>
 

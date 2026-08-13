@@ -37,7 +37,7 @@ export function ActiveContingenciesTicker({
 
   if (activeContingencies.length === 0) {
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="w-full flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
             Active Contingencies
@@ -48,16 +48,16 @@ export function ActiveContingenciesTicker({
             e.stopPropagation();
             onUpdateTasks?.();
           }}
-          className="flex items-center justify-between bg-emerald-600 text-white border border-emerald-700/80 p-2.5 rounded-xl shadow-xs hover:bg-emerald-700 transition-all cursor-pointer select-none"
+          className="w-full flex items-center justify-between bg-emerald-600 text-white border border-emerald-700/80 p-2.5 rounded-xl shadow-xs hover:bg-emerald-700 transition-all cursor-pointer select-none gap-2"
           title="All contingencies removed! Click to view details."
         >
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <CheckCircle2 size={16} className="text-white shrink-0" />
             <span className="text-xs font-bold text-white truncate">
               All 9 Contingencies Removed / Cleared
             </span>
           </div>
-          <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
+          <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded-md shrink-0 shadow-2xs whitespace-nowrap">
             9 / 9 Done
           </span>
         </div>
@@ -91,13 +91,13 @@ export function ActiveContingenciesTicker({
 
     if (expDateStr) {
       return (
-        <span className="inline-flex items-center gap-1">
-          <span className="text-[#334155]">{expDateStr}</span>
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+          <span className="text-slate-700 font-semibold">{expDateStr}</span>
           <span className={`font-extrabold ${parenColor}`}>({statusMsg})</span>
         </span>
       );
     }
-    return <span className={`font-extrabold ${parenColor}`}>{statusMsg}</span>;
+    return <span className={`font-extrabold ${parenColor} whitespace-nowrap`}>{statusMsg}</span>;
   };
 
   // Color styles matching Next Step box formatting
@@ -117,7 +117,7 @@ export function ActiveContingenciesTicker({
     <div 
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="flex flex-col gap-1.5"
+      className="w-full flex flex-col gap-1.5"
     >
       {/* Title Header matching Next Step */}
       <div className="flex items-center justify-between">
@@ -142,20 +142,20 @@ export function ActiveContingenciesTicker({
           e.stopPropagation();
           onUpdateTasks?.();
         }}
-        className={`flex items-center justify-between text-white border p-2.5 rounded-xl shadow-xs transition-all cursor-pointer group/step select-none ${boxBgClass}`}
+        className={`w-full flex items-center justify-between gap-2.5 text-white border p-2.5 rounded-xl shadow-xs transition-all cursor-pointer group/step select-none overflow-hidden ${boxBgClass}`}
         title={dueDate ? `${currentItem?.label} - Due: ${format(dueDate, 'EEE, MMM d, yyyy')} (${daysLeft}d left). Click to manage tasks.` : 'Active contingency. Click to manage tasks.'}
       >
-        <div key={animateKey} className="flex items-center gap-2 min-w-0 animate-fadeIn">
+        <div key={animateKey} className="flex items-center gap-2 min-w-0 flex-1 animate-fadeIn overflow-hidden">
           <span className="w-2 h-2 rounded-full bg-white shrink-0 shadow-2xs animate-pulse" />
           <span className="text-[10px] font-mono font-bold bg-white/20 text-white px-1.5 py-0.5 rounded shrink-0">
             {currentItem?.key}
           </span>
-          <span className="text-xs font-bold text-white truncate">
+          <span className="text-xs font-bold text-white truncate min-w-0">
             {currentItem?.label}
           </span>
         </div>
 
-        <span className={`text-[10px] font-bold bg-white px-2 py-0.5 rounded-md shrink-0 shadow-2xs ${badgeTextClass}`}>
+        <span className={`text-[10px] font-bold bg-white px-2.5 py-1 rounded-md shrink-0 shadow-2xs whitespace-nowrap flex items-center gap-1 ${badgeTextClass}`}>
           {renderDaysText()}
         </span>
       </div>
