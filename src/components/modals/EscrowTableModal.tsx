@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Search, Edit3, Trash2, Calendar, Download, Building, Check, Sparkles } from 'lucide-react';
+import { X, Search, Edit3, Trash2, Calendar, Download, Building, Check } from 'lucide-react';
 import { Escrow } from '../../types';
 import { downloadEscrowsCsv } from '../../utils/csvUtils';
 
@@ -88,19 +88,34 @@ export function EscrowTableModal({
       return true;
     });
 
-    // Stable sort by Escrow Number / Code descending, or createdAt / coeDate / ID descending
-    // So editing ANY field NEVER changes the order of rows!
+    // Default sort by COE Date descending (last/newest escrow at the top)
     return list.sort((a, b) => {
+      const parseDate = (d?: string) => {
+        if (!d) return 0;
+        const ts = new Date(d).getTime();
+        return isNaN(ts) ? 0 : ts;
+      };
+
+      const dateA = parseDate(a.coeDate);
+      const dateB = parseDate(b.coeDate);
+      if (dateB !== dateA) {
+        return dateB - dateA;
+      }
+
+      // Secondary fallback: createdAt descending
+      const createdA = parseDate(a.createdAt);
+      const createdB = parseDate(b.createdAt);
+      if (createdB !== createdA) {
+        return createdB - createdA;
+      }
+
+      // Tertiary fallback: Escrow Number descending
       const numA = (a.escrowNumber || '').trim();
       const numB = (b.escrowNumber || '').trim();
       if (numA && numB) {
         const comp = numB.localeCompare(numA, undefined, { numeric: true, sensitivity: 'base' });
         if (comp !== 0) return comp;
       }
-
-      const timeA = new Date(a.createdAt || a.coeDate || 0).getTime();
-      const timeB = new Date(b.createdAt || b.coeDate || 0).getTime();
-      if (timeB !== timeA) return timeB - timeA;
 
       return (b.id || '').localeCompare(a.id || '');
     });
@@ -173,25 +188,17 @@ export function EscrowTableModal({
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-[#1B3A5C] text-white shadow-xs">
-                <Building size={18} />
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-lg sm:text-xl font-bold text-[#1d1d1f] tracking-tight">
+                Live Escrow Spreadsheet
+              </h2>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                Live Editing
               </span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg sm:text-xl font-bold text-[#1d1d1f] tracking-tight">
-                    Live Escrow Spreadsheet
-                  </h2>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                    <Sparkles size={12} />
-                    Live Editing
-                  </span>
-                </div>
-                <p className="text-xs text-[#86868b]">
-                  Edit any cell directly in the table — changes save automatically in real-time.
-                </p>
-              </div>
             </div>
+            <p className="text-xs text-[#86868b] mt-0.5">
+              Edit any cell directly in the table — changes save automatically in real-time.
+            </p>
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
