@@ -138,20 +138,38 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
     }
   };
 
-  const handleDelete = async (docId: string, url: string, name: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
-    
-    if (user && url && url !== '#') {
-      try {
-        const storageRef = ref(storage, `users/${user.uid}/escrows/${escrow.id}/documents/${docId}_${name}`);
-        await deleteObject(storageRef);
-      } catch (err) {
-        console.error("Error deleting from storage:", err);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<{ id: string; url: string; name: string } | null>(null);
+
+  const executeDelete = async (docId: string, url: string, name: string) => {
+    setDeletingId(docId);
+
+    try {
+      if (user && url && url !== '#' && url.startsWith('http')) {
+        try {
+          const storageRef = ref(storage, url);
+          await deleteObject(storageRef);
+        } catch {
+          try {
+            const pathRef = ref(storage, `users/${user.uid}/escrows/${escrow.id}/documents/${docId}_${name}`);
+            await deleteObject(pathRef);
+          } catch (storageErr) {
+            console.warn("Storage object cleanup notice:", storageErr);
+          }
+        }
       }
+    } catch (err) {
+      console.error("Error during document deletion:", err);
+    } finally {
+      const existingDocs = escrow.documents || [];
+      const updatedDocs = existingDocs.filter(d => d.id !== docId);
+      onUpdate({ documents: updatedDocs });
+
+      if (previewDoc?.id === docId) {
+        setPreviewDoc(null);
+      }
+      setDeletingId(null);
     }
-    
-    const existingDocs = escrow.documents || [];
-    onUpdate({ documents: existingDocs.filter(d => d.id !== docId) });
   };
 
   const formatSize = (bytes?: number) => {
@@ -275,16 +293,16 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setPreviewDoc(doc);
                     }}
-                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                     title="Quick Preview"
                   >
-                    <Eye size={14} />
+                    <Eye size={15} />
                   </button>
                   <a
                     href={doc.url}
@@ -292,20 +310,25 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="p-1.5 text-slate-400 hover:text-[#1B3A5C] hover:bg-slate-50 rounded-md transition-colors"
+                    className="p-1.5 text-slate-500 hover:text-[#1B3A5C] hover:bg-slate-50 rounded-md transition-colors"
                     title="Download File"
                   >
-                    <Download size={14} />
+                    <Download size={15} />
                   </a>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(doc.id, doc.url, doc.name);
+                      setConfirmDeleteDoc({ id: doc.id, url: doc.url, name: doc.name });
                     }}
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                    title="Delete"
+                    disabled={deletingId === doc.id}
+                    className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                    title="Delete Document"
                   >
-                    <Trash2 size={14} />
+                    {deletingId === doc.id ? (
+                      <Loader2 size={15} className="animate-spin text-rose-500" />
+                    ) : (
+                      <Trash2 size={15} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -389,8 +412,21 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
                   <span className="hidden sm:inline">Download</span>
                 </a>
                 <button
+                  onClick={() => setConfirmDeleteDoc({ id: previewDoc.id, url: previewDoc.url, name: previewDoc.name })}
+                  disabled={deletingId === previewDoc.id}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-300 bg-rose-950/70 hover:bg-rose-900 hover:text-white border border-rose-800/80 rounded-lg transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                  title="Delete document"
+                >
+                  {deletingId === previewDoc.id ? (
+                    <Loader2 size={14} className="animate-spin text-rose-300" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                  <span className="hidden sm:inline">Delete</span>
+                </button>
+                <button
                   onClick={() => setPreviewDoc(null)}
-                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors ml-1"
+                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors ml-1 cursor-pointer"
                   title="Close preview window"
                 >
                   <X size={18} />
@@ -429,6 +465,58 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
                   className="w-full h-full rounded-lg border border-slate-200 bg-white shadow-sm"
                 />
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Confirmation Modal for Document Deletion (iframe-safe) */}
+      {confirmDeleteDoc && (
+        <div 
+          className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
+          onClick={() => setConfirmDeleteDoc(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl border border-slate-200 text-center space-y-4 animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100">
+              <Trash2 size={22} />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-slate-900">Delete Document?</h4>
+              <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 px-1">
+                Are you sure you want to delete <strong className="text-slate-800 font-semibold">{confirmDeleteDoc.name}</strong>?
+              </p>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteDoc(null)}
+                disabled={deletingId === confirmDeleteDoc.id}
+                className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const target = confirmDeleteDoc;
+                  await executeDelete(target.id, target.url, target.name);
+                  setConfirmDeleteDoc(null);
+                }}
+                disabled={deletingId === confirmDeleteDoc.id}
+                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+              >
+                {deletingId === confirmDeleteDoc.id ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <span>Yes, Delete</span>
+                )}
+              </button>
             </div>
           </div>
         </div>

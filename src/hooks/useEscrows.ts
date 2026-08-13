@@ -183,6 +183,8 @@ export function useEscrows() {
           if (allTasksDone && updated.status !== 'Cancelled') {
             updated.status = 'Closed';
           }
+          // Optimistically update local state so changes reflect immediately
+          setEscrows((prev) => prev.map((e) => (e.id === id ? updated : e)));
           await setDoc(escrowDocRef, cleanUndefined(updated));
         }
       } catch (error) {
