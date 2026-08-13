@@ -63,6 +63,7 @@ export interface Escrow {
   documents?: EscrowDocument[];
   anniversaryInteractions?: AnniversaryInteraction[];
   lastUpdated: string;
+  createdAt?: string;
 }
 
 export const MILESTONES = [

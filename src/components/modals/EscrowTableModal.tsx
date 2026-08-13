@@ -25,6 +25,7 @@ export function EscrowTableModal({
   const [statusFilter, setStatusFilter] = useState<'All' | 'Open' | 'Closed' | 'Cancelled'>('All');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [lastSavedId, setLastSavedId] = useState<string | null>(null);
+  const [cellText, setCellText] = useState<Record<string, string>>({});
 
   // Helper function to extract exact year from escrow (COE date or acceptance date)
   const getEscrowYear = (e: Escrow): string => {
@@ -52,9 +53,9 @@ export function EscrowTableModal({
     return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
   }, [escrows]);
 
-  // Filtered escrows list
+  // Filtered escrows list with stable sort (newest code / created date first)
   const filteredEscrows = useMemo(() => {
-    return escrows.filter((e) => {
+    const list = escrows.filter((e) => {
       // Year filter
       if (selectedYear !== 'All') {
         const yr = getEscrowYear(e);
@@ -86,6 +87,23 @@ export function EscrowTableModal({
 
       return true;
     });
+
+    // Stable sort by Escrow Number / Code descending, or createdAt / coeDate / ID descending
+    // So editing ANY field NEVER changes the order of rows!
+    return list.sort((a, b) => {
+      const numA = (a.escrowNumber || '').trim();
+      const numB = (b.escrowNumber || '').trim();
+      if (numA && numB) {
+        const comp = numB.localeCompare(numA, undefined, { numeric: true, sensitivity: 'base' });
+        if (comp !== 0) return comp;
+      }
+
+      const timeA = new Date(a.createdAt || a.coeDate || 0).getTime();
+      const timeB = new Date(b.createdAt || b.coeDate || 0).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+
+      return (b.id || '').localeCompare(a.id || '');
+    });
   }, [escrows, selectedYear, statusFilter, search]);
 
   // Summary metrics for current view
@@ -105,15 +123,39 @@ export function EscrowTableModal({
     setTimeout(() => setLastSavedId((prev) => (prev === id ? null : prev)), 1500);
   };
 
-  const handleNumberFieldChange = (id: string, field: keyof Escrow, rawValue: string) => {
-    if (rawValue === '') {
+  const getCellText = (id: string, field: keyof Escrow, defaultValue: number | undefined | null) => {
+    const key = `${id}_${String(field)}`;
+    if (cellText[key] !== undefined) {
+      return cellText[key];
+    }
+    if (defaultValue !== undefined && defaultValue !== null && defaultValue !== 0) {
+      return String(defaultValue);
+    }
+    return '';
+  };
+
+  const handleCellTextChange = (id: string, field: keyof Escrow, rawValue: string) => {
+    const key = `${id}_${String(field)}`;
+    setCellText((prev) => ({ ...prev, [key]: rawValue }));
+
+    if (rawValue.trim() === '') {
       onUpdateEscrow(id, { [field]: undefined });
     } else {
-      const num = parseFloat(rawValue);
+      const cleaned = rawValue.replace(/[^0-9.]/g, '');
+      const num = parseFloat(cleaned);
       onUpdateEscrow(id, { [field]: isNaN(num) ? undefined : num });
     }
     setLastSavedId(id);
     setTimeout(() => setLastSavedId((prev) => (prev === id ? null : prev)), 1500);
+  };
+
+  const handleCellBlur = (id: string, field: keyof Escrow) => {
+    const key = `${id}_${String(field)}`;
+    setCellText((prev) => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
   };
 
   const confirmDelete = (id: string) => {
@@ -378,10 +420,11 @@ export function EscrowTableModal({
                       <td className="py-1.5 px-2">
                         <div className="relative">
                           <input
-                            type="number"
-                            step="any"
-                            value={escrow.commissionPercent !== undefined && escrow.commissionPercent !== null && escrow.commissionPercent !== 0 ? escrow.commissionPercent : ''}
-                            onChange={(e) => handleNumberFieldChange(escrow.id, 'commissionPercent', e.target.value)}
+                            type="text"
+                            inputMode="decimal"
+                            value={getCellText(escrow.id, 'commissionPercent', escrow.commissionPercent)}
+                            onChange={(e) => handleCellTextChange(escrow.id, 'commissionPercent', e.target.value)}
+                            onBlur={() => handleCellBlur(escrow.id, 'commissionPercent')}
                             placeholder=""
                             className="w-full pr-6 pl-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono font-bold text-slate-900 text-xs transition-all outline-none"
                           />
@@ -394,10 +437,11 @@ export function EscrowTableModal({
                         <div className="relative">
                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-emerald-600 font-mono text-xs">$</span>
                           <input
-                            type="number"
-                            step="any"
-                            value={escrow.netCommission ?? ''}
-                            onChange={(e) => handleNumberFieldChange(escrow.id, 'netCommission', e.target.value)}
+                            type="text"
+                            inputMode="decimal"
+                            value={getCellText(escrow.id, 'netCommission', escrow.netCommission)}
+                            onChange={(e) => handleCellTextChange(escrow.id, 'netCommission', e.target.value)}
+                            onBlur={() => handleCellBlur(escrow.id, 'netCommission')}
                             placeholder="0.00"
                             className="w-full pl-5 pr-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 font-mono font-bold text-emerald-700 text-xs transition-all outline-none"
                           />
