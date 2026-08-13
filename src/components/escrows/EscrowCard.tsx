@@ -160,7 +160,7 @@ export function EscrowCard({
             </div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5">Commission</div>
+            <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5">Net Commission</div>
             <div className="font-mono text-xs sm:text-sm font-bold text-[#1B3A5C]">{formatCurrency(escrow.netCommission)}</div>
           </div>
         </div>
