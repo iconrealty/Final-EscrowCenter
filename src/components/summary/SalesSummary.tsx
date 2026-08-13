@@ -333,7 +333,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
             }`}
           >
-            Commissions
+            Net Commissions
           </button>
           <button
             onClick={() => {
@@ -380,7 +380,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
                 <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Volume</span>
                 <span className="text-sm sm:text-base font-extrabold text-[#1d1d1f] font-mono mt-0.5 truncate">
@@ -394,9 +394,15 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                 </span>
               </div>
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Commissions</span>
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Net Commissions</span>
                 <span className="text-sm sm:text-base font-extrabold text-[#059669] font-mono mt-0.5 truncate">
                   {formatCurrency(totalStats.commission)}
+                </span>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Gross Commissions</span>
+                <span className="text-sm sm:text-base font-extrabold text-[#1B3A5C] font-mono mt-0.5 truncate">
+                  {formatCurrency(totalStats.grossCommission)}
                 </span>
               </div>
             </div>
@@ -405,46 +411,53 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             <div className="flex items-center text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
               <span className="w-8 text-center shrink-0">#</span>
               <span className="flex-1">Properties Closed in {selectedYear === 'all' ? 'All Time' : selectedYear} ({filteredClosedEscrows.length})</span>
-              <span className="w-24 text-right shrink-0">Price</span>
-              <span className="w-24 text-right shrink-0 ml-4">Commission</span>
+              <span className="w-20 text-right shrink-0">Price</span>
+              <span className="w-20 text-right shrink-0 ml-2">Net Comm</span>
+              <span className="w-20 text-right shrink-0 ml-2">Gross Comm</span>
             </div>
 
             {/* Scrollable list of properties */}
             <div className="flex-1 overflow-y-auto pr-1">
               {filteredClosedEscrows.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  {filteredClosedEscrows.map((escrow, index) => (
-                    <div
-                      key={escrow.id}
-                      onClick={() => onSelectEscrow(escrow)}
-                      className="group flex items-center p-2.5 rounded-xl border border-transparent hover:border-[#e5e5ea] hover:bg-slate-50 transition-all duration-200 cursor-pointer"
-                    >
-                      <div className="w-8 text-center shrink-0 mr-1">
-                        <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1 rounded bg-[#1B3A5C] text-white text-[10px] font-mono font-bold">
-                          #{index + 1}
-                        </span>
-                      </div>
-                      <div className="min-w-0 flex-1 pr-4">
-                        <div className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
-                          {escrow.address}
-                        </div>
-                        <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
-                          <span className="font-semibold truncate">
-                            {escrow.clientFirstName} {escrow.clientLastName}
-                            {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
+                  {filteredClosedEscrows.map((escrow, index) => {
+                    const grossVal = escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0);
+                    return (
+                      <div
+                        key={escrow.id}
+                        onClick={() => onSelectEscrow(escrow)}
+                        className="group flex items-center p-2.5 rounded-xl border border-transparent hover:border-[#e5e5ea] hover:bg-slate-50 transition-all duration-200 cursor-pointer"
+                      >
+                        <div className="w-8 text-center shrink-0 mr-1">
+                          <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1 rounded bg-[#1B3A5C] text-white text-[10px] font-mono font-bold">
+                            #{index + 1}
                           </span>
-                          <span className="text-slate-300">•</span>
-                          <span className="font-mono">{formatItemDate(escrow.coeDate)}</span>
+                        </div>
+                        <div className="min-w-0 flex-1 pr-2">
+                          <div className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
+                            {escrow.address}
+                          </div>
+                          <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
+                            <span className="font-semibold truncate">
+                              {escrow.clientFirstName} {escrow.clientLastName}
+                              {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
+                            </span>
+                            <span className="text-slate-300">•</span>
+                            <span className="font-mono">{formatItemDate(escrow.coeDate)}</span>
+                          </div>
+                        </div>
+                        <div className="text-xs font-extrabold text-[#1d1d1f] font-mono shrink-0 w-20 text-right">
+                          {formatCurrency(escrow.price || 0)}
+                        </div>
+                        <div className="text-xs font-bold text-[#059669] font-mono shrink-0 w-20 text-right ml-2">
+                          {formatCurrency(escrow.netCommission || 0)}
+                        </div>
+                        <div className="text-xs font-bold text-[#1B3A5C] font-mono shrink-0 w-20 text-right ml-2">
+                          {formatCurrency(grossVal)}
                         </div>
                       </div>
-                      <div className="text-xs font-extrabold text-[#1d1d1f] font-mono shrink-0 w-24 text-right">
-                        {formatCurrency(escrow.price || 0)}
-                      </div>
-                      <div className="text-xs font-bold text-[#059669] font-mono shrink-0 w-24 text-right ml-4">
-                        {formatCurrency(escrow.netCommission || 0)}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="py-12 text-center text-[#86868b] text-sm font-medium flex flex-col items-center gap-3 justify-center h-full">
@@ -488,7 +501,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
                 <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Vol ({formatMonthName(selectedMonth).split(' ')[0].substring(0, 3)})</span>
                 <span className="text-sm sm:text-base font-extrabold text-[#1d1d1f] font-mono mt-0.5 truncate">
@@ -502,9 +515,15 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                 </span>
               </div>
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Commissions</span>
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Net Commissions</span>
                 <span className="text-sm sm:text-base font-extrabold text-[#059669] font-mono mt-0.5 truncate">
                   {formatCurrency(monthlyStats.commission)}
+                </span>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Gross Commissions</span>
+                <span className="text-sm sm:text-base font-extrabold text-[#1B3A5C] font-mono mt-0.5 truncate">
+                  {formatCurrency(monthlyStats.grossCommission)}
                 </span>
               </div>
             </div>
@@ -513,46 +532,53 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             <div className="flex items-center text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
               <span className="w-8 text-center shrink-0">#</span>
               <span className="flex-1">Closed in {formatMonthName(selectedMonth)} ({monthlyEscrows.length})</span>
-              <span className="w-24 text-right shrink-0">Price</span>
-              <span className="w-24 text-right shrink-0 ml-4">Commission</span>
+              <span className="w-20 text-right shrink-0">Price</span>
+              <span className="w-20 text-right shrink-0 ml-2">Net Comm</span>
+              <span className="w-20 text-right shrink-0 ml-2">Gross Comm</span>
             </div>
 
             {/* Scrollable list of properties */}
             <div className="flex-1 overflow-y-auto pr-1">
               {monthlyEscrows.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  {monthlyEscrows.map((escrow, index) => (
-                    <div
-                      key={escrow.id}
-                      onClick={() => onSelectEscrow(escrow)}
-                      className="group flex items-center p-2.5 rounded-xl border border-transparent hover:border-[#e5e5ea] hover:bg-slate-50 transition-all duration-200 cursor-pointer"
-                    >
-                      <div className="w-8 text-center shrink-0 mr-1">
-                        <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1 rounded bg-[#1B3A5C] text-white text-[10px] font-mono font-bold">
-                          #{index + 1}
-                        </span>
-                      </div>
-                      <div className="min-w-0 flex-1 pr-4">
-                        <div className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
-                          {escrow.address}
-                        </div>
-                        <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
-                          <span className="font-semibold truncate">
-                            {escrow.clientFirstName} {escrow.clientLastName}
-                            {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
+                  {monthlyEscrows.map((escrow, index) => {
+                    const grossVal = escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0);
+                    return (
+                      <div
+                        key={escrow.id}
+                        onClick={() => onSelectEscrow(escrow)}
+                        className="group flex items-center p-2.5 rounded-xl border border-transparent hover:border-[#e5e5ea] hover:bg-slate-50 transition-all duration-200 cursor-pointer"
+                      >
+                        <div className="w-8 text-center shrink-0 mr-1">
+                          <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1 rounded bg-[#1B3A5C] text-white text-[10px] font-mono font-bold">
+                            #{index + 1}
                           </span>
-                          <span className="text-slate-300">•</span>
-                          <span className="font-mono">{formatItemDate(escrow.coeDate)}</span>
+                        </div>
+                        <div className="min-w-0 flex-1 pr-2">
+                          <div className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
+                            {escrow.address}
+                          </div>
+                          <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
+                            <span className="font-semibold truncate">
+                              {escrow.clientFirstName} {escrow.clientLastName}
+                              {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
+                            </span>
+                            <span className="text-slate-300">•</span>
+                            <span className="font-mono">{formatItemDate(escrow.coeDate)}</span>
+                          </div>
+                        </div>
+                        <div className="text-xs font-extrabold text-[#1d1d1f] font-mono shrink-0 w-20 text-right">
+                          {formatCurrency(escrow.price || 0)}
+                        </div>
+                        <div className="text-xs font-bold text-[#059669] font-mono shrink-0 w-20 text-right ml-2">
+                          {formatCurrency(escrow.netCommission || 0)}
+                        </div>
+                        <div className="text-xs font-bold text-[#1B3A5C] font-mono shrink-0 w-20 text-right ml-2">
+                          {formatCurrency(grossVal)}
                         </div>
                       </div>
-                      <div className="text-xs font-extrabold text-[#1d1d1f] font-mono shrink-0 w-24 text-right">
-                        {formatCurrency(escrow.price || 0)}
-                      </div>
-                      <div className="text-xs font-bold text-[#059669] font-mono shrink-0 w-24 text-right ml-4">
-                        {formatCurrency(escrow.netCommission || 0)}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="py-12 text-center text-[#86868b] text-sm font-medium flex flex-col items-center gap-3 justify-center h-full">
@@ -713,6 +739,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             </div>
           </div>
         )}
+
         {activeSubTab === 'source' && (
           /* LEAD SOURCE ANALYTICS VIEW */
           <div className="flex-1 flex flex-col overflow-hidden p-5 gap-4 animate-fade-in">
