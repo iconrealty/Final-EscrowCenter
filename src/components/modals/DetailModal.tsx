@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Escrow, CONTINGENCIES, getContingencyDaysLeft, getContingencyDueDate } from '../../types';
-import { X, Pencil, Trash2, ExternalLink, Check, CheckCircle2 } from 'lucide-react';
+import { X, Pencil, Trash2, ExternalLink, Check } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
@@ -200,11 +200,10 @@ export function DetailModal({
                       <button 
                         type="button"
                         onClick={handleCompleteAllContingencies}
-                        className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
-                        title="Mark all contingencies as complete"
+                        className="text-xs font-bold text-[#1B3A5C] hover:text-[#11253C] hover:underline transition-colors cursor-pointer bg-transparent border-0 p-0"
+                        title="Mark all contingencies as done"
                       >
-                        <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                        <span>Complete All Contingencies</span>
+                        Mark all Done
                       </button>
                     )}
                   </div>
