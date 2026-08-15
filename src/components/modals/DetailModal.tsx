@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Escrow, CONTINGENCIES, getContingencyDaysLeft, getContingencyDueDate } from '../../types';
-import { X, Pencil, Trash2, ExternalLink } from 'lucide-react';
+import { X, Pencil, Trash2, ExternalLink, Check, CheckCircle2 } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
@@ -178,63 +178,107 @@ export function DetailModal({
 
           {/* Contingencies Status Section */}
           <section id="detail-contingencies">
-            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-[#86868b] mb-4 pb-2 border-b border-[#e5e5ea]">
-              Contingencies Status
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {CONTINGENCIES.map((c) => {
-                const isCompleted = !!escrow.tasks[c.key];
-                const daysLeft = getContingencyDaysLeft(escrow, c.key);
-                const dueDate = getContingencyDueDate(escrow, c.key);
-                const expDateStr = dueDate ? format(dueDate, 'MMM d') : null;
-                const isOverdue = !isCompleted && daysLeft !== null && daysLeft < 0;
-                const isUrgent = !isCompleted && daysLeft !== null && daysLeft <= 2 && daysLeft >= 0;
+            {(() => {
+              const completedContingenciesCount = CONTINGENCIES.filter(t => escrow.tasks[t.key]).length;
+              const hasIncompleteContingencies = CONTINGENCIES.some(c => !escrow.tasks[c.key]);
 
-                let statusText = '';
-                let statusColorClass = '';
-                if (isCompleted) {
-                  statusText = expDateStr ? `Done (${expDateStr})` : 'Completed';
-                  statusColorClass = 'text-white bg-emerald-700 border-emerald-800 font-bold';
-                } else if (daysLeft !== null) {
-                  if (daysLeft > 1) {
-                    statusText = expDateStr ? `${expDateStr} • ${daysLeft}d left` : `${daysLeft} days left`;
-                    statusColorClass = isUrgent ? 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold' : 'text-slate-600 bg-slate-100/50 border-slate-200';
-                  } else if (daysLeft === 1) {
-                    statusText = expDateStr ? `${expDateStr} • 1d left` : `1 day left`;
-                    statusColorClass = 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold';
-                  } else if (daysLeft === 0) {
-                    statusText = expDateStr ? `${expDateStr} • Due today` : `Due today`;
-                    statusColorClass = 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold';
-                  } else if (daysLeft === -1) {
-                    statusText = expDateStr ? `${expDateStr} • 1d overdue` : `1 day overdue`;
-                    statusColorClass = 'text-rose-600 bg-rose-50 border-rose-100 font-bold animate-pulse';
-                  } else {
-                    statusText = expDateStr ? `${expDateStr} • ${Math.abs(daysLeft)}d overdue` : `${Math.abs(daysLeft)} days overdue`;
-                    statusColorClass = 'text-rose-600 bg-rose-50 border-rose-100 font-bold animate-pulse';
-                  }
-                } else {
-                  statusText = expDateStr ? `Exp: ${expDateStr}` : 'Pending';
-                  statusColorClass = 'text-slate-400 bg-slate-50 border-slate-100';
-                }
+              const handleCompleteAllContingencies = () => {
+                const updatedTasks = { ...escrow.tasks };
+                CONTINGENCIES.forEach(c => {
+                  updatedTasks[c.key] = true;
+                });
+                onUpdateTasks(escrow.id, updatedTasks);
+              };
 
-                return (
-                  <div 
-                    key={c.key}
-                    className="flex items-center justify-between p-3 bg-white border border-[#e5e5ea] rounded-xl shadow-sm transition-all hover:border-slate-300"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${isCompleted ? 'bg-emerald-700' : isOverdue ? 'bg-rose-500 animate-pulse' : isUrgent ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`} />
-                      <span className="text-xs font-semibold text-[#1d1d1f] truncate" title={`${c.key} - ${c.label}`}>
-                        {c.key} - {c.label}
-                      </span>
-                    </div>
-                    <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border ${statusColorClass} shrink-0`}>
-                      {statusText}
-                    </span>
+              return (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-2 border-b border-[#e5e5ea]">
+                    <h3 className="text-[10px] font-semibold uppercase tracking-widest text-[#86868b]">
+                      Contingencies Status ({completedContingenciesCount}/{CONTINGENCIES.length})
+                    </h3>
+                    {hasIncompleteContingencies && (
+                      <button 
+                        type="button"
+                        onClick={handleCompleteAllContingencies}
+                        className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+                        title="Mark all contingencies as complete"
+                      >
+                        <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                        <span>Complete All Contingencies</span>
+                      </button>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {CONTINGENCIES.map((c) => {
+                      const isCompleted = !!escrow.tasks[c.key];
+                      const daysLeft = getContingencyDaysLeft(escrow, c.key);
+                      const dueDate = getContingencyDueDate(escrow, c.key);
+                      const expDateStr = dueDate ? format(dueDate, 'MMM d') : null;
+                      const isOverdue = !isCompleted && daysLeft !== null && daysLeft < 0;
+                      const isUrgent = !isCompleted && daysLeft !== null && daysLeft <= 2 && daysLeft >= 0;
+
+                      let statusText = '';
+                      let statusColorClass = '';
+                      if (isCompleted) {
+                        statusText = expDateStr ? `Done (${expDateStr})` : 'Completed';
+                        statusColorClass = 'text-white bg-emerald-700 border-emerald-800 font-bold';
+                      } else if (daysLeft !== null) {
+                        if (daysLeft > 1) {
+                          statusText = expDateStr ? `${expDateStr} • ${daysLeft}d left` : `${daysLeft} days left`;
+                          statusColorClass = isUrgent ? 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold' : 'text-slate-600 bg-slate-100/50 border-slate-200';
+                        } else if (daysLeft === 1) {
+                          statusText = expDateStr ? `${expDateStr} • 1d left` : `1 day left`;
+                          statusColorClass = 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold';
+                        } else if (daysLeft === 0) {
+                          statusText = expDateStr ? `${expDateStr} • Due today` : `Due today`;
+                          statusColorClass = 'text-amber-600 bg-amber-50 border-amber-100 animate-pulse font-bold';
+                        } else if (daysLeft === -1) {
+                          statusText = expDateStr ? `${expDateStr} • 1d overdue` : `1 day overdue`;
+                          statusColorClass = 'text-rose-600 bg-rose-50 border-rose-100 font-bold animate-pulse';
+                        } else {
+                          statusText = expDateStr ? `${expDateStr} • ${Math.abs(daysLeft)}d overdue` : `${Math.abs(daysLeft)} days overdue`;
+                          statusColorClass = 'text-rose-600 bg-rose-50 border-rose-100 font-bold animate-pulse';
+                        }
+                      } else {
+                        statusText = expDateStr ? `Exp: ${expDateStr}` : 'Pending';
+                        statusColorClass = 'text-slate-400 bg-slate-50 border-slate-100';
+                      }
+
+                      return (
+                        <button
+                          type="button"
+                          key={c.key}
+                          onClick={() => onToggleTask(escrow.id, c.key)}
+                          className={`flex items-center justify-between p-3 border rounded-xl shadow-2xs transition-all text-left cursor-pointer group active:scale-[0.98] ${
+                            isCompleted 
+                              ? 'bg-emerald-50/70 border-emerald-200 hover:bg-emerald-100/80 hover:border-emerald-300' 
+                              : 'bg-white border-[#e5e5ea] hover:border-slate-300 hover:bg-slate-50/80'
+                          }`}
+                          title={isCompleted ? `Click to mark ${c.label} as incomplete` : `Click to mark ${c.label} as complete`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                            <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                              isCompleted 
+                                ? 'bg-emerald-700 text-white shadow-2xs' 
+                                : 'border-2 border-slate-300 group-hover:border-emerald-600 bg-white'
+                            }`}>
+                              {isCompleted && <Check size={13} strokeWidth={3} />}
+                            </div>
+                            <span className={`text-xs font-semibold truncate ${isCompleted ? 'text-emerald-950 opacity-90' : 'text-[#1d1d1f]'}`} title={`${c.key} - ${c.label}`}>
+                              {c.key} - {c.label}
+                            </span>
+                          </div>
+                          <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border ${statusColorClass} shrink-0`}>
+                            {statusText}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
           </section>
 
           {/* Notes Section */}
