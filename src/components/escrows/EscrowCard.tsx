@@ -297,19 +297,19 @@ export function EscrowCard({
           return (
             <div 
               onClick={(e) => e.stopPropagation()} 
-              className="mt-3 px-3 py-2 bg-slate-50/90 border border-slate-200/90 rounded-xl shadow-2xs"
+              className="mt-3 px-3 py-2 bg-slate-100 hover:bg-slate-100/90 border border-slate-300 rounded-xl shadow-xs transition-colors"
             >
               <div className="flex items-center justify-between gap-2">
                 {/* Agent Identity & Info */}
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1B3A5C]/10 border border-[#1B3A5C]/20 flex items-center justify-center text-[#1B3A5C] shrink-0 font-bold text-xs">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1B3A5C] border border-[#11253C] flex items-center justify-center text-white shrink-0 font-bold text-xs shadow-xs">
                     {agentName ? agentName.charAt(0).toUpperCase() : <User size={13} />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[9px] sm:text-[10px] font-bold text-[#55697a] uppercase tracking-wider leading-none mb-0.5">
+                    <div className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 uppercase tracking-wider leading-none mb-0.5">
                       Agent
                     </div>
-                    <div className="text-xs sm:text-sm font-bold text-[#1d1d1f] truncate" title={agentName || 'Agent Not Assigned'}>
+                    <div className="text-xs sm:text-sm font-bold text-slate-900 truncate" title={agentName || 'Agent Not Assigned'}>
                       {agentName || 'Agent Not Assigned'}
                     </div>
                   </div>
@@ -322,7 +322,7 @@ export function EscrowCard({
                     <a
                       href={`tel:${cleanPhone}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-all active:scale-95 shadow-2xs cursor-pointer border border-emerald-600/40"
+                      className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs cursor-pointer border border-emerald-600/40"
                       title={`Call ${agentName || 'Agent'}: ${agentPhone}`}
                       aria-label={`Call ${agentName || 'Agent'}`}
                     >
@@ -335,7 +335,7 @@ export function EscrowCard({
                         e.stopPropagation();
                         onEdit();
                       }}
-                      className="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-300 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
                       title="No phone number recorded. Click to edit."
                       aria-label="No phone number"
                     >
@@ -348,7 +348,7 @@ export function EscrowCard({
                     <a
                       href={`sms:${cleanPhone}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all active:scale-95 shadow-2xs cursor-pointer border border-blue-700/60"
+                      className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs cursor-pointer border border-blue-700/60"
                       title={`Text ${agentName || 'Agent'}: ${agentPhone}`}
                       aria-label={`Text ${agentName || 'Agent'}`}
                     >
@@ -361,7 +361,7 @@ export function EscrowCard({
                         e.stopPropagation();
                         onEdit();
                       }}
-                      className="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-300 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
                       title="No phone number recorded. Click to edit."
                       aria-label="No phone number"
                     >
@@ -374,7 +374,7 @@ export function EscrowCard({
                     <a
                       href={`mailto:${agentEmail}?subject=${emailSubject}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all active:scale-95 shadow-2xs cursor-pointer border border-red-700/60"
+                      className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs cursor-pointer border border-red-700/60"
                       title={`Email ${agentName || 'Agent'}: ${agentEmail}`}
                       aria-label={`Email ${agentName || 'Agent'}`}
                     >
@@ -387,7 +387,7 @@ export function EscrowCard({
                         e.stopPropagation();
                         onEdit();
                       }}
-                      className="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-300 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
                       title="No email address recorded. Click to edit."
                       aria-label="No email address"
                     >
