@@ -289,7 +289,6 @@ export function EscrowCard({
           const agentName = escrow.agentName?.trim();
           const agentPhone = escrow.agentPhone?.trim();
           const agentEmail = escrow.agentEmail?.trim();
-          const brokerage = escrow.cooperatingBrokerage?.trim() || escrow.collaborator?.trim();
           const cleanPhone = agentPhone ? agentPhone.replace(/[^0-9+]/g, '') : '';
           const hasPhone = !!cleanPhone;
           const hasEmail = !!agentEmail;
@@ -298,24 +297,17 @@ export function EscrowCard({
           return (
             <div 
               onClick={(e) => e.stopPropagation()} 
-              className="mt-3 p-2.5 sm:p-3 bg-slate-50/90 border border-slate-200/90 rounded-xl shadow-2xs"
+              className="mt-3 px-3 py-2 bg-slate-50/90 border border-slate-200/90 rounded-xl shadow-2xs"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2">
                 {/* Agent Identity & Info */}
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-[#1B3A5C]/10 border border-[#1B3A5C]/20 flex items-center justify-center text-[#1B3A5C] shrink-0 font-bold text-xs">
-                    {agentName ? agentName.charAt(0).toUpperCase() : <User size={14} />}
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1B3A5C]/10 border border-[#1B3A5C]/20 flex items-center justify-center text-[#1B3A5C] shrink-0 font-bold text-xs">
+                    {agentName ? agentName.charAt(0).toUpperCase() : <User size={13} />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-bold text-[#55697a] uppercase tracking-wider">
-                        Agent Contact
-                      </span>
-                      {brokerage && (
-                        <span className="text-[10px] text-slate-500 font-medium truncate max-w-[140px] sm:max-w-[190px]" title={brokerage}>
-                          • {brokerage}
-                        </span>
-                      )}
+                    <div className="text-[9px] sm:text-[10px] font-bold text-[#55697a] uppercase tracking-wider leading-none mb-0.5">
+                      Agent
                     </div>
                     <div className="text-xs sm:text-sm font-bold text-[#1d1d1f] truncate" title={agentName || 'Agent Not Assigned'}>
                       {agentName || 'Agent Not Assigned'}
@@ -323,14 +315,14 @@ export function EscrowCard({
                   </div>
                 </div>
 
-                {/* Fast Action Buttons: Call (Dark Green), Text (Blue), Email (Red) in Circular Badges */}
+                {/* Fast Action Buttons: Call (Soft Green), Text (Blue), Email (Red) in Circular Badges */}
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Call Action - Dark Green Circle */}
+                  {/* Call Action - Soft Green Circle */}
                   {hasPhone ? (
                     <a
                       href={`tel:${cleanPhone}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-8 h-8 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white flex items-center justify-center transition-all active:scale-95 shadow-2xs cursor-pointer border border-emerald-900/80"
+                      className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-all active:scale-95 shadow-2xs cursor-pointer border border-emerald-600/40"
                       title={`Call ${agentName || 'Agent'}: ${agentPhone}`}
                       aria-label={`Call ${agentName || 'Agent'}`}
                     >
