@@ -36,7 +36,6 @@ export function MorningBriefingWidget({
 
   const now = new Date();
   const currentYear = now.getFullYear();
-  const todayFormatted = format(now, 'EEEE, MMMM d, yyyy');
 
   // Gather active anniversaries and client birthdays that are due/pending
   const upcomingBriefingItems = useMemo(() => {
@@ -170,7 +169,6 @@ export function MorningBriefingWidget({
             <h2 className="font-extrabold text-sm text-[#1B3A5C] uppercase tracking-wider">
               Anniversaries & Birthdays
             </h2>
-            <span className="text-xs text-slate-400">• {todayFormatted}</span>
           </div>
           <p className="text-xs text-slate-600 mt-1 font-medium">
             You&apos;re all caught up! No home closing anniversaries or client birthdays due today.
@@ -189,9 +187,6 @@ export function MorningBriefingWidget({
             <h2 className="font-extrabold text-sm text-[#1B3A5C] uppercase tracking-wider">
               Anniversaries & Birthdays
             </h2>
-            <span className="bg-slate-200/80 text-slate-700 text-[11px] font-bold px-2.5 py-0.5 rounded-md">
-              {todayFormatted}
-            </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5 font-medium">
             {upcomingBriefingItems.length} Client {upcomingBriefingItems.length === 1 ? 'Anniversary or Birthday' : 'Anniversaries & Birthdays'}
