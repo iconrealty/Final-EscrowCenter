@@ -58,22 +58,47 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
 
   if (client1FirstName || client1LastName) {
     entryData["ClientName"] = { "First": client1FirstName, "Last": client1LastName };
+    entryData["ClientsName"] = { "First": client1FirstName, "Last": client1LastName };
   }
-  if (escrow.clientEmail) {
-    entryData["ClientEmail"] = escrow.clientEmail;
+  if (escrow.clientEmail && escrow.clientEmail.trim()) {
+    const cleanEmail = escrow.clientEmail.trim();
+    entryData["ClientEmail"] = cleanEmail;
+    entryData["ClientsEmail"] = cleanEmail;
+    entryData["ClientEmailAddress"] = cleanEmail;
+    entryData["ClientsEmailAddress"] = cleanEmail;
   }
-  if (escrow.clientPhone) {
-    entryData["ClientPhone"] = escrow.clientPhone;
+  if (escrow.clientPhone && escrow.clientPhone.trim()) {
+    const cleanPhone = escrow.clientPhone.trim();
+    entryData["ClientPhone"] = cleanPhone;
+    entryData["ClientsPhone"] = cleanPhone;
+    entryData["ClientPhoneNumber"] = cleanPhone;
+    entryData["ClientsPhoneNumber"] = cleanPhone;
+    entryData["ClientContactNumber"] = cleanPhone;
+    entryData["ClientsContactNumber"] = cleanPhone;
   }
 
   if (client2FirstName || client2LastName) {
     entryData["Client2Name"] = { "First": client2FirstName, "Last": client2LastName };
+    entryData["Clients2Name"] = { "First": client2FirstName, "Last": client2LastName };
+    entryData["Client2sName"] = { "First": client2FirstName, "Last": client2LastName };
   }
-  if (escrow.client2Email) {
-    entryData["Client2Email"] = escrow.client2Email;
+  if (escrow.client2Email && escrow.client2Email.trim()) {
+    const clean2Email = escrow.client2Email.trim();
+    entryData["Client2Email"] = clean2Email;
+    entryData["Clients2Email"] = clean2Email;
+    entryData["Client2sEmail"] = clean2Email;
+    entryData["Client2EmailAddress"] = clean2Email;
+    entryData["Client2sEmailAddress"] = clean2Email;
   }
-  if (escrow.client2Phone) {
-    entryData["Client2Phone"] = escrow.client2Phone;
+  if (escrow.client2Phone && escrow.client2Phone.trim()) {
+    const clean2Phone = escrow.client2Phone.trim();
+    entryData["Client2Phone"] = clean2Phone;
+    entryData["Clients2Phone"] = clean2Phone;
+    entryData["Client2sPhone"] = clean2Phone;
+    entryData["Client2PhoneNumber"] = clean2Phone;
+    entryData["Clients2PhoneNumber"] = clean2Phone;
+    entryData["Client2sPhoneNumber"] = clean2Phone;
+    entryData["Client2ContactNumber"] = clean2Phone;
   }
 
   if (escrow.address) {
@@ -83,21 +108,32 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
   if (escrow.price) {
     entryData["TransactionAmount"] = escrow.price;
   }
-  if (escrow.commissionPercent) {
-    entryData["YourCommission"] = escrow.commissionPercent;
+  if (escrow.commissionPercent !== undefined && escrow.commissionPercent !== null && !isNaN(Number(escrow.commissionPercent))) {
+    // Cognito Forms percentage fields expect a decimal fraction (e.g., 0.025 for 2.5%, 0.03 for 3%)
+    const commNum = Number(escrow.commissionPercent);
+    entryData["YourCommission"] = commNum / 100;
   }
 
   if (agentFirstName || agentLastName) {
     entryData["OtherAgentsName"] = { "First": agentFirstName, "Last": agentLastName };
+    entryData["OtherAgentName"] = { "First": agentFirstName, "Last": agentLastName };
   }
-  if (escrow.agentPhone) {
-    entryData["OtherAgentsPhoneNumber"] = escrow.agentPhone;
+  if (escrow.agentPhone && escrow.agentPhone.trim()) {
+    const cleanAgPhone = escrow.agentPhone.trim();
+    entryData["OtherAgentsPhoneNumber"] = cleanAgPhone;
+    entryData["OtherAgentPhoneNumber"] = cleanAgPhone;
+    entryData["OtherAgentsPhone"] = cleanAgPhone;
+    entryData["OtherAgentPhone"] = cleanAgPhone;
   }
-  if (escrow.agentEmail) {
-    entryData["OtherAgentsEmail"] = escrow.agentEmail;
+  if (escrow.agentEmail && escrow.agentEmail.trim()) {
+    const cleanAgEmail = escrow.agentEmail.trim();
+    entryData["OtherAgentsEmail"] = cleanAgEmail;
+    entryData["OtherAgentEmail"] = cleanAgEmail;
   }
-  if (escrow.cooperatingBrokerage) {
-    entryData["OtherAgentsBrokerage"] = escrow.cooperatingBrokerage;
+  if (escrow.cooperatingBrokerage && escrow.cooperatingBrokerage.trim()) {
+    const cleanBrokerage = escrow.cooperatingBrokerage.trim();
+    entryData["OtherAgentsBrokerage"] = cleanBrokerage;
+    entryData["OtherAgentBrokerage"] = cleanBrokerage;
   }
 
   // Pre-fill answers requested by user
@@ -112,24 +148,37 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     entryData["ForecastedCloseDate"] = formattedForecastedClose;
   }
 
-  if (escrow.lenderName) {
-    entryData["LenderUsed"] = escrow.lenderName;
+  if (escrow.lenderName && escrow.lenderName.trim()) {
+    const cleanLender = escrow.lenderName.trim();
+    entryData["LenderUsed"] = cleanLender;
+    entryData["LenderName"] = cleanLender;
   }
-  if (escrow.lenderPhone) {
-    entryData["LenderPhoneNumber"] = escrow.lenderPhone;
+  if (escrow.lenderPhone && escrow.lenderPhone.trim()) {
+    const cleanLendPhone = escrow.lenderPhone.trim();
+    entryData["LenderPhoneNumber"] = cleanLendPhone;
+    entryData["LenderPhone"] = cleanLendPhone;
+    entryData["LenderContactNumber"] = cleanLendPhone;
   }
-  if (escrow.lenderEmail) {
-    entryData["LenderEmail"] = escrow.lenderEmail;
+  if (escrow.lenderEmail && escrow.lenderEmail.trim()) {
+    const cleanLendEmail = escrow.lenderEmail.trim();
+    entryData["LenderEmail"] = cleanLendEmail;
+    entryData["LenderEmailAddress"] = cleanLendEmail;
   }
 
-  if (escrow.escrowCompany) {
-    entryData["EscrowCompany"] = escrow.escrowCompany;
+  if (escrow.escrowCompany && escrow.escrowCompany.trim()) {
+    const cleanEscComp = escrow.escrowCompany.trim();
+    entryData["EscrowCompany"] = cleanEscComp;
   }
-  if (escrow.escrowPhone) {
-    entryData["EscrowContactNumber"] = escrow.escrowPhone;
+  if (escrow.escrowPhone && escrow.escrowPhone.trim()) {
+    const cleanEscPhone = escrow.escrowPhone.trim();
+    entryData["EscrowContactNumber"] = cleanEscPhone;
+    entryData["EscrowPhoneNumber"] = cleanEscPhone;
+    entryData["EscrowPhone"] = cleanEscPhone;
   }
-  if (escrow.escrowEmail) {
-    entryData["EscrowEmail"] = escrow.escrowEmail;
+  if (escrow.escrowEmail && escrow.escrowEmail.trim()) {
+    const cleanEscEmail = escrow.escrowEmail.trim();
+    entryData["EscrowEmail"] = cleanEscEmail;
+    entryData["EscrowEmailAddress"] = cleanEscEmail;
   }
 
   const jsonString = JSON.stringify(entryData);
