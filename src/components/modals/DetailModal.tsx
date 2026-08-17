@@ -57,18 +57,18 @@ export function DetailModal({
         <div id="detail-modal-header" className="px-6 py-5 border-b border-[#fafafa] flex justify-between items-center bg-white shrink-0">
           <div>
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-[10px] font-bold text-[#11253C] uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-black uppercase tracking-wider">
                 {escrow.clientFirstName} {escrow.clientLastName}
                 {hasClient2 && ` & ${escrow.client2FirstName} ${escrow.client2LastName}`}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-normal tracking-tight text-[#1d1d1f] mb-2 truncate max-w-[240px] sm:max-w-none" title={escrow.address}>
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-black mb-2 truncate max-w-[240px] sm:max-w-none" title={escrow.address}>
               {escrow.address}
             </h2>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <StatusBadge status={escrow.status} />
               <span className="text-[10px] sm:text-xs text-[#86868b]">
-                COE: <strong className="text-[#1d1d1f]">{escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMM d, yyyy') : 'TBD'}</strong>
+                COE: <strong className="text-black font-semibold">{escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMM d, yyyy') : 'TBD'}</strong>
               </span>
             </div>
           </div>
@@ -118,7 +118,7 @@ export function DetailModal({
               
               {/* Sale Price */}
               <div className="flex flex-col">
-                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Sale Price</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-black mb-1">Sale Price</span>
                 <span className="text-lg sm:text-xl font-normal text-[#1d1d1f]">
                   {formatCurrency(escrow.price)}
                 </span>
@@ -126,7 +126,7 @@ export function DetailModal({
 
               {/* Gross Commission */}
               <div className="flex flex-col">
-                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-black mb-1">
                   Gross Commission {hasCommissionPercent ? `(${escrow.commissionPercent}%)` : ''}
                 </span>
                 <span className="text-lg sm:text-xl font-normal text-[#1d1d1f]">
@@ -136,7 +136,7 @@ export function DetailModal({
 
               {/* Net Commission */}
               <div className="flex flex-col">
-                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Net Commission</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-black mb-1">Net Commission</span>
                 <span className="text-lg sm:text-xl font-normal text-[#1d1d1f]">
                   {formatCurrency(escrow.netCommission)}
                 </span>
@@ -144,7 +144,7 @@ export function DetailModal({
 
               {/* Lead Source */}
               <div className="flex flex-col">
-                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Lead Source</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-black mb-1">Lead Source</span>
                 <span className="text-sm sm:text-base font-normal text-[#1d1d1f] truncate" title={escrow.leadSource || 'Zillow'}>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-[#1B3A5C]/10 text-[#1B3A5C]">
                     {escrow.leadSource || 'Zillow'}
@@ -154,7 +154,7 @@ export function DetailModal({
 
               {/* Escrow */}
               <div className="flex flex-col">
-                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Escrow</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-black mb-1">Escrow</span>
                 <span className="text-sm sm:text-base font-normal text-[#1d1d1f] truncate" title={escrow.escrowCompany || 'None Assigned'}>
                   {escrow.escrowCompany || 'None Assigned'}
                 </span>
@@ -167,7 +167,7 @@ export function DetailModal({
 
               {/* Collaborator */}
               <div className="flex flex-col">
-                <span className="text-[10px] font-medium uppercase tracking-widest text-[#86868b] mb-1">Collaborator</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-black mb-1">Collaborator</span>
                 <span className="text-sm sm:text-base font-normal text-[#1d1d1f] truncate" title={escrow.collaborator || 'Direct Transaction'}>
                   {escrow.collaborator || 'Direct Transaction'}
                 </span>
@@ -193,7 +193,7 @@ export function DetailModal({
               return (
                 <>
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-2 border-b border-[#e5e5ea]">
-                    <h3 className="text-[10px] font-semibold uppercase tracking-widest text-[#86868b]">
+                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-black">
                       Contingencies Status ({completedContingenciesCount}/{CONTINGENCIES.length})
                     </h3>
                     {hasIncompleteContingencies && (
@@ -283,7 +283,7 @@ export function DetailModal({
           {/* Notes Section */}
           {escrow.notes && (
             <section id="detail-notes">
-              <h3 className="text-[11px] font-black uppercase tracking-widest text-[#86868b] mb-3 pb-2 border-b border-[#e5e5ea]">
+              <h3 className="text-[11px] font-semibold uppercase tracking-widest text-black mb-3 pb-2 border-b border-[#e5e5ea]">
                 Escrow Notes
               </h3>
               <div className="bg-white border border-[#e5e5ea] p-5 rounded-2xl text-sm text-[#1d1d1f] whitespace-pre-wrap leading-relaxed shadow-sm">

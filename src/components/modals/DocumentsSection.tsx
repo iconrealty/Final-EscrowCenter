@@ -201,7 +201,7 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
       onDrop={handleDrop}
     >
       <div className="flex items-center justify-between pb-2 border-b border-[#e5e5ea]">
-        <h3 className="text-[10px] font-semibold uppercase tracking-widest text-[#86868b]">
+        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-black">
           Documents ({docs.length})
         </h3>
         <input
