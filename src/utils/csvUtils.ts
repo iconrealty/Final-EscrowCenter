@@ -355,38 +355,50 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
   if (rows.length <= 1) return []; // Only headers or empty
 
   const headers = rows[0].map(h => h.trim().toLowerCase());
+  const cleanAlpha = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cleanHeaders = headers.map(h => cleanAlpha(h));
   const results: Partial<Escrow>[] = [];
 
   for (let i = 1; i < rows.length; i++) {
     const values = rows[i];
     
-    const getVal = (possibleKeys: string[]) => {
-      const normalizedKeys = possibleKeys.map(k => k.trim().toLowerCase());
-      
-      // 1. Direct exact match first
-      for (const pk of normalizedKeys) {
-        const found = headers.findIndex(h => h === pk);
-        if (found !== -1 && values[found] !== undefined && values[found].trim() !== '') {
-          return values[found].trim();
+    const getVal = (possibleKeys: string[], excludeSubstrings: string[] = []) => {
+      const normKeys = possibleKeys.map(k => k.trim().toLowerCase());
+      const cleanKeys = normKeys.map(k => cleanAlpha(k)).filter(Boolean);
+
+      // 1. Direct exact match
+      for (let j = 0; j < headers.length; j++) {
+        const h = headers[j];
+        const cH = cleanHeaders[j];
+        if (!h) continue;
+
+        if (excludeSubstrings.some(ex => h.includes(ex) || cH.includes(cleanAlpha(ex)))) {
+          continue;
         }
-      }
-      
-      // 2. Exact match ignoring non-alphanumeric chars (spaces, hyphens, underscores)
-      const clean = (s: string) => s.replace(/[^a-z0-9]/g, '');
-      for (const pk of normalizedKeys) {
-        const cPk = clean(pk);
-        if (!cPk) continue;
-        const found = headers.findIndex(h => clean(h) === cPk);
-        if (found !== -1 && values[found] !== undefined && values[found].trim() !== '') {
-          return values[found].trim();
+
+        if (normKeys.includes(h) || cleanKeys.includes(cH)) {
+          if (values[j] !== undefined && values[j].trim() !== '') {
+            return values[j].trim();
+          }
         }
       }
 
-      // 3. Substring match
-      for (const pk of normalizedKeys) {
-        const found = headers.findIndex(h => h.includes(pk) || pk.includes(h));
-        if (found !== -1 && values[found] !== undefined && values[found].trim() !== '') {
-          return values[found].trim();
+      // 2. Controlled substring match: only when header starts with or contains the specific phrase
+      for (let j = 0; j < headers.length; j++) {
+        const h = headers[j];
+        const cH = cleanHeaders[j];
+        if (!h) continue;
+
+        if (excludeSubstrings.some(ex => h.includes(ex) || cH.includes(cleanAlpha(ex)))) {
+          continue;
+        }
+
+        for (const pk of normKeys) {
+          if (pk.length >= 4 && (h === pk || h.startsWith(pk) || h.endsWith(pk))) {
+            if (values[j] !== undefined && values[j].trim() !== '') {
+              return values[j].trim();
+            }
+          }
         }
       }
 
@@ -405,7 +417,7 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
     }
     
     // Address, City, Zip
-    let address = getVal(['address', 'address ', 'street address', 'street', 'property address', 'property', 'location', 'address line 1', 'line 1', 'address line']);
+    let address = getVal(['address', 'street address', 'street', 'property address', 'property', 'location', 'address line 1', 'line 1', 'address line']);
     let city = getVal(['city', 'property city', 'town', 'municipality']);
     let zipCode = getVal(['zip code', 'zip', 'postal code', 'zipcode', 'property zip', 'property zip code', 'postal']);
 
@@ -429,10 +441,11 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       address = 'TBD';
     }
 
-    // Client 1 Name
-    const rawClientFirstName = getVal(['client first name', 'first name', 'buyer first name', 'seller first name', 'client 1 first name', 'buyer 1 first name', 'seller 1 first name', 'primary contact first name']);
-    const rawClientLastName = getVal(['client last name', 'last name', 'buyer last name', 'seller last name', 'client 1 last name', 'buyer 1 last name', 'seller 1 last name', 'primary contact last name']);
-    const legacyClientName = getVal(['client name', 'client', 'buyer name', 'seller name', 'contact name', 'primary contact', 'client 1', 'buyer 1', 'seller 1']);
+    // Client 1 Name (EXCLUDE headers with '2', 'second', '2nd', 'co-')
+    const excludeClient2 = ['2 client', 'client 2', 'client2', 'second contact', 'second client', '2nd client', '2nd contact', 'buyer 2', 'seller 2', 'co-buyer', 'co-seller', 'co-agent'];
+    const rawClientFirstName = getVal(['client first name', 'first name', 'buyer first name', 'seller first name', 'client 1 first name', 'buyer 1 first name', 'seller 1 first name', 'primary contact first name'], excludeClient2);
+    const rawClientLastName = getVal(['client last name', 'last name', 'buyer last name', 'seller last name', 'client 1 last name', 'buyer 1 last name', 'seller 1 last name', 'primary contact last name'], excludeClient2);
+    const legacyClientName = getVal(['client name', 'client', 'buyer name', 'seller name', 'contact name', 'primary contact', 'client 1', 'buyer 1', 'seller 1'], excludeClient2);
     
     let clientFirstName = rawClientFirstName;
     let clientLastName = rawClientLastName;
@@ -443,7 +456,7 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       clientLastName = parts.slice(1).join(' ') || '';
     }
 
-    // Client 2 Name
+    // Client 2 Name (MUST match 2 / second / co-buyer headers)
     const rawClient2Name = getVal(['2 client name', 'second client name', 'client 2 name', 'client2 name', 'client 2', 'client2', 'second contact name', 'second contact', 'co-buyer', 'co-seller', 'buyer 2', 'seller 2', 'buyer 2 name', 'seller 2 name', '2nd client', '2nd contact']);
     let client2FirstName = getVal(['client 2 first name', 'client2 first name', '2 client first name', 'second contact first name', 'buyer 2 first name', 'seller 2 first name', '2nd client first name']);
     let client2LastName = getVal(['client 2 last name', 'client2 last name', '2 client last name', 'second contact last name', 'buyer 2 last name', 'seller 2 last name', '2nd client last name']);
@@ -457,6 +470,17 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
     const client2Phone = getVal(['second contact phone', '2 client phone', 'client 2 phone', 'client2 phone', 'second phone', 'buyer 2 phone', 'seller 2 phone', '2nd contact phone', '2nd client phone']);
     const client2Email = getVal(['2 client email', 'client 2 email', 'client2 email', 'second contact email', 'second email', 'buyer 2 email', 'seller 2 email', '2nd contact email', '2nd client email']);
     const client2Birthday = parseDateToIso(getVal(['client 2 birthday', 'client 2 birthdate', 'client 2 dob', 'client2 birthday', 'client2 birthdate', 'client2 dob', '2 client birthday', 'second contact birthday']));
+
+    // Check if Client 2 is identical to Client 1 (avoid false duplication)
+    if (client2FirstName && client2FirstName.toLowerCase() === clientFirstName.toLowerCase() &&
+        client2LastName && client2LastName.toLowerCase() === clientLastName.toLowerCase()) {
+      client2FirstName = '';
+      client2LastName = '';
+    }
+
+    const clientPhone = getVal(['client phone', 'phone', 'contact phone', 'client cell', 'mobile phone number', 'mobile', 'cell', 'primary phone'], excludeClient2);
+    const clientEmail = getVal(['client email', 'contact email', 'email', 'primary email', 'buyer email', 'seller email'], excludeClient2);
+    const clientBirthday = parseDateToIso(getVal(['client birthday', 'client birthdate', 'birthday', 'dob', 'client dob', 'birth date'], excludeClient2));
 
     const escrowCompany = getVal(['escrow company', 'escrow_company', 'escrowcompany', 'escrow']);
     let notes = getVal(['notes', 'description', 'comments', 'memo']);
@@ -525,9 +549,9 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       zipCode,
       clientFirstName,
       clientLastName,
-      clientPhone: getVal(['client phone', 'client phone ', 'phone', 'contact phone', 'client cell', 'mobile phone number', 'mobile', 'cell', 'primary phone']),
-      clientEmail: getVal(['client email', 'contact email', 'email', 'primary email', 'buyer email', 'seller email']),
-      clientBirthday: parseDateToIso(getVal(['client birthday', 'client birthdate', 'birthday', 'dob', 'client dob', 'birth date'])),
+      clientPhone,
+      clientEmail,
+      clientBirthday,
       client2FirstName,
       client2LastName,
       client2Phone,
@@ -641,6 +665,13 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     const p2 = rawClient2Name.trim().split(/\s+/);
     client2FirstName = p2[0] || '';
     client2LastName = p2.slice(1).join(' ') || '';
+  }
+
+  // Check if Client 2 is identical to Client 1 (avoid false duplication)
+  if (client2FirstName && client2FirstName.toLowerCase() === clientFirstName.toLowerCase() &&
+      client2LastName && client2LastName.toLowerCase() === clientLastName.toLowerCase()) {
+    client2FirstName = '';
+    client2LastName = '';
   }
 
   const client2Phone = getVal(['second contact phone', '2 client phone', 'client 2 phone', 'client2 phone', 'buyer 2 phone', 'seller 2 phone']);
