@@ -1,6 +1,6 @@
 {
   "name": "Real Estate Escrow Management Dashboard",
-  "description": "SimpL. - Real Estate Escrow Management Dashboard with persistent email client selection (Gmail or native mail), pipeline tracking, and client updates.",
+  "description": "SimpL. - Real Estate Escrow Management Dashboard with pipeline tracking, task management, client updates, and anniversary tracking.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

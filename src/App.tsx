@@ -22,7 +22,6 @@ import { GoalsModal } from './components/modals/GoalsModal';
 import { ContactsModal } from './components/modals/ContactsModal';
 import { DocumentsModal } from './components/modals/DocumentsModal';
 import { EscrowTableModal } from './components/modals/EscrowTableModal';
-import { EmailChooserModal } from './components/modals/EmailChooserModal';
 
 import { useEscrows } from './hooks/useEscrows';
 import { Escrow } from './types';
@@ -356,9 +355,6 @@ function App() {
           onDeleteEscrow={(id) => deleteEscrow(id)}
         />
       )}
-
-      {/* Global Email Client Selector & Config Modal */}
-      <EmailChooserModal />
 
       {/* Mobile Bottom Navigation Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-[#e5e5ea] flex justify-around items-center z-50 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] pb-safe">

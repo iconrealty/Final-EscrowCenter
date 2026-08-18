@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Escrow } from '../../types';
 import { X, Phone, Mail, MessageSquare, Copy, Check, Users } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
-import { useEmailPreference } from '../../context/EmailPreferenceContext';
 
 interface ContactsModalProps {
   escrow: Escrow;
@@ -23,7 +22,6 @@ interface ContactItem {
 
 export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const { openEmail } = useEmailPreference();
 
   const copyToClipboard = async (text: string): Promise<boolean> => {
     if (!text) return false;
@@ -324,14 +322,13 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
                           <span className="truncate" title={contact.email}>{contact.email}</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => openEmail({ to: contact.email! })}
+                          <a
+                            href={`mailto:${contact.email}`}
                             className="p-2.5 sm:p-2 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-200/80 rounded-xl transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center justify-center"
                             title={`Email ${contact.name}`}
                           >
                             <Mail size={18} className="stroke-[2.5]" />
-                          </button>
+                          </a>
                           <button
                             onClick={() => handleCopy(contact.email!, `${contact.id}-email`)}
                             className="p-2.5 sm:p-2 bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center"

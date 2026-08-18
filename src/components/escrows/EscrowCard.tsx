@@ -4,7 +4,6 @@ import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
 import { CheckCircle2, Users, Phone, MessageSquare, Mail, User } from 'lucide-react';
-import { useEmailPreference } from '../../context/EmailPreferenceContext';
 
 export function EscrowCard({ 
   escrow, 
@@ -28,7 +27,6 @@ export function EscrowCard({
   onOpenContacts?: () => void;
   onOpenDocuments?: () => void;
 }) {
-  const { openEmail } = useEmailPreference();
   const daysToCoe = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
   
@@ -373,22 +371,15 @@ export function EscrowCard({
 
                   {/* Email Action - Red Circle */}
                   {hasEmail ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEmail({
-                          to: agentEmail,
-                          subject: emailSubject,
-                          body: ''
-                        });
-                      }}
+                    <a
+                      href={`mailto:${agentEmail}?subject=${encodeURIComponent(emailSubject)}`}
+                      onClick={(e) => e.stopPropagation()}
                       className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs cursor-pointer border border-red-700/60"
                       title={`Email ${agentName || 'Agent'}: ${agentEmail}`}
                       aria-label={`Email ${agentName || 'Agent'}`}
                     >
                       <Mail size={14} className="text-white" />
-                    </button>
+                    </a>
                   ) : (
                     <button
                       type="button"

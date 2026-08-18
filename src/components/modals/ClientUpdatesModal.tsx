@@ -4,7 +4,6 @@ import { X, MessageSquare, Mail, Copy, Check, ChevronDown } from 'lucide-react';
 import { parseISO, format } from 'date-fns';
 import { motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
-import { useEmailPreference } from '../../context/EmailPreferenceContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -149,7 +148,6 @@ export function ClientUpdatesModal({
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   const { user } = useAuth();
-  const { openEmail, emailPreference, openChooser } = useEmailPreference();
 
   const [templates, setTemplates] = useState<typeof TEMPLATES>(() => {
     const saved = localStorage.getItem('escrow_custom_templates');
@@ -681,45 +679,17 @@ export function ClientUpdatesModal({
                       </>
                     )}
 
-                    {/* Email Action Group */}
-                    <div className="flex items-center gap-1 flex-1 sm:flex-initial">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!recipientEmail) return;
-                          openEmail({
-                            to: recipientEmail,
-                            subject: getPopulatedSubject(selectedTemplate.subject),
-                            body: editedText
-                          });
-                        }}
-                        disabled={!recipientEmail}
-                        className={`px-3.5 py-2.5 sm:py-2 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
-                          recipientEmail ? 'bg-[#1B3A5C] hover:bg-[#11253C] cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
-                        }`}
-                        title={recipientEmail ? `Send via ${emailPreference === 'gmail' ? 'Gmail' : emailPreference === 'native' ? 'Default Mail' : 'Email'}` : 'No email address'}
-                      >
-                        <Mail size={13} />
-                        <span>{isEscrowOfficerTemplate ? 'Email Officer' : (hasClient2 ? 'Email Both Clients' : 'Email Client')}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          openChooser({
-                            to: recipientEmail || '',
-                            subject: getPopulatedSubject(selectedTemplate.subject),
-                            body: editedText
-                          });
-                        }}
-                        className="p-2 sm:p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold transition-all border border-slate-200 cursor-pointer"
-                        title={`Current client: ${emailPreference === 'gmail' ? 'Gmail (Web)' : emailPreference === 'native' ? 'Native Mail App' : 'Ask Every Time'}. Click to change.`}
-                      >
-                        <span className="text-[10px] font-bold uppercase tracking-wider">
-                          {emailPreference === 'gmail' ? 'Gmail' : emailPreference === 'native' ? 'Mail' : 'Set'}
-                        </span>
-                      </button>
-                    </div>
+                    {/* Email Button */}
+                    <a
+                      href={`mailto:${recipientEmail || ''}?subject=${encodeURIComponent(getPopulatedSubject(selectedTemplate.subject))}&body=${encodeURIComponent(editedText)}`}
+                      className={`px-3.5 py-2.5 sm:py-2 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
+                        recipientEmail ? 'bg-[#1B3A5C] hover:bg-[#11253C] cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
+                      }`}
+                      title={recipientEmail ? `Email ${recipientName}` : 'No email saved'}
+                    >
+                      <Mail size={13} />
+                      <span>{isEscrowOfficerTemplate ? 'Email Officer' : (hasClient2 ? 'Email Both Clients' : 'Email Client')}</span>
+                    </a>
                   </div>
                 </div>
               </div>
