@@ -308,6 +308,8 @@ export function useEscrows() {
         escrowNumber: data.escrowNumber || '',
         escrowCompany: data.escrowCompany || '',
         address: data.address || 'Unknown Address',
+        city: data.city || '',
+        zipCode: data.zipCode || '',
         clientFirstName,
         clientLastName,
         clientPhone: data.clientPhone || '',

@@ -44,7 +44,15 @@ export const CSV_HEADERS = [
 
 function parseDateToIso(dateStr: string): string {
   if (!dateStr || !dateStr.trim()) return '';
-  const trimmed = dateStr.trim();
+  let trimmed = dateStr.trim();
+  // Strip time components like " 00:00:00" or " 12:00:00 AM" if present
+  if (trimmed.includes(' ')) {
+    trimmed = trimmed.split(' ')[0];
+  }
+  if (trimmed.includes('T')) {
+    trimmed = trimmed.split('T')[0];
+  }
+
   // If YYYY-MM-DD or YYYY/MM/DD
   if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(trimmed)) {
     const parts = trimmed.split(/[-/]/);
@@ -63,7 +71,7 @@ function parseDateToIso(dateStr: string): string {
   }
   // Try standard JS parsing
   try {
-    const d = new Date(trimmed);
+    const d = new Date(dateStr.trim());
     if (!isNaN(d.getTime())) {
       return d.toISOString().split('T')[0];
     }
@@ -302,6 +310,8 @@ export function parseCsvData(csvText: string): string[][] {
   if (cleanCsv.startsWith('\ufeff')) {
     cleanCsv = cleanCsv.slice(1);
   }
+  // Replace non-breaking spaces and special unicode spaces
+  cleanCsv = cleanCsv.replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000]/g, ' ');
 
   for (let i = 0; i < cleanCsv.length; i++) {
     const char = cleanCsv[i];
@@ -344,61 +354,85 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
   const rows = parseCsvData(csvText);
   if (rows.length <= 1) return []; // Only headers or empty
 
-  const headers = rows[0].map(h => h.toLowerCase());
+  const headers = rows[0].map(h => h.trim().toLowerCase());
   const results: Partial<Escrow>[] = [];
 
   for (let i = 1; i < rows.length; i++) {
     const values = rows[i];
     
-    const row: Record<string, string> = {};
-    headers.forEach((h, idx) => {
-      row[h] = values[idx] || '';
-    });
-
     const getVal = (possibleKeys: string[]) => {
-      // Direct exact match first
-      const exactMatch = headers.find(h => possibleKeys.some(pk => h === pk.toLowerCase()));
-      if (exactMatch) return row[exactMatch];
+      const normalizedKeys = possibleKeys.map(k => k.trim().toLowerCase());
       
-      // Fuzzy match (includes)
-      const match = headers.find(h => possibleKeys.some(pk => h.includes(pk.toLowerCase())));
-      return match ? row[match] : '';
+      // 1. Direct exact match first
+      for (const pk of normalizedKeys) {
+        const found = headers.findIndex(h => h === pk);
+        if (found !== -1 && values[found] !== undefined && values[found].trim() !== '') {
+          return values[found].trim();
+        }
+      }
+      
+      // 2. Exact match ignoring non-alphanumeric chars (spaces, hyphens, underscores)
+      const clean = (s: string) => s.replace(/[^a-z0-9]/g, '');
+      for (const pk of normalizedKeys) {
+        const cPk = clean(pk);
+        if (!cPk) continue;
+        const found = headers.findIndex(h => clean(h) === cPk);
+        if (found !== -1 && values[found] !== undefined && values[found].trim() !== '') {
+          return values[found].trim();
+        }
+      }
+
+      // 3. Substring match
+      for (const pk of normalizedKeys) {
+        const found = headers.findIndex(h => h.includes(pk) || pk.includes(h));
+        if (found !== -1 && values[found] !== undefined && values[found].trim() !== '') {
+          return values[found].trim();
+        }
+      }
+
+      return '';
     };
 
     // Standardize status mapping
-    const rawStatus = getVal(['status']);
+    const rawStatus = getVal(['status', 'transaction status', 'escrow status', 'stage', 'state', 'deal status']);
     let parsedStatus: 'Open' | 'Closed' | 'Cancelled' = 'Open';
-    if (rawStatus.toLowerCase().includes('closed')) {
+    if (rawStatus.toLowerCase().includes('closed') || rawStatus.toLowerCase().includes('close')) {
       parsedStatus = 'Closed';
     } else if (rawStatus.toLowerCase().includes('cancel')) {
       parsedStatus = 'Cancelled';
     } else {
-      parsedStatus = 'Open'; // Default or pending maps to Open
+      parsedStatus = 'Open';
     }
     
-    let address = getVal(['address', 'street address', 'street', 'property address', 'property', 'location', 'address line 1', 'line 1']);
+    // Address, City, Zip
+    let address = getVal(['address', 'address ', 'street address', 'street', 'property address', 'property', 'location', 'address line 1', 'line 1', 'address line']);
     let city = getVal(['city', 'property city', 'town', 'municipality']);
-    let zipCode = getVal(['zip code', 'zip', 'postal code', 'zipcode', 'property zip', 'property zip code']);
+    let zipCode = getVal(['zip code', 'zip', 'postal code', 'zipcode', 'property zip', 'property zip code', 'postal']);
 
-    if ((!city || !zipCode) && address && address !== 'TBD') {
+    // Clean non-breaking spaces
+    address = address ? address.replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ').trim() : '';
+    city = city ? city.replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ').trim() : '';
+    zipCode = zipCode ? zipCode.replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ').trim() : '';
+
+    if (address && address !== 'TBD') {
       const parsedAddr = parseAddressComponents(address);
       if (!city && parsedAddr.city) city = parsedAddr.city;
       if (!zipCode && parsedAddr.zipCode) zipCode = parsedAddr.zipCode;
-      if (parsedAddr.address && (parsedAddr.city || parsedAddr.zipCode)) {
+      if (parsedAddr.address && (city || zipCode || parsedAddr.city || parsedAddr.zipCode)) {
         address = parsedAddr.address;
       }
     }
 
     if (!address) {
-      // Check if we have any other non-empty field, otherwise skip fully blank row
-      const hasAnyField = Object.values(row).some(val => val.trim().length > 0);
+      const hasAnyField = values.some(val => val.trim().length > 0);
       if (!hasAnyField) continue;
       address = 'TBD';
     }
 
-    const rawClientFirstName = getVal(['client first name', 'first name']);
-    const rawClientLastName = getVal(['client last name', 'last name']);
-    const legacyClientName = getVal(['client name', 'client']);
+    // Client 1 Name
+    const rawClientFirstName = getVal(['client first name', 'first name', 'buyer first name', 'seller first name', 'client 1 first name', 'buyer 1 first name', 'seller 1 first name', 'primary contact first name']);
+    const rawClientLastName = getVal(['client last name', 'last name', 'buyer last name', 'seller last name', 'client 1 last name', 'buyer 1 last name', 'seller 1 last name', 'primary contact last name']);
+    const legacyClientName = getVal(['client name', 'client', 'buyer name', 'seller name', 'contact name', 'primary contact', 'client 1', 'buyer 1', 'seller 1']);
     
     let clientFirstName = rawClientFirstName;
     let clientLastName = rawClientLastName;
@@ -409,66 +443,110 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       clientLastName = parts.slice(1).join(' ') || '';
     }
 
-    const escrowCompany = getVal(['escrow company']);
+    // Client 2 Name
+    const rawClient2Name = getVal(['2 client name', 'second client name', 'client 2 name', 'client2 name', 'client 2', 'client2', 'second contact name', 'second contact', 'co-buyer', 'co-seller', 'buyer 2', 'seller 2', 'buyer 2 name', 'seller 2 name', '2nd client', '2nd contact']);
+    let client2FirstName = getVal(['client 2 first name', 'client2 first name', '2 client first name', 'second contact first name', 'buyer 2 first name', 'seller 2 first name', '2nd client first name']);
+    let client2LastName = getVal(['client 2 last name', 'client2 last name', '2 client last name', 'second contact last name', 'buyer 2 last name', 'seller 2 last name', '2nd client last name']);
+
+    if (!client2FirstName && !client2LastName && rawClient2Name) {
+      const p2 = rawClient2Name.trim().split(/\s+/);
+      client2FirstName = p2[0] || '';
+      client2LastName = p2.slice(1).join(' ') || '';
+    }
+
+    const client2Phone = getVal(['second contact phone', '2 client phone', 'client 2 phone', 'client2 phone', 'second phone', 'buyer 2 phone', 'seller 2 phone', '2nd contact phone', '2nd client phone']);
+    const client2Email = getVal(['2 client email', 'client 2 email', 'client2 email', 'second contact email', 'second email', 'buyer 2 email', 'seller 2 email', '2nd contact email', '2nd client email']);
+    const client2Birthday = parseDateToIso(getVal(['client 2 birthday', 'client 2 birthdate', 'client 2 dob', 'client2 birthday', 'client2 birthdate', 'client2 dob', '2 client birthday', 'second contact birthday']));
+
+    const escrowCompany = getVal(['escrow company', 'escrow_company', 'escrowcompany', 'escrow']);
     let notes = getVal(['notes', 'description', 'comments', 'memo']);
-    if (escrowCompany) {
+    if (escrowCompany && !notes?.includes(escrowCompany)) {
       const prefix = `Escrow Company: ${escrowCompany}`;
       notes = notes ? `${prefix}\n\n${notes}` : prefix;
     }
 
     // Dates parsing
-    const rawAcceptance = getVal(['acceptance date', 'acceptance', 'under contract date']);
+    const rawAcceptance = getVal(['acceptance date', 'acceptance', 'under contract date', 'contract date', 'accepted date', 'signed date']);
     const rawContingencyStart = getVal(['contingency start date', 'contingency start', 'contingency_start_date']);
-    const rawCoe = getVal(['close of escrow', 'coe', 'close date', 'forecasted closed date']);
-    const cooperatingBrokerage = getVal(['cooperating brokerage', 'cooperating_brokerage', 'co-brokerage', 'other agent brokerage', 'other brokerage', 'agent brokerage']);
+    const rawCoe = getVal(['closed of escrow', 'close of escrow', 'closed date', 'close date', 'closed (settlement) date', 'coe', 'coe date', 'forecasted closed date', 'closing date', 'settlement date', 'closing', 'target close']);
+    const cooperatingBrokerage = getVal(['cooperating brokerage', 'cooperating_brokerage', 'co-brokerage', 'other agent brokerage', 'other brokerage', 'agent brokerage', 'selling brokerage', 'listing brokerage']);
 
-    // Representation mapping
-    const rawRep = getVal(['representation', 'rep']);
+    // Representation / Transaction Type mapping
+    const rawRep = getVal(['representation', 'rep', 'transaction type', 'trans type', 'type', 'side', 'role']);
     let representation: 'Buyer' | 'Seller' | 'Dual' | undefined = undefined;
     if (rawRep.toLowerCase().includes('buyer')) representation = 'Buyer';
     else if (rawRep.toLowerCase().includes('seller')) representation = 'Seller';
     else if (rawRep.toLowerCase().includes('dual')) representation = 'Dual';
 
     // Lead Source mapping
-    const rawSource = getVal(['lead source', 'source']);
+    const rawSource = getVal(['lead source', 'source', 'lead_source', 'lead type']);
     let leadSource: 'Zillow' | 'Self' | 'Team Lead' | 'Opcity' | 'Other' = 'Zillow';
     if (rawSource.toLowerCase().includes('zillow')) leadSource = 'Zillow';
-    else if (rawSource.toLowerCase().includes('self') || rawSource.toLowerCase().includes('soi') || rawSource.toLowerCase().includes('referral')) leadSource = 'Self';
+    else if (rawSource.toLowerCase().includes('self') || rawSource.toLowerCase().includes('soi') || rawSource.toLowerCase().includes('referral') || rawSource.toLowerCase().includes('past client')) leadSource = 'Self';
     else if (rawSource.toLowerCase().includes('team')) leadSource = 'Team Lead';
     else if (rawSource.toLowerCase().includes('opcity')) leadSource = 'Opcity';
     else if (rawSource) leadSource = 'Other';
 
+    // Price
+    const rawPrice = getVal(['sale price', 'price', 'purchase price', 'amount', 'transaction amount']);
+    const price = Number(String(rawPrice || '').replace(/[^0-9.]/g, '')) || 0;
+
+    // Commission Percent
+    const rawCommPercent = getVal(['commission percent', 'commission %', 'commission_percent', 'comm %', 'comm percent', 'commission rate', 'commission percentage', 'comm rate']);
+    let commissionPercent: number | undefined = undefined;
+    if (rawCommPercent) {
+      const num = Number(String(rawCommPercent).replace(/[^0-9.]/g, ''));
+      if (!isNaN(num) && num > 0) {
+        commissionPercent = num <= 0.2 ? num * 100 : num;
+      }
+    }
+
+    // Net Commission & Gross Commission
+    const rawNetComm = getVal(['net commission', 'net gci', 'net income', 'agent net', 'net', 'gross agent(s) paid income']);
+    const rawGrossComm = getVal(['gross commission', 'gci', 'gross gci', 'gross commission amount', 'total commission']);
+    let netCommission = 0;
+    if (rawNetComm) {
+      netCommission = Number(String(rawNetComm).replace(/[^0-9.]/g, '')) || 0;
+    } else if (rawGrossComm) {
+      netCommission = Number(String(rawGrossComm).replace(/[^0-9.]/g, '')) || 0;
+    } else {
+      const genericComm = getVal(['commission']);
+      if (genericComm) {
+        netCommission = Number(String(genericComm).replace(/[^0-9.]/g, '')) || 0;
+      }
+    }
+
     // Map fields
     const escrow: Partial<Escrow> = {
-      escrowNumber: getVal(['escrow #', 'escrow number', 'escrow no', 'escrowno', 'escrow_no', 'escrow_number']),
-      escrowCompany: getVal(['escrow company', 'escrow_company', 'escrowcompany']) || escrowCompany || '',
+      escrowNumber: getVal(['escrow #', 'escrow number', 'escrow no', 'escrowno', 'escrow_no', 'escrow_number', 'id', 'deal id', 'sisu id', 'file #', 'file number', 'transaction id']),
+      escrowCompany: escrowCompany || '',
       address,
       city,
       zipCode,
       clientFirstName,
       clientLastName,
-      clientPhone: getVal(['client phone']),
-      clientEmail: getVal(['client email']),
-      clientBirthday: parseDateToIso(getVal(['client birthday', 'client birthdate', 'birthday', 'dob', 'client dob'])),
-      client2FirstName: getVal(['client 2 first name', 'client2 first name']),
-      client2LastName: getVal(['client 2 last name', 'client2 last name']),
-      client2Phone: getVal(['client 2 phone', 'client2 phone']),
-      client2Email: getVal(['client 2 email', 'client2 email']),
-      client2Birthday: parseDateToIso(getVal(['client 2 birthday', 'client 2 birthdate', 'client 2 dob', 'client2 birthday', 'client2 birthdate', 'client2 dob'])),
-      agentName: getVal(['agent name']),
-      agentEmail: getVal(['agent email']),
-      agentPhone: getVal(['agent phone']),
+      clientPhone: getVal(['client phone', 'client phone ', 'phone', 'contact phone', 'client cell', 'mobile phone number', 'mobile', 'cell', 'primary phone']),
+      clientEmail: getVal(['client email', 'contact email', 'email', 'primary email', 'buyer email', 'seller email']),
+      clientBirthday: parseDateToIso(getVal(['client birthday', 'client birthdate', 'birthday', 'dob', 'client dob', 'birth date'])),
+      client2FirstName,
+      client2LastName,
+      client2Phone,
+      client2Email,
+      client2Birthday,
+      agentName: getVal(['agent name', 'agent', 'primary agent']),
+      agentEmail: getVal(['agent email', 'agent_email']),
+      agentPhone: getVal(['agent phone', 'agent_phone']),
       cooperatingBrokerage,
-      lenderName: getVal(['lender name']),
-      lenderPhone: getVal(['lender phone']),
-      lenderEmail: getVal(['lender email']),
-      escrowOfficer: getVal(['escrow officer name', 'escrow officer']),
-      escrowPhone: getVal(['escrow officer phone', 'escrow phone']),
-      escrowEmail: getVal(['escrow officer email', 'escrow email']),
+      lenderName: getVal(['lender', 'lender name', 'mortgage company', 'mortgage', 'loan officer', 'lender company']),
+      lenderPhone: getVal(['lender phone', 'lender phone number', 'mortgage phone']),
+      lenderEmail: getVal(['lender email', 'mortgage email']),
+      escrowOfficer: getVal(['escrow officer name', 'escrow officer', 'officer', 'escrow contact']),
+      escrowPhone: getVal(['escrow officer phone', 'escrow phone', 'escrow contact phone']),
+      escrowEmail: getVal(['escrow officer email', 'escrow email', 'escrow contact email']),
       collaborator: getVal(['co-agent name', 'co-agent', 'collaborator']),
-      price: Number(String(getVal(['sale price', 'price', 'amount']) || '').replace(/[^0-9.]/g, '')) || 0,
-      commissionPercent: getVal(['commission percent', 'commission %', 'commission_percent']) ? Number(String(getVal(['commission percent', 'commission %', 'commission_percent'])).replace(/[^0-9.]/g, '')) : undefined,
-      netCommission: Number(String(getVal(['net commission', 'commission']) || '').replace(/[^0-9.]/g, '')) || 0,
+      price,
+      commissionPercent,
+      netCommission,
       acceptanceDate: (rawAcceptance && parseDateToIso(rawAcceptance)) || '',
       contingencyStartDate: (rawContingencyStart && parseDateToIso(rawContingencyStart)) || (rawAcceptance && parseDateToIso(rawAcceptance)) || '',
       coeDate: (rawCoe && parseDateToIso(rawCoe)) || '',
@@ -528,7 +606,7 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
 
   // Address, City, Zip
   let address = getVal(['address line 1', 'street address', 'address', 'property address', 'property location', 'address line 2']);
-  let city = getVal(['city', 'property city']);
+  let city = getVal(['city', 'property city', 'town']);
   let zipCode = getVal(['zip', 'zip code', 'postal code', 'property zip']);
 
   if ((!city || !zipCode) && address && address !== 'TBD') {
@@ -544,7 +622,7 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     address = 'TBD';
   }
 
-  // Client Name
+  // Client 1 Name
   let clientFirstName = getVal(['first name', 'client first name', 'buyer first name', 'seller first name']);
   let clientLastName = getVal(['last name', 'client last name', 'buyer last name', 'seller last name']);
   const clientName = getVal(['client name', 'client', 'buyer name', 'seller name']);
@@ -553,6 +631,20 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     clientFirstName = parts[0] || '';
     clientLastName = parts.slice(1).join(' ') || '';
   }
+
+  // Client 2 Name
+  const rawClient2Name = getVal(['2 client name', 'second client name', 'client 2 name', 'client2 name', 'client 2', 'client2', 'second contact name', 'second contact', 'co-buyer', 'co-seller', 'buyer 2', 'seller 2', 'buyer 2 name', 'seller 2 name']);
+  let client2FirstName = getVal(['client 2 first name', 'client2 first name', '2 client first name', 'second contact first name', 'buyer 2 first name', 'seller 2 first name']);
+  let client2LastName = getVal(['client 2 last name', 'client2 last name', '2 client last name', 'second contact last name', 'buyer 2 last name', 'seller 2 last name']);
+
+  if (!client2FirstName && !client2LastName && rawClient2Name) {
+    const p2 = rawClient2Name.trim().split(/\s+/);
+    client2FirstName = p2[0] || '';
+    client2LastName = p2.slice(1).join(' ') || '';
+  }
+
+  const client2Phone = getVal(['second contact phone', '2 client phone', 'client 2 phone', 'client2 phone', 'buyer 2 phone', 'seller 2 phone']);
+  const client2Email = getVal(['2 client email', 'client 2 email', 'client2 email', 'second contact email', 'buyer 2 email', 'seller 2 email']);
 
   // Agent Name
   let agentName = getVal(['agent', 'agent name', 'primary agent']);
@@ -565,7 +657,7 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
 
   // Dates
   const rawAcceptance = getVal(['under contract date', 'signed date', 'acceptance date', 'acceptance']);
-  const rawCoe = getVal(['closed (settlement) date', 'closed date', 'forecasted closed date', 'close of escrow', 'coe']);
+  const rawCoe = getVal(['closed (settlement) date', 'closed date', 'closed of escrow', 'forecasted closed date', 'close of escrow', 'coe']);
 
   const acceptanceDate = rawAcceptance && rawAcceptance.toLowerCase() !== 'none' && rawAcceptance.toLowerCase() !== '--'
     ? parseDateToIso(rawAcceptance) 
@@ -583,7 +675,21 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
   const rawGCI = getVal(['gci', 'net commission', 'commission', 'gross agent(s) paid income']);
   const netCommission = Number(String(rawGCI || '').replace(/[^0-9.]/g, '')) || 0;
 
-  const commissionPercent = getVal(['commission percent', 'commission %', 'commission_percent']) ? Number(String(getVal(['commission percent', 'commission %', 'commission_percent'])).replace(/[^0-9.]/g, '')) : undefined;
+  const rawCommPercent = getVal(['commission percent', 'commission %', 'commission_percent']);
+  let commissionPercent: number | undefined = undefined;
+  if (rawCommPercent) {
+    const num = Number(String(rawCommPercent).replace(/[^0-9.]/g, ''));
+    if (!isNaN(num) && num > 0) {
+      commissionPercent = num <= 0.2 ? num * 100 : num;
+    }
+  }
+
+  // Representation / Transaction Type mapping
+  const rawRep = getVal(['representation', 'rep', 'transaction type', 'trans type', 'type', 'side']);
+  let representation: 'Buyer' | 'Seller' | 'Dual' | undefined = undefined;
+  if (rawRep.toLowerCase().includes('buyer')) representation = 'Buyer';
+  else if (rawRep.toLowerCase().includes('seller')) representation = 'Seller';
+  else if (rawRep.toLowerCase().includes('dual')) representation = 'Dual';
 
   // Lead Source mapping
   const rawSource = getVal(['lead source', 'source']);
@@ -637,6 +743,10 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     clientPhone: getVal(['mobile phone number', 'client phone', 'phone', 'contact phone']),
     clientEmail: getVal(['contact email', 'client email', 'email']),
     clientBirthday: parseDateToIso(getVal(['client birthday', 'client birthdate', 'client dob', 'birthday', 'dob'])),
+    client2FirstName,
+    client2LastName,
+    client2Phone,
+    client2Email,
     client2Birthday: parseDateToIso(getVal(['client 2 birthday', 'client 2 birthdate', 'client 2 dob', 'client2 birthday', 'client2 birthdate', 'client2 dob'])),
     agentName: agentName || '',
     agentEmail: getVal(['agent email', 'agent_email']),
@@ -655,6 +765,7 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     acceptanceDate,
     coeDate,
     status: parsedStatus,
+    representation,
     leadSource,
     notes: noteLines.join('\n')
   };
