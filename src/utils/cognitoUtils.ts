@@ -1,4 +1,4 @@
-import { Escrow } from '../types';
+import { Escrow, parseAddressComponents } from '../types';
 import { parseISO, format } from 'date-fns';
 
 function formatDateForCognito(dateStr?: string): string {
@@ -101,8 +101,45 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     entryData["Client2ContactNumber"] = clean2Phone;
   }
 
-  if (escrow.address) {
-    entryData["PropertyAddress"] = { "Line1": escrow.address };
+  // Parse or retrieve address components
+  let streetAddress = (escrow.address || '').trim();
+  let propertyCity = (escrow.city || '').trim();
+  let propertyZip = (escrow.zipCode || '').trim();
+
+  // If city or zip are missing on legacy records, attempt to parse from address string
+  if ((!propertyCity || !propertyZip) && streetAddress) {
+    const parsedAddr = parseAddressComponents(streetAddress);
+    if (!propertyCity && parsedAddr.city) propertyCity = parsedAddr.city;
+    if (!propertyZip && parsedAddr.zipCode) propertyZip = parsedAddr.zipCode;
+    if (parsedAddr.address && (parsedAddr.city || parsedAddr.zipCode)) {
+      streetAddress = parsedAddr.address;
+    }
+  }
+
+  if (streetAddress || propertyCity || propertyZip) {
+    const addressObj: Record<string, string> = {};
+    if (streetAddress) addressObj["Line1"] = streetAddress;
+    if (propertyCity) addressObj["City"] = propertyCity;
+    if (propertyZip) addressObj["PostalCode"] = propertyZip;
+    
+    entryData["PropertyAddress"] = addressObj;
+
+    // Additional aliases/flat fields if the form uses distinct text inputs
+    if (streetAddress) {
+      entryData["Address"] = streetAddress;
+      entryData["StreetAddress"] = streetAddress;
+      entryData["PropertyStreet"] = streetAddress;
+    }
+    if (propertyCity) {
+      entryData["City"] = propertyCity;
+      entryData["PropertyCity"] = propertyCity;
+    }
+    if (propertyZip) {
+      entryData["Zip"] = propertyZip;
+      entryData["ZipCode"] = propertyZip;
+      entryData["PostalCode"] = propertyZip;
+      entryData["PropertyZip"] = propertyZip;
+    }
   }
 
   if (escrow.price) {

@@ -1,4 +1,4 @@
-import { Escrow, ALL_TASKS } from '../types';
+import { Escrow, ALL_TASKS, parseAddressComponents } from '../types';
 
 export const CSV_HEADERS = [
   'Escrow #',
@@ -6,6 +6,8 @@ export const CSV_HEADERS = [
   'Representation',
   'Lead Source',
   'Address',
+  'City',
+  'Zip Code',
   'Client Name',
   'Client First Name',
   'Client Last Name',
@@ -76,7 +78,9 @@ export function generateCsvTemplate(): string {
       '"Closed"', // Status
       '"Buyer"', // Representation
       '"Zillow"', // Lead Source
-      '"1206 Louise St, Santa Ana, CA 92703"', // Address
+      '"1206 Louise St"', // Address
+      '"Santa Ana"', // City
+      '"92703"', // Zip Code
       '"Patrick Curley"', // Client Name
       '"Patrick"', // Client First Name
       '"Curley"', // Client Last Name
@@ -115,7 +119,9 @@ export function generateCsvTemplate(): string {
       '"Open"',
       '"Seller"',
       '"Self"',
-      '"12592 Montecito Rd #9, Seal Beach, CA 90740"',
+      '"12592 Montecito Rd #9"',
+      '"Seal Beach"',
+      '"90740"',
       '"Carlos Campa"',
       '"Carlos"',
       '"Campa"',
@@ -154,7 +160,9 @@ export function generateCsvTemplate(): string {
       '"Open"',
       '"Buyer"',
       '"Team Lead"',
-      '"742 Evergreen Terrace, Springfield, OR 97477"',
+      '"742 Evergreen Terrace"',
+      '"Springfield"',
+      '"97477"',
       '"Homer Simpson"',
       '"Homer"',
       '"Simpson"',
@@ -231,6 +239,8 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       escapeCsv(e.representation || ''),
       escapeCsv(e.leadSource || 'Zillow'),
       escapeCsv(e.address || ''),
+      escapeCsv(e.city || ''),
+      escapeCsv(e.zipCode || ''),
       escapeCsv(clientName),
       escapeCsv(e.clientFirstName || ''),
       escapeCsv(e.clientLastName || ''),
@@ -366,7 +376,19 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       parsedStatus = 'Open'; // Default or pending maps to Open
     }
     
-    let address = getVal(['address', 'property', 'location']);
+    let address = getVal(['address', 'street address', 'street', 'property address', 'property', 'location', 'address line 1', 'line 1']);
+    let city = getVal(['city', 'property city', 'town', 'municipality']);
+    let zipCode = getVal(['zip code', 'zip', 'postal code', 'zipcode', 'property zip', 'property zip code']);
+
+    if ((!city || !zipCode) && address && address !== 'TBD') {
+      const parsedAddr = parseAddressComponents(address);
+      if (!city && parsedAddr.city) city = parsedAddr.city;
+      if (!zipCode && parsedAddr.zipCode) zipCode = parsedAddr.zipCode;
+      if (parsedAddr.address && (parsedAddr.city || parsedAddr.zipCode)) {
+        address = parsedAddr.address;
+      }
+    }
+
     if (!address) {
       // Check if we have any other non-empty field, otherwise skip fully blank row
       const hasAnyField = Object.values(row).some(val => val.trim().length > 0);
@@ -421,6 +443,8 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       escrowNumber: getVal(['escrow #', 'escrow number', 'escrow no', 'escrowno', 'escrow_no', 'escrow_number']),
       escrowCompany: getVal(['escrow company', 'escrow_company', 'escrowcompany']) || escrowCompany || '',
       address,
+      city,
+      zipCode,
       clientFirstName,
       clientLastName,
       clientPhone: getVal(['client phone']),
@@ -502,8 +526,20 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     parsedStatus = 'Open';
   }
 
-  // Address
-  let address = getVal(['address line 1', 'address', 'property address', 'property location', 'address line 2']);
+  // Address, City, Zip
+  let address = getVal(['address line 1', 'street address', 'address', 'property address', 'property location', 'address line 2']);
+  let city = getVal(['city', 'property city']);
+  let zipCode = getVal(['zip', 'zip code', 'postal code', 'property zip']);
+
+  if ((!city || !zipCode) && address && address !== 'TBD') {
+    const parsedAddr = parseAddressComponents(address);
+    if (!city && parsedAddr.city) city = parsedAddr.city;
+    if (!zipCode && parsedAddr.zipCode) zipCode = parsedAddr.zipCode;
+    if (parsedAddr.address && (parsedAddr.city || parsedAddr.zipCode)) {
+      address = parsedAddr.address;
+    }
+  }
+
   if (!address) {
     address = 'TBD';
   }
@@ -594,6 +630,8 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     escrowNumber: getVal(['id', 'escrow #', 'escrow number', 'escrow no']),
     escrowCompany: getVal(['escrow company', 'escrow_company', 'escrowcompany']),
     address,
+    city,
+    zipCode,
     clientFirstName: clientFirstName || '',
     clientLastName: clientLastName || '',
     clientPhone: getVal(['mobile phone number', 'client phone', 'phone', 'contact phone']),

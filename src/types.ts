@@ -27,6 +27,8 @@ export interface Escrow {
   escrowNumber?: string;
   escrowCompany?: string;
   address: string;
+  city?: string;
+  zipCode?: string;
   clientFirstName: string;
   clientLastName: string;
   clientPhone?: string;
@@ -157,3 +159,79 @@ export function getContingencyDaysLeft(escrow: Escrow, taskKey: string): number 
   }
   return differenceInCalendarDays(dueDate, new Date());
 }
+
+export function formatPropertyAddress(escrow?: { address?: string; city?: string; zipCode?: string } | null): string {
+  if (!escrow) return '';
+  const street = (escrow.address || '').trim();
+  const city = (escrow.city || '').trim();
+  const zip = (escrow.zipCode || '').trim();
+
+  if (!city && !zip) return street;
+
+  // If the street field already contains city and zip, don't duplicate
+  if (city && street.toLowerCase().includes(city.toLowerCase()) && zip && street.includes(zip)) {
+    return street;
+  }
+
+  const parts: string[] = [];
+  if (street) parts.push(street);
+  if (city && zip) {
+    parts.push(`${city}, ${zip}`);
+  } else if (city) {
+    parts.push(city);
+  } else if (zip) {
+    parts.push(zip);
+  }
+  return parts.join(', ');
+}
+
+export function parseAddressComponents(rawAddress?: string): { address: string; city: string; zipCode: string } {
+  if (!rawAddress || !rawAddress.trim()) {
+    return { address: '', city: '', zipCode: '' };
+  }
+  const clean = rawAddress.trim();
+
+  // Try parsing: "123 Main St, City, State Zip" or "123 Main St, City, Zip"
+  const commaParts = clean.split(',').map(p => p.trim()).filter(Boolean);
+
+  if (commaParts.length >= 3) {
+    const street = commaParts[0];
+    const city = commaParts[1];
+    const lastPart = commaParts.slice(2).join(' ');
+    const zipMatch = lastPart.match(/\b\d{5}(?:-\d{4})?\b/);
+    const zipCode = zipMatch ? zipMatch[0] : '';
+    return {
+      address: street,
+      city: city,
+      zipCode: zipCode
+    };
+  } else if (commaParts.length === 2) {
+    const street = commaParts[0];
+    const secondPart = commaParts[1];
+    const zipMatch = secondPart.match(/\b\d{5}(?:-\d{4})?\b/);
+    const zipCode = zipMatch ? zipMatch[0] : '';
+    const city = secondPart.replace(/\b[A-Z]{2}\b/g, '').replace(/\b\d{5}(?:-\d{4})?\b/g, '').trim();
+    return {
+      address: street,
+      city: city || secondPart,
+      zipCode: zipCode
+    };
+  } else {
+    const zipMatch = clean.match(/\b\d{5}(?:-\d{4})?\b$/);
+    if (zipMatch) {
+      const zipCode = zipMatch[0];
+      const rest = clean.substring(0, clean.length - zipCode.length).trim();
+      return {
+        address: rest,
+        city: '',
+        zipCode: zipCode
+      };
+    }
+    return {
+      address: clean,
+      city: '',
+      zipCode: ''
+    };
+  }
+}
+

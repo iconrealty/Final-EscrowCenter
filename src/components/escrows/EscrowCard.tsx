@@ -1,5 +1,5 @@
 import React from 'react';
-import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS } from '../../types';
+import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, formatPropertyAddress } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
@@ -135,8 +135,8 @@ export function EscrowCard({
               {escrow.clientFirstName || ''} {escrow.clientLastName || ''}
               {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
             </div>
-            <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#11253C]/80 tracking-tight line-clamp-2 transition-colors" title={escrow.address}>
-              {escrow.address}
+            <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#11253C]/80 tracking-tight line-clamp-2 transition-colors" title={formatPropertyAddress(escrow)}>
+              {formatPropertyAddress(escrow)}
             </h3>
           </div>
         </div>

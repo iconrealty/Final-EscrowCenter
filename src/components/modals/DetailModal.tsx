@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Escrow, CONTINGENCIES, getContingencyDaysLeft, getContingencyDueDate } from '../../types';
+import { Escrow, CONTINGENCIES, getContingencyDaysLeft, getContingencyDueDate, formatPropertyAddress } from '../../types';
 import { X, Pencil, Trash2, ExternalLink, Check } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
@@ -62,8 +62,8 @@ export function DetailModal({
                 {hasClient2 && ` & ${escrow.client2FirstName} ${escrow.client2LastName}`}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-black mb-2 truncate max-w-[240px] sm:max-w-none" title={escrow.address}>
-              {escrow.address}
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-black mb-2 truncate max-w-[240px] sm:max-w-none" title={formatPropertyAddress(escrow)}>
+              {formatPropertyAddress(escrow)}
             </h2>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <StatusBadge status={escrow.status} />

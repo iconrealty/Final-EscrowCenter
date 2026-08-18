@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Escrow, CONTINGENCIES, adjustWeekendToMonday } from '../../types';
+import { Escrow, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
 import { X, Sparkles } from 'lucide-react';
 import { addMonths, addDays, parseISO, format } from 'date-fns';
 import { parseSisuText } from '../../utils/csvUtils';
@@ -18,6 +18,8 @@ export function AddEditModal({
       escrowNumber: '',
       escrowCompany: '',
       address: '',
+      city: '',
+      zipCode: '',
       clientFirstName: '',
       clientLastName: '',
       clientPhone: '',
@@ -76,7 +78,9 @@ export function AddEditModal({
       ...prev,
       escrowNumber: parsed.escrowNumber || prev.escrowNumber,
       escrowCompany: parsed.escrowCompany || prev.escrowCompany,
-      address: parsed.address !== 'TBD' ? parsed.address : prev.address,
+      address: parsed.address !== 'TBD' ? (parsed.address || prev.address) : prev.address,
+      city: parsed.city || prev.city,
+      zipCode: parsed.zipCode || prev.zipCode,
       clientFirstName: parsed.clientFirstName || prev.clientFirstName,
       clientLastName: parsed.clientLastName || prev.clientLastName,
       clientPhone: parsed.clientPhone || prev.clientPhone,
@@ -129,10 +133,26 @@ export function AddEditModal({
       const cleanBday1 = sanitizeBday(escrow.clientBirthday, escrow.acceptanceDate, escrow.coeDate);
       const cleanBday2 = sanitizeBday(escrow.client2Birthday, escrow.acceptanceDate, escrow.coeDate);
 
+      let initAddress = escrow.address || '';
+      let initCity = escrow.city || '';
+      let initZip = escrow.zipCode || '';
+
+      // Auto-extract city and zip if missing on legacy single-string address
+      if ((!initCity || !initZip) && initAddress) {
+        const parsed = parseAddressComponents(initAddress);
+        if (!initCity && parsed.city) initCity = parsed.city;
+        if (!initZip && parsed.zipCode) initZip = parsed.zipCode;
+        if (parsed.address && (parsed.city || parsed.zipCode)) {
+          initAddress = parsed.address;
+        }
+      }
+
       setFormData({
         escrowNumber: escrow.escrowNumber || '',
         escrowCompany: escrow.escrowCompany || '',
-        address: escrow.address || '',
+        address: initAddress,
+        city: initCity,
+        zipCode: initZip,
         clientFirstName: escrow.clientFirstName || '',
         clientLastName: escrow.clientLastName || '',
         clientPhone: escrow.clientPhone || '',
@@ -171,6 +191,8 @@ export function AddEditModal({
         escrowNumber: '',
         escrowCompany: '',
         address: '',
+        city: '',
+        zipCode: '',
         clientFirstName: '',
         clientLastName: '',
         clientPhone: '',
@@ -306,8 +328,18 @@ export function AddEditModal({
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-[#334155] mb-1">Property Address *</label>
-              <input required type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+              <label className="block text-xs font-bold text-[#334155] mb-1">Property Address (Street) *</label>
+              <input required type="text" placeholder="e.g. 1206 Louise St" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">City</label>
+              <input type="text" placeholder="e.g. Santa Ana" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#334155] mb-1">Zip Code</label>
+              <input type="text" placeholder="e.g. 92703" value={formData.zipCode} onChange={e => setFormData({...formData, zipCode: e.target.value})} className="w-full border border-[#e5e5ea] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C]" />
             </div>
 
             <div>

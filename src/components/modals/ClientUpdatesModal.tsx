@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Escrow } from '../../types';
+import { Escrow, formatPropertyAddress } from '../../types';
 import { X, MessageSquare, Mail, Copy, Check, ChevronDown } from 'lucide-react';
 import { parseISO, format } from 'date-fns';
 import { motion } from 'motion/react';
@@ -318,7 +318,16 @@ export function ClientUpdatesModal({
     text = text.replace(/\[Lender Information\]/g, lenderBlock);
 
     // Property & Escrow details
-    text = text.replace(/\[Address\]/g, escrow.address || 'the property');
+    const fullPropertyAddress = formatPropertyAddress(escrow);
+    text = text.replace(/\[Address\]/g, fullPropertyAddress || 'the property');
+    text = text.replace(/\[FullAddress\]/g, fullPropertyAddress || 'the property');
+    text = text.replace(/\[Full Address\]/g, fullPropertyAddress || 'the property');
+    text = text.replace(/\[StreetAddress\]/g, escrow.address || 'the property');
+    text = text.replace(/\[Street Address\]/g, escrow.address || 'the property');
+    text = text.replace(/\[City\]/g, escrow.city || '');
+    text = text.replace(/\[Zip\]/g, escrow.zipCode || '');
+    text = text.replace(/\[ZipCode\]/g, escrow.zipCode || '');
+    text = text.replace(/\[Zip Code\]/g, escrow.zipCode || '');
     text = text.replace(/\[COE\]/g, escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMMM d, yyyy') : 'the scheduled closing date');
     text = text.replace(/\[Price\]/g, formatCurrency(escrow.price));
     text = text.replace(/\[AgentName\]/g, escrow.agentName || 'your agent');
@@ -350,7 +359,14 @@ export function ClientUpdatesModal({
 
   const getPopulatedSubject = (rawSubject: string) => {
     let subject = rawSubject;
-    subject = subject.replace(/\[Address\]/g, escrow.address || 'the property');
+    const fullPropertyAddress = formatPropertyAddress(escrow);
+    subject = subject.replace(/\[Address\]/g, fullPropertyAddress || 'the property');
+    subject = subject.replace(/\[FullAddress\]/g, fullPropertyAddress || 'the property');
+    subject = subject.replace(/\[Full Address\]/g, fullPropertyAddress || 'the property');
+    subject = subject.replace(/\[StreetAddress\]/g, escrow.address || 'the property');
+    subject = subject.replace(/\[Street Address\]/g, escrow.address || 'the property');
+    subject = subject.replace(/\[City\]/g, escrow.city || '');
+    subject = subject.replace(/\[Zip\]/g, escrow.zipCode || '');
     return subject;
   };
 

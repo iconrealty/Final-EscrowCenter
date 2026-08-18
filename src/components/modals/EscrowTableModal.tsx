@@ -71,6 +71,8 @@ export function EscrowTableModal({
       if (search.trim()) {
         const query = search.toLowerCase();
         const address = (e.address || '').toLowerCase();
+        const city = (e.city || '').toLowerCase();
+        const zipCode = (e.zipCode || '').toLowerCase();
         const clientName = `${e.clientFirstName || ''} ${e.clientLastName || ''}`.toLowerCase();
         const escrowNum = (e.escrowNumber || '').toLowerCase();
         const agent = (e.agentName || '').toLowerCase();
@@ -78,6 +80,8 @@ export function EscrowTableModal({
 
         return (
           address.includes(query) ||
+          city.includes(query) ||
+          zipCode.includes(query) ||
           clientName.includes(query) ||
           escrowNum.includes(query) ||
           agent.includes(query) ||
@@ -323,17 +327,19 @@ export function EscrowTableModal({
               )}
             </div>
           ) : (
-            <table className="w-full text-left border-collapse min-w-[980px]">
+            <table className="w-full text-left border-collapse min-w-[1120px]">
               <thead className="bg-slate-100/90 text-slate-600 text-[11px] font-bold uppercase tracking-wider sticky top-0 z-10 border-b border-slate-200">
                 <tr>
-                  <th className="py-2.5 px-3 w-[220px]">Address</th>
-                  <th className="py-2.5 px-3 w-[110px]">Escrow #</th>
-                  <th className="py-2.5 px-3 w-[180px]">Client Name</th>
-                  <th className="py-2.5 px-3 w-[120px]">Status</th>
-                  <th className="py-2.5 px-3 w-[110px]">Side</th>
-                  <th className="py-2.5 px-3 w-[120px]">Gross Comm. (%)</th>
-                  <th className="py-2.5 px-3 w-[130px]">Net Comm ($)</th>
-                  <th className="py-2.5 px-3 w-[135px]">COE Date</th>
+                  <th className="py-2.5 px-3 w-[200px]">Address</th>
+                  <th className="py-2.5 px-3 w-[120px]">City</th>
+                  <th className="py-2.5 px-3 w-[80px]">Zip</th>
+                  <th className="py-2.5 px-3 w-[100px]">Escrow #</th>
+                  <th className="py-2.5 px-3 w-[160px]">Client Name</th>
+                  <th className="py-2.5 px-3 w-[110px]">Status</th>
+                  <th className="py-2.5 px-3 w-[100px]">Side</th>
+                  <th className="py-2.5 px-3 w-[110px]">Gross Comm. (%)</th>
+                  <th className="py-2.5 px-3 w-[120px]">Net Comm ($)</th>
+                  <th className="py-2.5 px-3 w-[125px]">COE Date</th>
                   <th className="py-2.5 px-3 w-[80px] text-right">Actions</th>
                 </tr>
               </thead>
@@ -355,8 +361,30 @@ export function EscrowTableModal({
                           type="text"
                           value={escrow.address || ''}
                           onChange={(e) => handleFieldChange(escrow.id, 'address', e.target.value)}
-                          placeholder="Property Address"
+                          placeholder="Street Address"
                           className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-bold text-[#1d1d1f] text-xs transition-all outline-none"
+                        />
+                      </td>
+
+                      {/* City */}
+                      <td className="py-1.5 px-2">
+                        <input
+                          type="text"
+                          value={escrow.city || ''}
+                          onChange={(e) => handleFieldChange(escrow.id, 'city', e.target.value)}
+                          placeholder="City"
+                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] text-slate-700 text-xs transition-all outline-none"
+                        />
+                      </td>
+
+                      {/* Zip */}
+                      <td className="py-1.5 px-2">
+                        <input
+                          type="text"
+                          value={escrow.zipCode || ''}
+                          onChange={(e) => handleFieldChange(escrow.id, 'zipCode', e.target.value)}
+                          placeholder="Zip"
+                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] text-slate-700 text-xs transition-all outline-none"
                         />
                       </td>
 
