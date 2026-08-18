@@ -82,28 +82,28 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
       {/* Metric Cards Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {/* Closed Commission Card */}
-        <div className="h-[76px] sm:h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-4 sm:px-5 flex flex-col justify-center min-w-0">
-          <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.9px] text-black mb-1 truncate">
+        <div className="h-[76px] sm:h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center">
+          <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.9px] text-black mb-1 truncate w-full">
             Net Closed Comm ({actualYear})
           </div>
-          <div className="text-base sm:text-xl xl:text-2xl font-mono text-black tracking-tight leading-none truncate">
+          <div className="text-base sm:text-xl xl:text-2xl font-mono text-black tracking-tight leading-none truncate w-full">
             {formatCurrency(closedCommission)}
           </div>
         </div>
 
         {/* Pending Commission Card */}
-        <div className="h-[76px] sm:h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-4 sm:px-5 flex flex-col justify-center min-w-0">
-          <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.9px] text-black mb-1 truncate">
+        <div className="h-[76px] sm:h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center">
+          <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.9px] text-black mb-1 truncate w-full">
             Net Pending Comm
           </div>
-          <div className="text-base sm:text-xl xl:text-2xl font-mono text-black tracking-tight leading-none truncate">
+          <div className="text-base sm:text-xl xl:text-2xl font-mono text-black tracking-tight leading-none truncate w-full">
             {formatCurrency(pendingCommission)}
           </div>
         </div>
 
         {/* Open Escrows */}
-        <div className="h-[76px] sm:h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl flex flex-col items-center justify-center min-w-0">
-          <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.5px] text-black text-center leading-none">
+        <div className="h-[76px] sm:h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl flex flex-col items-center justify-center min-w-0 text-center">
+          <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.5px] text-black leading-none">
             Open
           </div>
           <div className="text-lg sm:text-2xl font-mono text-black mt-1.5 sm:mt-2 leading-none">
@@ -112,8 +112,8 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
         </div>
 
         {/* Closed Escrows */}
-        <div className="h-[76px] sm:h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl flex flex-col items-center justify-center min-w-0">
-          <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.5px] text-black text-center leading-none">
+        <div className="h-[76px] sm:h-[84px] bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl flex flex-col items-center justify-center min-w-0 text-center">
+          <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.5px] text-black leading-none">
             Closed ({actualYear})
           </div>
           <div className="text-lg sm:text-2xl font-mono text-black mt-1.5 sm:mt-2 leading-none">
