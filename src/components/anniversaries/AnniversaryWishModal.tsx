@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Escrow, AnniversaryInteraction } from '../../types';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+import { useEmailPreference } from '../../context/EmailPreferenceContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Phone, MessageSquare, Mail, UserCheck, Gift, Calendar, CheckCircle2, Trash2, RotateCcw } from 'lucide-react';
@@ -61,6 +62,7 @@ export function AnniversaryWishModal({
   const isBirthday = wishType === 'birthday';
   const { success: showSuccess } = useToast();
   const { user } = useAuth();
+  const { openEmail } = useEmailPreference();
   const [copied, setCopied] = useState(false);
   const [templateType, setTemplateType] = useState<'sms' | 'email'>('sms');
 
@@ -211,9 +213,12 @@ export function AnniversaryWishModal({
     if (!escrow.clientEmail) return;
     logQuickContact('Email');
     const subjectText = isBirthday ? `Happy Birthday, ${clientName}!` : `Happy ${anniversaryTitle}! 🏠🎉`;
-    const subject = encodeURIComponent(subjectText);
-    const body = encodeURIComponent(message.replace(/Subject:.*\n\n/, ''));
-    window.location.href = `mailto:${escrow.clientEmail}?subject=${subject}&body=${body}`;
+    const cleanBody = message.replace(/Subject:.*\n\n/, '');
+    openEmail({
+      to: escrow.clientEmail,
+      subject: subjectText,
+      body: cleanBody
+    });
   };
 
   const handleSmsLaunch = () => {
