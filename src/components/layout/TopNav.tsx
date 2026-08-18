@@ -76,7 +76,7 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
             title="Click to refresh application"
           >
             <h1 className="text-[#1B3A5C] tracking-wide truncate flex items-center gap-1.5 group-hover:opacity-85">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight">SimPL<span className="text-3xl sm:text-4xl font-black select-none ml-1 text-[#1B3A5C]">.</span></span>
+              <span className="text-2xl sm:text-3xl font-black tracking-tight">SimpL<span className="text-3xl sm:text-4xl font-black select-none ml-1 text-[#1B3A5C]">.</span></span>
             </h1>
           </button>
         </div>
