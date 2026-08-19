@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Escrow } from '../../types';
-import { TrendingUp, Calendar, DollarSign, ChevronDown, Building, Award, CheckCircle2, ChevronRight, BarChart3 } from 'lucide-react';
+import { TrendingUp, Calendar, DollarSign, ChevronDown, Building, Award, CheckCircle2, ChevronRight, BarChart3, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 interface SalesSummaryProps {
@@ -13,38 +13,6 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   const [commissionGroup, setCommissionGroup] = useState<'monthly' | 'yearly'>('monthly');
   const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null);
 
-  // Filter to closed escrows and sort by last date of closing (descending)
-  const closedEscrows = useMemo(() => {
-    return escrows
-      .filter((e) => e.status === 'Closed')
-      .sort((a, b) => {
-        const dateA = a.coeDate || '';
-        const dateB = b.coeDate || '';
-        return dateB.localeCompare(dateA);
-      });
-  }, [escrows]);
-
-  // Extract all unique months (YYYY-MM) from closed escrows
-  const availableMonths = useMemo(() => {
-    const monthsSet = new Set<string>();
-    
-    // Always ensure the current month is an option
-    const now = new Date();
-    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    monthsSet.add(currentYM);
-
-    closedEscrows.forEach((escrow) => {
-      if (escrow.coeDate && escrow.coeDate.length >= 7) {
-        const ym = escrow.coeDate.substring(0, 7);
-        if (/^\d{4}-\d{2}$/.test(ym)) {
-          monthsSet.add(ym);
-        }
-      }
-    });
-
-    return Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
-  }, [closedEscrows]);
-
   // Helper function to extract exact year from escrow (prioritizing COE date, then acceptance date)
   const getEscrowYear = (e: Escrow): string => {
     const dateStr = (e.coeDate || e.acceptanceDate || '').trim();
@@ -56,6 +24,57 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     if (!isNaN(parsed.getTime())) return parsed.getFullYear().toString();
     return '';
   };
+
+  // Helper function to extract exact YYYY-MM from escrow COE date (or acceptance date fallback)
+  const getEscrowMonth = (e: Escrow): string => {
+    const dateStr = (e.coeDate || e.acceptanceDate || '').trim();
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}/.test(dateStr)) return dateStr.substring(0, 7);
+    const match = dateStr.match(/^(\d{1,2})\/\d{1,2}\/(\d{4})/);
+    if (match) {
+      const month = match[1].padStart(2, '0');
+      const year = match[2];
+      return `${year}-${month}`;
+    }
+    const parsed = new Date(dateStr);
+    if (!isNaN(parsed.getTime())) {
+      const y = parsed.getFullYear();
+      const m = String(parsed.getMonth() + 1).padStart(2, '0');
+      return `${y}-${m}`;
+    }
+    return '';
+  };
+
+  // Filter to closed escrows and sort by last date of closing (descending)
+  const closedEscrows = useMemo(() => {
+    return escrows
+      .filter((e) => e.status === 'Closed')
+      .sort((a, b) => {
+        const dateA = a.coeDate || '';
+        const dateB = b.coeDate || '';
+        return dateB.localeCompare(dateA);
+      });
+  }, [escrows]);
+
+  // Extract all unique months (YYYY-MM) from all non-cancelled escrows (both Open and Closed)
+  const availableMonths = useMemo(() => {
+    const monthsSet = new Set<string>();
+    
+    // Always ensure the current month is an option
+    const now = new Date();
+    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    monthsSet.add(currentYM);
+
+    escrows.forEach((escrow) => {
+      if (escrow.status === 'Cancelled') return;
+      const ym = getEscrowMonth(escrow);
+      if (ym && /^\d{4}-\d{2}$/.test(ym)) {
+        monthsSet.add(ym);
+      }
+    });
+
+    return Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
+  }, [escrows]);
 
   // Selected year state for the Total Amount tab (defaults to actual current year)
   const [selectedYear, setSelectedYear] = useState<string>(() => {
@@ -82,7 +101,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
   }, [escrows]);
 
-  // Filter closed escrows by selected year if not "all"
+  // Parse COE date to timestamp for sorting
   const parseCoeTime = (coeDate?: string): number => {
     if (!coeDate) return 0;
     const str = coeDate.trim();
@@ -122,26 +141,69 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     return { volume, count, commission, grossCommission };
   }, [filteredClosedEscrows]);
 
-  // Calculate Monthly Sales Stats for standard monthly tab
-  const monthlyEscrows = useMemo(() => {
+  // Open escrows scheduled to close in the selected month (Pending COE)
+  const pendingMonthlyEscrows = useMemo(() => {
+    let list = selectedMonth === 'all'
+      ? escrows.filter(e => e.status === 'Open')
+      : escrows.filter(e => e.status === 'Open' && getEscrowMonth(e) === selectedMonth);
+    return [...list].sort((a, b) => parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate));
+  }, [escrows, selectedMonth]);
+
+  // Closed escrows for the selected month
+  const closedMonthlyEscrows = useMemo(() => {
     let list = selectedMonth === 'all'
       ? closedEscrows
-      : closedEscrows.filter((e) => e.coeDate && e.coeDate.startsWith(selectedMonth));
+      : closedEscrows.filter((e) => getEscrowMonth(e) === selectedMonth);
     return [...list].sort((a, b) => parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate));
   }, [closedEscrows, selectedMonth]);
 
+  // Combined escrows for the monthly view
+  const allMonthlyEscrows = useMemo(() => {
+    return [...pendingMonthlyEscrows, ...closedMonthlyEscrows].sort(
+      (a, b) => parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate)
+    );
+  }, [pendingMonthlyEscrows, closedMonthlyEscrows]);
+
+  // Calculate Monthly Sales Stats (Expected vs Closed)
   const monthlyStats = useMemo(() => {
-    const volume = monthlyEscrows.reduce((sum, e) => sum + (e.price || 0), 0);
-    const count = monthlyEscrows.length;
-    const commission = monthlyEscrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);
-    const grossCommission = monthlyEscrows.reduce((sum, e) => {
+    const expectedCommission = pendingMonthlyEscrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);
+    const expectedGrossCommission = pendingMonthlyEscrows.reduce((sum, e) => {
       if (e.grossCommission !== undefined && e.grossCommission !== null) return sum + e.grossCommission;
       if (e.price && e.commissionPercent) return sum + (e.price * e.commissionPercent) / 100;
       return sum;
     }, 0);
+    const expectedVolume = pendingMonthlyEscrows.reduce((sum, e) => sum + (e.price || 0), 0);
+    const expectedCount = pendingMonthlyEscrows.length;
 
-    return { volume, count, commission, grossCommission };
-  }, [monthlyEscrows]);
+    const closedCommission = closedMonthlyEscrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);
+    const closedGrossCommission = closedMonthlyEscrows.reduce((sum, e) => {
+      if (e.grossCommission !== undefined && e.grossCommission !== null) return sum + e.grossCommission;
+      if (e.price && e.commissionPercent) return sum + (e.price * e.commissionPercent) / 100;
+      return sum;
+    }, 0);
+    const closedVolume = closedMonthlyEscrows.reduce((sum, e) => sum + (e.price || 0), 0);
+    const closedCount = closedMonthlyEscrows.length;
+
+    const totalProjectedCommission = closedCommission + expectedCommission;
+    const totalProjectedGrossCommission = closedGrossCommission + expectedGrossCommission;
+    const totalProjectedVolume = closedVolume + expectedVolume;
+    const totalCount = closedCount + expectedCount;
+
+    return {
+      expectedCommission,
+      expectedGrossCommission,
+      expectedVolume,
+      expectedCount,
+      closedCommission,
+      closedGrossCommission,
+      closedVolume,
+      closedCount,
+      totalProjectedCommission,
+      totalProjectedGrossCommission,
+      totalProjectedVolume,
+      totalCount,
+    };
+  }, [pendingMonthlyEscrows, closedMonthlyEscrows]);
 
   // Group Commissions by Month (filtered by selectedYear)
   const commissionByMonth = useMemo(() => {
@@ -149,26 +211,24 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     const escrowsToUse = selectedYear === 'all' ? closedEscrows : closedEscrows.filter(e => getEscrowYear(e) === selectedYear);
     
     escrowsToUse.forEach((escrow) => {
-      if (escrow.coeDate && escrow.coeDate.length >= 7) {
-        const ym = escrow.coeDate.substring(0, 7);
-        if (/^\d{4}-\d{2}$/.test(ym)) {
-          if (!groups[ym]) {
-            // Format month name
-            let formattedLabel = ym;
-            try {
-              const [year, month] = ym.split('-');
-              const date = new Date(Number(year), Number(month) - 1, 1);
-              formattedLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            } catch {
-              // fallback
-            }
-            groups[ym] = { key: ym, label: formattedLabel, amount: 0, grossAmount: 0, count: 0, escrows: [] };
+      const ym = getEscrowMonth(escrow);
+      if (ym && /^\d{4}-\d{2}$/.test(ym)) {
+        if (!groups[ym]) {
+          // Format month name
+          let formattedLabel = ym;
+          try {
+            const [year, month] = ym.split('-');
+            const date = new Date(Number(year), Number(month) - 1, 1);
+            formattedLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+          } catch {
+            // fallback
           }
-          groups[ym].amount += escrow.netCommission || 0;
-          groups[ym].grossAmount += (escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0));
-          groups[ym].count += 1;
-          groups[ym].escrows.push(escrow);
+          groups[ym] = { key: ym, label: formattedLabel, amount: 0, grossAmount: 0, count: 0, escrows: [] };
         }
+        groups[ym].amount += escrow.netCommission || 0;
+        groups[ym].grossAmount += (escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0));
+        groups[ym].count += 1;
+        groups[ym].escrows.push(escrow);
       }
     });
 
@@ -181,17 +241,15 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     const escrowsToUse = selectedYear === 'all' ? closedEscrows : closedEscrows.filter(e => getEscrowYear(e) === selectedYear);
     
     escrowsToUse.forEach((escrow) => {
-      if (escrow.coeDate && escrow.coeDate.length >= 4) {
-        const yr = escrow.coeDate.substring(0, 4);
-        if (/^\d{4}$/.test(yr)) {
-          if (!groups[yr]) {
-            groups[yr] = { key: yr, label: `${yr} Year Total`, amount: 0, grossAmount: 0, count: 0, escrows: [] };
-          }
-          groups[yr].amount += escrow.netCommission || 0;
-          groups[yr].grossAmount += (escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0));
-          groups[yr].count += 1;
-          groups[yr].escrows.push(escrow);
+      const yr = getEscrowYear(escrow);
+      if (yr && /^\d{4}$/.test(yr)) {
+        if (!groups[yr]) {
+          groups[yr] = { key: yr, label: `${yr} Year Total`, amount: 0, grossAmount: 0, count: 0, escrows: [] };
         }
+        groups[yr].amount += escrow.netCommission || 0;
+        groups[yr].grossAmount += (escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0));
+        groups[yr].count += 1;
+        groups[yr].escrows.push(escrow);
       }
     });
 
@@ -475,88 +533,92 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
         )}
 
         {activeSubTab === 'monthly' && (
-          /* MONTHLY SALES VIEW */
-          <div className="flex-1 flex flex-col overflow-hidden p-5 gap-4">
-            {/* Month Selector dropdown */}
-            <div className="flex items-center justify-between shrink-0">
-              <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Select Month</span>
-              
-              <div className="relative inline-flex items-center">
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
-                >
-                  <option value="all">All Time</option>
-                  {availableMonths.map((ym) => (
-                    <option key={ym} value={ym}>
-                      {formatMonthName(ym)}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute right-2.5 text-[#86868b] flex items-center">
-                  <ChevronDown size={12} />
+          /* SIMPLE MONTHLY SALES VIEW - EXPECTED MONEY & MONTH */
+          <div className="flex-1 flex flex-col overflow-hidden p-5 gap-4 animate-fade-in">
+            {/* Top Bar: Month Selector & Expected Summary */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
+              <div>
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">
+                  Expected to Receive ({formatMonthName(selectedMonth)})
+                </span>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-2xl sm:text-3xl font-black font-mono text-[#059669] tracking-tight">
+                    {formatCurrency(monthlyStats.expectedCommission)}
+                  </span>
+                  <span className="text-xs text-slate-500 font-medium">
+                    ({monthlyStats.expectedCount} pending {monthlyStats.expectedCount === 1 ? 'deal' : 'deals'} based on COE)
+                  </span>
+                </div>
+              </div>
+
+              {/* Month Selector dropdown */}
+              <div className="flex items-center gap-2 self-start sm:self-center">
+                <span className="text-[11px] font-bold text-[#86868b] whitespace-nowrap">Month:</span>
+                <div className="relative inline-flex items-center">
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => {
+                      setSelectedMonth(e.target.value);
+                    }}
+                    className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-xs font-bold px-4 py-2 pr-8 rounded-xl border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 transition-all duration-200 shadow-sm"
+                  >
+                    <option value="all">All Time</option>
+                    {availableMonths.map((ym) => (
+                      <option key={ym} value={ym}>
+                        {formatMonthName(ym)}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-2.5 text-[#86868b] flex items-center">
+                    <ChevronDown size={14} />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Vol ({formatMonthName(selectedMonth).split(' ')[0].substring(0, 3)})</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#1d1d1f] font-mono mt-0.5 truncate">
-                  {formatCurrency(monthlyStats.volume)}
-                </span>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Sales Count</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#1d1d1f] font-mono mt-0.5 truncate">
-                  {monthlyStats.count}
-                </span>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Net Commissions</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#059669] font-mono mt-0.5 truncate">
-                  {formatCurrency(monthlyStats.commission)}
-                </span>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Gross Commissions</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#1B3A5C] font-mono mt-0.5 truncate">
-                  {formatCurrency(monthlyStats.grossCommission)}
-                </span>
-              </div>
-            </div>
-
             {/* List Header */}
-            <div className="flex items-center text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
+            <div className="flex items-center text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-2 shrink-0">
               <span className="w-8 text-center shrink-0">#</span>
-              <span className="flex-1">Closed in {formatMonthName(selectedMonth)} ({monthlyEscrows.length})</span>
+              <span className="flex-1">Properties Closing in {formatMonthName(selectedMonth)} ({allMonthlyEscrows.length})</span>
               <span className="w-20 text-right shrink-0">Price</span>
-              <span className="w-20 text-right shrink-0 ml-2">Net Comm</span>
-              <span className="w-20 text-right shrink-0 ml-2">Gross Comm</span>
+              <span className="w-24 text-right shrink-0 ml-2">Net Comm</span>
             </div>
 
             {/* Scrollable list of properties */}
             <div className="flex-1 overflow-y-auto pr-1">
-              {monthlyEscrows.length > 0 ? (
+              {allMonthlyEscrows.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  {monthlyEscrows.map((escrow, index) => {
-                    const grossVal = escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0);
+                  {allMonthlyEscrows.map((escrow, index) => {
+                    const isPending = escrow.status === 'Open';
                     return (
                       <div
                         key={escrow.id}
                         onClick={() => onSelectEscrow(escrow)}
-                        className="group flex items-center p-2.5 rounded-xl border border-transparent hover:border-[#e5e5ea] hover:bg-slate-50 transition-all duration-200 cursor-pointer"
+                        className={`group flex items-center p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
+                          isPending
+                            ? 'border-emerald-200/80 bg-emerald-50/30 hover:bg-emerald-50/70'
+                            : 'border-slate-100 bg-white hover:bg-slate-50'
+                        }`}
                       >
                         <div className="w-8 text-center shrink-0 mr-1">
-                          <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1 rounded bg-[#1B3A5C] text-white text-[10px] font-mono font-bold">
+                          <span className={`inline-flex items-center justify-center min-w-[22px] h-5 px-1 rounded text-[10px] font-mono font-bold ${
+                            isPending ? 'bg-emerald-600 text-white' : 'bg-[#1B3A5C] text-white'
+                          }`}>
                             #{index + 1}
                           </span>
                         </div>
                         <div className="min-w-0 flex-1 pr-2">
-                          <div className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
-                            {escrow.address}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
+                              {escrow.address}
+                            </span>
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wide shrink-0 ${
+                              isPending
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300/80'
+                                : 'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}>
+                              {isPending ? 'Expected' : 'Closed'}
+                            </span>
                           </div>
                           <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
                             <span className="font-semibold truncate">
@@ -564,17 +626,14 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                               {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
                             </span>
                             <span className="text-slate-300">•</span>
-                            <span className="font-mono">{formatItemDate(escrow.coeDate)}</span>
+                            <span className="font-mono text-slate-600">COE: {formatItemDate(escrow.coeDate)}</span>
                           </div>
                         </div>
                         <div className="text-xs font-extrabold text-[#1d1d1f] font-mono shrink-0 w-20 text-right">
                           {formatCurrency(escrow.price || 0)}
                         </div>
-                        <div className="text-xs font-bold text-[#059669] font-mono shrink-0 w-20 text-right ml-2">
+                        <div className="text-xs font-bold text-[#059669] font-mono shrink-0 w-24 text-right ml-2">
                           {formatCurrency(escrow.netCommission || 0)}
-                        </div>
-                        <div className="text-xs font-bold text-[#1B3A5C] font-mono shrink-0 w-20 text-right ml-2">
-                          {formatCurrency(grossVal)}
                         </div>
                       </div>
                     );
@@ -586,8 +645,8 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                     <Calendar size={16} />
                   </div>
                   <div>
-                    <p className="uppercase text-[9px] tracking-widest font-bold text-neutral-500">No monthly sales</p>
-                    <p className="text-[10px] text-[#86868b] mt-1 normal-case">There are no closed escrows registered for {formatMonthName(selectedMonth)}.</p>
+                    <p className="uppercase text-[9px] tracking-widest font-bold text-neutral-500">No escrows for {formatMonthName(selectedMonth)}</p>
+                    <p className="text-[10px] text-[#86868b] mt-1 normal-case">No pending or closed escrows found for this month.</p>
                   </div>
                 </div>
               )}
@@ -696,27 +755,27 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                               const grossVal = escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0);
                               return (
                                 <div
-                                  key={escrow.id}
-                                  onClick={() => onSelectEscrow(escrow)}
-                                  className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-all duration-150 cursor-pointer"
-                                >
-                                  <div className="min-w-0 flex-1 pr-3">
-                                    <div className="text-[11px] font-semibold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
-                                      {escrow.address}
-                                    </div>
-                                    <div className="text-[9px] text-[#86868b] mt-0.5">
-                                      {escrow.clientFirstName} {escrow.clientLastName} • {formatItemDate(escrow.coeDate)}
-                                    </div>
-                                  </div>
-                                  <div className="text-right font-mono shrink-0">
-                                    <div className="text-[11px] font-bold text-[#059669]">
-                                      Net: {formatCurrency(escrow.netCommission || 0)}
-                                    </div>
-                                    <div className="text-[9px] font-semibold text-[#1B3A5C]">
-                                      Gross: {formatCurrency(grossVal)}
-                                    </div>
-                                  </div>
-                                </div>
+                                   key={escrow.id}
+                                   onClick={() => onSelectEscrow(escrow)}
+                                   className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-all duration-150 cursor-pointer"
+                                 >
+                                   <div className="min-w-0 flex-1 pr-3">
+                                     <div className="text-[11px] font-semibold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
+                                       {escrow.address}
+                                     </div>
+                                     <div className="text-[9px] text-[#86868b] mt-0.5">
+                                       {escrow.clientFirstName} {escrow.clientLastName} • {formatItemDate(escrow.coeDate)}
+                                     </div>
+                                   </div>
+                                   <div className="text-right font-mono shrink-0">
+                                     <div className="text-[11px] font-bold text-[#059669]">
+                                       Net: {formatCurrency(escrow.netCommission || 0)}
+                                     </div>
+                                     <div className="text-[9px] font-semibold text-[#1B3A5C]">
+                                       Gross: {formatCurrency(grossVal)}
+                                     </div>
+                                   </div>
+                                 </div>
                               );
                             })}
                           </div>
