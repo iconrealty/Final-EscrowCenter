@@ -75,6 +75,9 @@ export function EscrowTableModal({
         const zipCode = (e.zipCode || '').toLowerCase();
         const clientName = `${e.clientFirstName || ''} ${e.clientLastName || ''}`.toLowerCase();
         const escrowNum = (e.escrowNumber || '').toLowerCase();
+        const escrowComp = (e.escrowCompany || '').toLowerCase();
+        const titleComp = (e.titleCompany || '').toLowerCase();
+        const titleOff = (e.titleOfficer || '').toLowerCase();
         const agent = (e.agentName || '').toLowerCase();
         const lead = (e.leadSource || '').toLowerCase();
 
@@ -84,6 +87,9 @@ export function EscrowTableModal({
           zipCode.includes(query) ||
           clientName.includes(query) ||
           escrowNum.includes(query) ||
+          escrowComp.includes(query) ||
+          titleComp.includes(query) ||
+          titleOff.includes(query) ||
           agent.includes(query) ||
           lead.includes(query)
         );

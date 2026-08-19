@@ -43,6 +43,10 @@ export interface Escrow {
   escrowOfficer: string;
   escrowPhone?: string;
   escrowEmail?: string;
+  titleCompany?: string;
+  titleOfficer?: string;
+  titlePhone?: string;
+  titleEmail?: string;
   agentName: string;
   agentPhone?: string;
   agentEmail?: string;

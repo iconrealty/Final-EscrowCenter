@@ -164,6 +164,16 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       email: escrow.escrowEmail,
     },
     {
+      id: 'titleOfficer',
+      role: 'Title Officer & Company',
+      badgeBg: 'bg-cyan-50 text-cyan-800 border-cyan-200',
+      badgeText: 'Title',
+      name: escrow.titleOfficer || (escrow.titleCompany ? escrow.titleCompany : 'Not specified'),
+      company: escrow.titleCompany && escrow.titleOfficer ? `Company: ${escrow.titleCompany}` : undefined,
+      phone: escrow.titlePhone,
+      email: escrow.titleEmail,
+    },
+    {
       id: 'lender',
       role: 'Lender / Loan Officer',
       badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',

@@ -165,6 +165,19 @@ export function DetailModal({
                 )}
               </div>
 
+              {/* Title Company */}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-black mb-1">Title</span>
+                <span className="text-sm sm:text-base font-normal text-[#1d1d1f] truncate" title={escrow.titleCompany || (escrow.titleOfficer ? escrow.titleOfficer : 'None')}>
+                  {escrow.titleCompany || (escrow.titleOfficer ? escrow.titleOfficer : 'None')}
+                </span>
+                {escrow.titleOfficer && escrow.titleCompany && (
+                  <span className="text-xs text-[#86868b] mt-0.5 truncate" title={escrow.titleOfficer}>
+                    {escrow.titleOfficer}
+                  </span>
+                )}
+              </div>
+
               {/* Collaborator */}
               <div className="flex flex-col">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-black mb-1">Collaborator</span>

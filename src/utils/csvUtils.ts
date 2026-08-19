@@ -33,6 +33,10 @@ export const CSV_HEADERS = [
   'Escrow Officer Email',
   'Escrow Officer Phone',
   'Escrow Company',
+  'Title Company',
+  'Title Officer Name',
+  'Title Officer Email',
+  'Title Officer Phone',
   'Acceptance Date',
   'Contingency Start Date',
   'Close of Escrow',
@@ -114,6 +118,10 @@ export function generateCsvTemplate(): string {
       '""', // Escrow Officer Email
       '""', // Escrow Officer Phone
       '"Escrow Logix, Inc."', // Escrow Company
+      '"First American Title"', // Title Company
+      '"Jane Doe"', // Title Officer Name
+      '"jdoe@firstam.com"', // Title Officer Email
+      '"714-555-0199"', // Title Officer Phone
       '"05/05/2026"', // Acceptance Date
       '"05/05/2026"', // Contingency Start Date
       '"06/05/2026"', // Close of Escrow
@@ -155,6 +163,10 @@ export function generateCsvTemplate(): string {
       '""',
       '""',
       '"Cloud Escrow"',
+      '""', // Title Company
+      '""', // Title Officer Name
+      '""', // Title Officer Email
+      '""', // Title Officer Phone
       '"06/01/2026"',
       '"06/01/2026"',
       '"07/15/2026"',
@@ -195,7 +207,11 @@ export function generateCsvTemplate(): string {
       '""',
       '""',
       '""',
-      '"First American Title"',
+      '"Lawyers Title"',
+      '"Lawyers Title"',
+      '"John Smith"',
+      '"jsmith@lawyerstitle.com"',
+      '"949-555-0144"',
       '"07/01/2026"',
       '"07/01/2026"',
       '"08/10/2026"',
@@ -274,6 +290,10 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       escapeCsv(e.escrowEmail || ''), // Escrow Officer Email
       escapeCsv(e.escrowPhone || ''), // Escrow Officer Phone
       escapeCsv(e.escrowCompany || ''),
+      escapeCsv(e.titleCompany || ''),
+      escapeCsv(e.titleOfficer || ''),
+      escapeCsv(e.titleEmail || ''),
+      escapeCsv(e.titlePhone || ''),
       escapeCsv(e.acceptanceDate || ''),
       escapeCsv(e.contingencyStartDate || ''),
       escapeCsv(e.coeDate || ''),
@@ -567,6 +587,10 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       escrowOfficer: getVal(['escrow officer name', 'escrow officer', 'officer', 'escrow contact']),
       escrowPhone: getVal(['escrow officer phone', 'escrow phone', 'escrow contact phone']),
       escrowEmail: getVal(['escrow officer email', 'escrow email', 'escrow contact email']),
+      titleCompany: getVal(['title company', 'title_company', 'titlecompany', 'title']),
+      titleOfficer: getVal(['title officer name', 'title officer', 'title contact', 'title person', 'title name', 'title rep', 'title representative']),
+      titlePhone: getVal(['title officer phone', 'title phone', 'title contact phone', 'title person phone']),
+      titleEmail: getVal(['title officer email', 'title email', 'title contact email', 'title person email']),
       collaborator: getVal(['co-agent name', 'co-agent', 'collaborator']),
       price,
       commissionPercent,
@@ -789,6 +813,10 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     escrowOfficer: getVal(['escrow officer name', 'escrow officer', 'escrow_officer']),
     escrowPhone: getVal(['escrow officer phone', 'escrow phone', 'escrow_phone']),
     escrowEmail: getVal(['escrow officer email', 'escrow email', 'escrow_email']),
+    titleCompany: getVal(['title company', 'title_company', 'titlecompany', 'title']),
+    titleOfficer: getVal(['title officer name', 'title officer', 'title person', 'title rep', 'title contact']),
+    titlePhone: getVal(['title officer phone', 'title phone', 'title_phone']),
+    titleEmail: getVal(['title officer email', 'title email', 'title_email']),
     collaborator: getVal(['co-agent name', 'co-agent', 'collaborator']),
     price,
     commissionPercent,
