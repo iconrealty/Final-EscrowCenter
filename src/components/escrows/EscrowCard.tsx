@@ -292,7 +292,7 @@ export function EscrowCard({
           const cleanPhone = agentPhone ? agentPhone.replace(/[^0-9+]/g, '') : '';
           const hasPhone = !!cleanPhone;
           const hasEmail = !!agentEmail;
-          const emailSubject = encodeURIComponent(`Escrow Update - ${escrow.address || 'Property'}`);
+          const emailSubject = formatPropertyAddress(escrow) || escrow.address || 'Property';
 
           return (
             <div 

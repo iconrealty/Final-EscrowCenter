@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Escrow, AnniversaryInteraction } from '../../types';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { Phone, MessageSquare, Mail, UserCheck, Gift, Calendar, CheckCircle2, Trash2, RotateCcw } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { Phone, MessageSquare, Mail, Trash2, RotateCcw } from 'lucide-react';
 
 interface AnniversaryWishModalProps {
   escrow: Escrow;
@@ -62,7 +62,6 @@ export function AnniversaryWishModal({
   const { success: showSuccess } = useToast();
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
-  const [templateType, setTemplateType] = useState<'sms' | 'email'>('sms');
 
   const defaultTemplates = isBirthday ? DEFAULT_BIRTHDAY_TEMPLATES : DEFAULT_ANNIVERSARY_TEMPLATES;
   const storageKey = isBirthday ? 'birthday_custom_templates' : 'anniversary_custom_templates';
@@ -83,11 +82,6 @@ export function AnniversaryWishModal({
     }
     return defaultTemplates;
   });
-
-  // Master Edit Mode State
-  const [isEditingMaster, setIsEditingMaster] = useState(false);
-  const [masterText, setMasterText] = useState('');
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   // Client message text state
   const [message, setMessage] = useState('');
@@ -155,20 +149,14 @@ export function AnniversaryWishModal({
     return text;
   };
 
-  const activeTemplate = templates.find(t => t.id === templateType) || templates[0];
+  const activeTemplate = templates.find(t => t.id === 'sms') || templates[0];
+  const emailTemplate = templates.find(t => t.id === 'email') || templates[1] || templates[0];
 
-  // Update client message or master text when template type changes or master edit mode toggles
   useEffect(() => {
     if (activeTemplate) {
       setMessage(populateTemplate(activeTemplate.text));
-      setMasterText(activeTemplate.text);
     }
-  }, [templateType, templates, escrow, yearsCount, anniversaryDateFormatted]);
-
-  const handleTemplateChange = (type: 'sms' | 'email') => {
-    setTemplateType(type);
-    setIsEditingMaster(false);
-  };
+  }, [templates, escrow, yearsCount, anniversaryDateFormatted]);
 
   const logQuickContact = (method: 'Text' | 'Email' | 'Phone' | 'In Person' | 'Card/Gift', customNotes?: string) => {
     if (!onUpdateEscrow) return;
@@ -202,7 +190,7 @@ export function AnniversaryWishModal({
   const handleCopy = () => {
     navigator.clipboard.writeText(message);
     setCopied(true);
-    logQuickContact(templateType === 'sms' ? 'Text' : 'Email');
+    logQuickContact('Text');
     showSuccess('Copied to clipboard & marked as responded!');
     setTimeout(() => setCopied(false), 2500);
   };
@@ -211,7 +199,8 @@ export function AnniversaryWishModal({
     if (!escrow.clientEmail) return;
     logQuickContact('Email');
     const subjectText = isBirthday ? `Happy Birthday, ${clientName}!` : `Happy ${anniversaryTitle}! 🏠🎉`;
-    const cleanBody = message.replace(/Subject:.*\n\n/, '');
+    const emailMsg = populateTemplate(emailTemplate.text);
+    const cleanBody = emailMsg.replace(/Subject:.*\n\n/, '');
     window.location.href = `mailto:${escrow.clientEmail}?subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(cleanBody)}`;
   };
 
@@ -225,52 +214,6 @@ export function AnniversaryWishModal({
     } else {
       showSuccess('Copied text to clipboard!');
     }
-  };
-
-  const handleSaveMaster = async () => {
-    const updated = templates.map(t => {
-      if (t.id === templateType) {
-        return { ...t, text: masterText };
-      }
-      return t;
-    });
-
-    setTemplates(updated);
-    localStorage.setItem(storageKey, JSON.stringify(updated));
-
-    if (user) {
-      try {
-        const docRef = doc(db, 'users', user.uid);
-        const cloudField = isBirthday ? 'birthdayTemplates' : 'anniversaryTemplates';
-        await setDoc(docRef, { [cloudField]: updated }, { merge: true });
-      } catch (e) {
-        console.error("Error saving templates to Firestore:", e);
-      }
-    }
-
-    setMessage(populateTemplate(masterText));
-    setIsEditingMaster(false);
-    showSuccess(`Master ${templateType.toUpperCase()} template saved successfully!`);
-  };
-
-  const handleResetDefault = () => {
-    const defaultT = defaultTemplates.find(t => t.id === templateType);
-    if (defaultT) {
-      setMasterText(defaultT.text);
-    }
-  };
-
-  const insertPlaceholder = (tag: string) => {
-    if (!textAreaRef.current) return;
-    const el = textAreaRef.current;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const newText = masterText.substring(0, start) + tag + masterText.substring(end);
-    setMasterText(newText);
-    setTimeout(() => {
-      el.focus();
-      el.setSelectionRange(start + tag.length, start + tag.length);
-    }, 50);
   };
 
   const handleSaveInteractionLog = () => {
@@ -297,16 +240,6 @@ export function AnniversaryWishModal({
     setIsLoggingConversation(false);
     showSuccess('Conversation & notes logged successfully!');
   };
-
-  const placeholders = [
-    { label: 'Client First Name', tag: '[ClientFirstName]' },
-    { label: 'Full Client Name', tag: '[ClientName]' },
-    { label: 'Address', tag: '[Address]' },
-    { label: 'Years Ordinal (e.g. 1st)', tag: '[YearsOrdinal]' },
-    { label: 'Years Text (e.g. 1 year)', tag: '[YearsText]' },
-    { label: 'Anniversary Date', tag: '[AnniversaryDate]' },
-    { label: 'Agent Name', tag: '[AgentName]' },
-  ];
 
   const interactions = escrow.anniversaryInteractions || [];
 
@@ -339,127 +272,10 @@ export function AnniversaryWishModal({
 
         {/* Content Area with Scroll */}
         <div className="p-6 overflow-y-auto flex flex-col gap-5 flex-1">
-          {/* Format selector & Global Template edit button */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="grid grid-cols-2 gap-2 flex-1">
-              <button
-                onClick={() => handleTemplateChange('sms')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  templateType === 'sms'
-                    ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
-                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                Text / SMS
-              </button>
-              <button
-                onClick={() => handleTemplateChange('email')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  templateType === 'email'
-                    ? 'bg-[#1B3A5C] text-white border-[#1B3A5C] shadow-sm'
-                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                Email
-              </button>
-            </div>
-
-            <button
-              onClick={() => setIsEditingMaster(!isEditingMaster)}
-              className={`py-2.5 px-3.5 rounded-xl text-xs font-bold transition-all border shrink-0 cursor-pointer ${
-                isEditingMaster
-                  ? 'bg-amber-50 text-amber-800 border-amber-300'
-                  : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-              }`}
-            >
-              {isEditingMaster ? 'Cancel Customization' : 'Edit Global Template'}
-            </button>
-          </div>
-
-          {/* Master Edit Mode View */}
-          {isEditingMaster ? (
-            <div className="flex flex-col gap-3 bg-amber-50/50 border border-amber-200/80 rounded-2xl p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-extrabold text-xs text-amber-900 uppercase tracking-wider">
-                    Edit Global {templateType.toUpperCase()} Template
-                  </h4>
-                  <p className="text-[11px] text-amber-800 mt-0.5">
-                    Changes saved here will apply to all future anniversary wishes.
-                  </p>
-                </div>
-                <button
-                  onClick={handleResetDefault}
-                  className="text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:underline cursor-pointer"
-                >
-                  Reset Default
-                </button>
-              </div>
-
-              {/* Placeholder tags */}
-              <div>
-                <span className="text-[10px] font-bold text-amber-900/70 uppercase tracking-wider block mb-1.5">
-                  Insert Placeholder Tags:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {placeholders.map(p => (
-                    <button
-                      key={p.tag}
-                      type="button"
-                      onClick={() => insertPlaceholder(p.tag)}
-                      className="text-[11px] font-bold bg-white text-amber-900 border border-amber-200 hover:bg-amber-100 px-2 py-1 rounded-lg transition-colors cursor-pointer"
-                    >
-                      + {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <textarea
-                ref={textAreaRef}
-                rows={6}
-                value={masterText}
-                onChange={(e) => setMasterText(e.target.value)}
-                className="w-full text-xs sm:text-sm font-medium text-[#1d1d1f] bg-white border border-amber-300 rounded-xl p-3.5 focus:outline-none focus:ring-2 focus:ring-amber-500 leading-relaxed resize-none transition-all"
-              />
-
-              <div className="flex justify-end gap-2 pt-1">
-                <button
-                  onClick={() => setIsEditingMaster(false)}
-                  className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveMaster}
-                  className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-                >
-                  Save Global Template
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* Standard Personalized Message View */
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-[#86868b] uppercase tracking-wider">
-                  Personalized Message
-                </label>
-                <span className="text-[11px] text-[#86868b]">Editable for this client</span>
-              </div>
-              <textarea
-                rows={6}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full text-xs sm:text-sm font-medium text-[#1d1d1f] bg-slate-50 border border-slate-200 rounded-xl p-3.5 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C] focus:bg-white leading-relaxed resize-none transition-all"
-              />
-            </div>
-          )}
-
           {/* Recipient Details */}
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
             <div>
-              <span className="font-bold text-[#1d1d1f]">Client Contact: </span>
+              <span className="font-bold text-[#1d1d1f] block sm:inline">Client Contact: </span>
               <span className="text-[#86868b]">
                 {escrow.clientPhone || escrow.client2Phone || 'No phone'} {escrow.clientEmail ? `• ${escrow.clientEmail}` : ''}
               </span>
@@ -471,14 +287,14 @@ export function AnniversaryWishModal({
                     href={`tel:${escrow.clientPhone || escrow.client2Phone}`}
                     onClick={() => logQuickContact('Phone', 'Called client')}
                     title="Call Client"
-                    className="text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center"
+                    className="text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center shadow-2xs"
                   >
                     <Phone size={16} />
                   </a>
                   <button
                     onClick={handleSmsLaunch}
                     title="Send Text (SMS)"
-                    className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center"
+                    className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center shadow-2xs"
                   >
                     <MessageSquare size={16} />
                   </button>
@@ -488,7 +304,7 @@ export function AnniversaryWishModal({
                 <button
                   onClick={handleEmailLaunch}
                   title="Open Email App"
-                  className="text-xs font-bold text-[#1B3A5C] bg-sky-50 hover:bg-sky-100 border border-sky-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center"
+                  className="text-xs font-bold text-[#1B3A5C] bg-sky-50 hover:bg-sky-100 border border-sky-200 p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center shadow-2xs"
                 >
                   <Mail size={16} />
                 </button>
@@ -657,24 +473,25 @@ export function AnniversaryWishModal({
             {copied ? 'Copied & Marked!' : 'Copy Message'}
           </button>
           {(escrow.clientPhone || escrow.client2Phone) && (
-            <a
-              href={`tel:${escrow.clientPhone || escrow.client2Phone}`}
-              onClick={() => logQuickContact('Phone', 'Called client')}
-              title="Call Client"
-              className="bg-amber-600 hover:bg-amber-700 text-white p-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
-            >
-              <Phone size={16} />
-            </a>
+            <>
+              <a
+                href={`tel:${escrow.clientPhone || escrow.client2Phone}`}
+                onClick={() => logQuickContact('Phone', 'Called client')}
+                title="Call Client"
+                className="bg-amber-600 hover:bg-amber-700 text-white p-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
+              >
+                <Phone size={16} />
+              </a>
+              <button
+                onClick={handleSmsLaunch}
+                title="Send Text (SMS)"
+                className="bg-[#059669] hover:bg-[#047857] text-white p-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
+              >
+                <MessageSquare size={16} />
+              </button>
+            </>
           )}
-          {templateType === 'sms' ? (
-            <button
-              onClick={handleSmsLaunch}
-              title="Send Text (SMS)"
-              className="bg-[#059669] hover:bg-[#047857] text-white p-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
-            >
-              <MessageSquare size={16} />
-            </button>
-          ) : (
+          {escrow.clientEmail && (
             <button
               onClick={handleEmailLaunch}
               title="Send Email"

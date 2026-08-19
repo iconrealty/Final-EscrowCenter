@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Escrow } from '../../types';
+import { Escrow, formatPropertyAddress } from '../../types';
 import { X, Phone, Mail, MessageSquare, Copy, Check, Users } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 
@@ -333,7 +333,7 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <a
-                            href={`mailto:${contact.email}`}
+                            href={`mailto:${contact.email}?subject=${encodeURIComponent(formatPropertyAddress(escrow) || escrow.address || 'Property')}`}
                             className="p-2.5 sm:p-2 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-200/80 rounded-xl transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center justify-center"
                             title={`Email ${contact.name}`}
                           >
