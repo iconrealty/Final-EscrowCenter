@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Escrow, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
-import { X, Sparkles } from 'lucide-react';
+import { X } from 'lucide-react';
 import { addMonths, addDays, parseISO, format } from 'date-fns';
-import { parseSisuText } from '../../utils/csvUtils';
 
 export function AddEditModal({ 
   escrow, 
@@ -60,65 +59,6 @@ export function AddEditModal({
       } as Record<string, string>
     };
   });
-
-  const [showSisuPaste, setShowSisuPaste] = useState(false);
-  const [sisuInputText, setSisuInputText] = useState('');
-  const [sisuError, setSisuError] = useState('');
-
-  const handleSisuParse = () => {
-    setSisuError('');
-    if (!sisuInputText.trim()) {
-      setSisuError('Please paste some text first.');
-      return;
-    }
-    const parsed = parseSisuText(sisuInputText);
-    if (!parsed) {
-      setSisuError('Could not parse any valid Sisu fields. Check that lines contain colons, e.g., "ID: 6535240".');
-      return;
-    }
-    
-    // Autofill the form!
-    setFormData(prev => ({
-      ...prev,
-      escrowNumber: parsed.escrowNumber || prev.escrowNumber,
-      escrowCompany: parsed.escrowCompany || prev.escrowCompany,
-      address: parsed.address !== 'TBD' ? (parsed.address || prev.address) : prev.address,
-      city: parsed.city || prev.city,
-      zipCode: parsed.zipCode || prev.zipCode,
-      clientFirstName: parsed.clientFirstName || prev.clientFirstName,
-      clientLastName: parsed.clientLastName || prev.clientLastName,
-      clientPhone: parsed.clientPhone || prev.clientPhone,
-      clientEmail: parsed.clientEmail || prev.clientEmail,
-      clientBirthday: parsed.clientBirthday || prev.clientBirthday,
-      client2Birthday: parsed.client2Birthday || prev.client2Birthday,
-      agentName: parsed.agentName || prev.agentName,
-      agentEmail: parsed.agentEmail || prev.agentEmail,
-      agentPhone: parsed.agentPhone || prev.agentPhone,
-      cooperatingBrokerage: parsed.cooperatingBrokerage || prev.cooperatingBrokerage,
-      lenderName: parsed.lenderName || prev.lenderName,
-      lenderPhone: parsed.lenderPhone || prev.lenderPhone,
-      lenderEmail: parsed.lenderEmail || prev.lenderEmail,
-      escrowOfficer: parsed.escrowOfficer || prev.escrowOfficer,
-      escrowPhone: parsed.escrowPhone || prev.escrowPhone,
-      escrowEmail: parsed.escrowEmail || prev.escrowEmail,
-      titleCompany: parsed.titleCompany || prev.titleCompany,
-      titleOfficer: parsed.titleOfficer || prev.titleOfficer,
-      titlePhone: parsed.titlePhone || prev.titlePhone,
-      titleEmail: parsed.titleEmail || prev.titleEmail,
-      collaborator: parsed.collaborator || prev.collaborator,
-      price: parsed.price ? parsed.price.toString() : prev.price,
-      netCommission: parsed.netCommission ? parsed.netCommission.toString() : prev.netCommission,
-      commissionPercent: parsed.commissionPercent ? parsed.commissionPercent.toString() : prev.commissionPercent,
-      acceptanceDate: parsed.acceptanceDate || prev.acceptanceDate,
-      contingencyStartDate: parsed.contingencyStartDate || parsed.acceptanceDate || prev.contingencyStartDate,
-      coeDate: parsed.coeDate || prev.coeDate,
-      status: parsed.status || prev.status,
-      notes: parsed.notes ? (prev.notes ? `${prev.notes}\n\n${parsed.notes}` : parsed.notes) : prev.notes,
-    }));
-    
-    setSisuInputText('');
-    setShowSisuPaste(false);
-  };
 
   useEffect(() => {
     if (escrow) {
@@ -294,49 +234,6 @@ export function AddEditModal({
         </div>
         
         <div className="p-6 overflow-y-auto flex-1">
-          {/* Sisu Text Autofill section */}
-          <div className="mb-6 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#1e293b]">Have Sisu Transaction Info?</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSisuPaste(!showSisuPaste)}
-                className="text-xs font-bold text-[#1B3A5C] hover:text-[#11253C] transition-colors focus:outline-none"
-              >
-                {showSisuPaste ? 'Cancel' : 'Paste Sisu Text to Autofill'}
-              </button>
-            </div>
-            
-            {showSisuPaste && (
-              <div className="mt-3">
-                <p className="text-[11px] text-[#64748b] mb-2 leading-relaxed">
-                  Copy the full transaction details from Sisu.co
-                </p>
-                <textarea
-                  rows={4}
-                  value={sisuInputText}
-                  onChange={e => setSisuInputText(e.target.value)}
-                  placeholder="Paste transaction info here (e.g. ID: 6535240...)"
-                  className="w-full border border-[#cbd5e1] bg-white rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-[#1B3A5C]"
-                />
-                {sisuError && (
-                  <p className="text-[11px] text-red-500 font-bold mt-1">{sisuError}</p>
-                )}
-                <div className="mt-2.5 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleSisuParse}
-                    className="bg-[#1B3A5C] hover:bg-[#11253C] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5 shadow-sm"
-                  >
-                    <span>Extract & Autofill</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
           <div className="space-y-4">
             {/* Section 1: Property & Financial Terms */}
             <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-4">
