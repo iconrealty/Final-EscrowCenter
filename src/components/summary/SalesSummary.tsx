@@ -8,10 +8,31 @@ interface SalesSummaryProps {
   onSelectEscrow: (escrow: Escrow) => void;
 }
 
+const MONTH_OPTIONS = [
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
+
 export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   const [activeSubTab, setActiveSubTab] = useState<'total' | 'monthly' | 'commission' | 'source'>('monthly');
   const [commissionGroup, setCommissionGroup] = useState<'monthly' | 'yearly'>('monthly');
   const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null);
+
+  // Dedicated filters for Net Commission tab
+  const [commissionSelectedYear, setCommissionSelectedYear] = useState<string>(() => {
+    return new Date().getFullYear().toString();
+  });
+  const [commissionSelectedMonth, setCommissionSelectedMonth] = useState<string>('all');
 
   // Helper function to extract exact year from escrow (prioritizing COE date, then acceptance date)
   const getEscrowYear = (e: Escrow): string => {
@@ -205,12 +226,41 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     };
   }, [pendingMonthlyEscrows, closedMonthlyEscrows]);
 
-  // Group Commissions by Month (filtered by selectedYear)
+  // Filtered closed escrows for the Net Commission tab based on commissionSelectedYear and commissionSelectedMonth
+  const filteredCommissionEscrows = useMemo(() => {
+    return closedEscrows.filter((escrow) => {
+      if (commissionSelectedYear !== 'all') {
+        const yr = getEscrowYear(escrow);
+        if (yr !== commissionSelectedYear) return false;
+      }
+      if (commissionSelectedMonth !== 'all') {
+        const ym = getEscrowMonth(escrow);
+        if (!ym) return false;
+        const parts = ym.split('-');
+        if (parts.length >= 2 && parts[1] !== commissionSelectedMonth) return false;
+      }
+      return true;
+    });
+  }, [closedEscrows, commissionSelectedYear, commissionSelectedMonth]);
+
+  // Total stats for Net Commission tab based on selected year & month
+  const commissionStats = useMemo(() => {
+    const net = filteredCommissionEscrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);
+    const gross = filteredCommissionEscrows.reduce((sum, e) => {
+      if (e.grossCommission !== undefined && e.grossCommission !== null) return sum + e.grossCommission;
+      if (e.price && e.commissionPercent) return sum + (e.price * e.commissionPercent) / 100;
+      return sum;
+    }, 0);
+    const volume = filteredCommissionEscrows.reduce((sum, e) => sum + (e.price || 0), 0);
+    const count = filteredCommissionEscrows.length;
+    return { net, gross, volume, count };
+  }, [filteredCommissionEscrows]);
+
+  // Group Commissions by Month (filtered by commissionSelectedYear and commissionSelectedMonth)
   const commissionByMonth = useMemo(() => {
     const groups: { [key: string]: { key: string; label: string; amount: number; grossAmount: number; count: number; escrows: Escrow[] } } = {};
-    const escrowsToUse = selectedYear === 'all' ? closedEscrows : closedEscrows.filter(e => getEscrowYear(e) === selectedYear);
     
-    escrowsToUse.forEach((escrow) => {
+    filteredCommissionEscrows.forEach((escrow) => {
       const ym = getEscrowMonth(escrow);
       if (ym && /^\d{4}-\d{2}$/.test(ym)) {
         if (!groups[ym]) {
@@ -233,14 +283,13 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     });
 
     return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
-  }, [closedEscrows, selectedYear]);
+  }, [filteredCommissionEscrows]);
 
-  // Group Commissions by Year
+  // Group Commissions by Year (filtered by commissionSelectedYear and commissionSelectedMonth)
   const commissionByYear = useMemo(() => {
     const groups: { [key: string]: { key: string; label: string; amount: number; grossAmount: number; count: number; escrows: Escrow[] } } = {};
-    const escrowsToUse = selectedYear === 'all' ? closedEscrows : closedEscrows.filter(e => getEscrowYear(e) === selectedYear);
     
-    escrowsToUse.forEach((escrow) => {
+    filteredCommissionEscrows.forEach((escrow) => {
       const yr = getEscrowYear(escrow);
       if (yr && /^\d{4}$/.test(yr)) {
         if (!groups[yr]) {
@@ -254,7 +303,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     });
 
     return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
-  }, [closedEscrows, selectedYear]);
+  }, [filteredCommissionEscrows]);
 
   const commissionGroupsToRender = useMemo(() => {
     return commissionGroup === 'monthly' ? commissionByMonth : commissionByYear;
@@ -335,8 +384,16 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
       if (selectedMonth === 'all') return 'All Time';
       return formatMonthName(selectedMonth);
     }
+    if (activeSubTab === 'commission') {
+      const monthObj = MONTH_OPTIONS.find(m => m.value === commissionSelectedMonth);
+      const monthName = monthObj ? monthObj.label : '';
+      if (commissionSelectedYear === 'all' && commissionSelectedMonth === 'all') return 'All Time';
+      if (commissionSelectedYear === 'all') return `${monthName} (All Years)`;
+      if (commissionSelectedMonth === 'all') return commissionSelectedYear;
+      return `${monthName} ${commissionSelectedYear}`;
+    }
     return selectedYear === 'all' ? 'All Time' : selectedYear;
-  }, [activeSubTab, selectedMonth, selectedYear]);
+  }, [activeSubTab, selectedMonth, selectedYear, commissionSelectedYear, commissionSelectedMonth]);
 
   return (
     <div className="bg-white rounded-2xl border border-[#e5e5ea] overflow-hidden flex flex-col h-full shadow-sm">
@@ -671,49 +728,104 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
         {activeSubTab === 'commission' && (
           /* ONLY COMMISSION ANALYTICS VIEW */
           <div className="flex-1 flex flex-col overflow-hidden p-5 gap-4 animate-fade-in">
-            {/* Header with Monthly/Yearly filter */}
-            <div className="flex items-center justify-between shrink-0">
+            {/* Top Bar with Year/Month selectors & Stats */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
               <div>
-                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Net Commission Revenue</span>
-                <div className="flex items-center gap-2.5 mt-0.5">
-                  <span className="text-[12px] font-bold text-[#059669] font-mono block">
-                    Net: {formatCurrency(totalStats.commission)}
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">
+                  Net Commission Revenue
+                </span>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <span className="text-sm sm:text-base font-extrabold text-[#059669] font-mono">
+                    Net: {formatCurrency(commissionStats.net)}
                   </span>
                   <span className="text-slate-300 font-normal text-xs">•</span>
-                  <span className="text-[12px] font-bold text-[#1B3A5C] font-mono block">
-                    Gross: {formatCurrency(totalStats.grossCommission)}
+                  <span className="text-xs sm:text-sm font-bold text-[#1B3A5C] font-mono">
+                    Gross: {formatCurrency(commissionStats.gross)}
+                  </span>
+                  <span className="text-slate-300 font-normal text-xs">•</span>
+                  <span className="text-[11px] font-medium text-slate-500">
+                    {commissionStats.count} {commissionStats.count === 1 ? 'sale' : 'sales'}
                   </span>
                 </div>
               </div>
               
-              {/* Selector for grouping: Monthly / Yearly */}
-              <div className="flex bg-slate-100 p-0.5 rounded-lg text-[10px] font-bold">
-                <button
-                  onClick={() => {
-                    setCommissionGroup('monthly');
-                    setExpandedPeriod(null);
-                  }}
-                  className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
-                    commissionGroup === 'monthly'
-                      ? 'bg-black text-white shadow-xs'
-                      : 'text-[#86868b] hover:text-[#1d1d1f]'
-                  }`}
-                >
-                  By Month
-                </button>
-                <button
-                  onClick={() => {
-                    setCommissionGroup('yearly');
-                    setExpandedPeriod(null);
-                  }}
-                  className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
-                    commissionGroup === 'yearly'
-                      ? 'bg-black text-white shadow-xs'
-                      : 'text-[#86868b] hover:text-[#1d1d1f]'
-                  }`}
-                >
-                  By Year
-                </button>
+              {/* Year, Month Selectors and Grouping Mode */}
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {/* Year Selector */}
+                <div className="relative inline-flex items-center">
+                  <select
+                    value={commissionSelectedYear}
+                    onChange={(e) => {
+                      setCommissionSelectedYear(e.target.value);
+                      setExpandedPeriod(null);
+                    }}
+                    className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3 py-1.5 pr-7 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-2xs"
+                  >
+                    <option value="all">All Years</option>
+                    {availableYears.map((yr) => (
+                      <option key={yr} value={yr}>
+                        {yr}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-2 text-[#86868b] flex items-center">
+                    <ChevronDown size={11} />
+                  </div>
+                </div>
+
+                {/* Month Selector */}
+                <div className="relative inline-flex items-center">
+                  <select
+                    value={commissionSelectedMonth}
+                    onChange={(e) => {
+                      setCommissionSelectedMonth(e.target.value);
+                      setExpandedPeriod(null);
+                    }}
+                    className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3 py-1.5 pr-7 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-2xs"
+                  >
+                    <option value="all">All Months</option>
+                    {MONTH_OPTIONS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-2 text-[#86868b] flex items-center">
+                    <ChevronDown size={11} />
+                  </div>
+                </div>
+
+                {/* Grouping Mode Toggle (when All Months is selected) */}
+                {commissionSelectedMonth === 'all' && (
+                  <div className="flex bg-slate-100 p-0.5 rounded-lg text-[10px] font-bold">
+                    <button
+                      onClick={() => {
+                        setCommissionGroup('monthly');
+                        setExpandedPeriod(null);
+                      }}
+                      className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+                        commissionGroup === 'monthly'
+                          ? 'bg-black text-white shadow-2xs'
+                          : 'text-[#86868b] hover:text-[#1d1d1f]'
+                      }`}
+                    >
+                      By Month
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCommissionGroup('yearly');
+                        setExpandedPeriod(null);
+                      }}
+                      className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+                        commissionGroup === 'yearly'
+                          ? 'bg-black text-white shadow-2xs'
+                          : 'text-[#86868b] hover:text-[#1d1d1f]'
+                      }`}
+                    >
+                      By Year
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -728,12 +840,18 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
               {commissionGroupsToRender.length > 0 ? (
                 <div className="flex flex-col gap-2">
                   {commissionGroupsToRender.map((group) => {
-                    const isExpanded = expandedPeriod === group.key;
+                    const isExpanded = expandedPeriod === group.key || (commissionSelectedMonth !== 'all' && commissionGroupsToRender.length === 1 && expandedPeriod !== 'collapsed');
                     return (
                       <div key={group.key} className="border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50">
                         {/* Period summary button */}
                         <button
-                          onClick={() => handlePeriodToggle(group.key)}
+                          onClick={() => {
+                            if (commissionSelectedMonth !== 'all' && commissionGroupsToRender.length === 1) {
+                              setExpandedPeriod(isExpanded ? 'collapsed' : group.key);
+                            } else {
+                              handlePeriodToggle(group.key);
+                            }
+                          }}
                           className="w-full flex items-center justify-between p-3 hover:bg-slate-100/50 transition-all duration-200 cursor-pointer text-left"
                         >
                           <div className="flex items-center gap-2 min-w-0">
@@ -804,8 +922,10 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                     <BarChart3 size={16} />
                   </div>
                   <div>
-                    <p className="uppercase text-[9px] tracking-widest font-bold text-neutral-500">No commissions yet</p>
-                    <p className="text-[10px] text-[#86868b] mt-1 normal-case">Change an escrow status to "Closed" to calculate commissions.</p>
+                    <p className="uppercase text-[9px] tracking-widest font-bold text-neutral-500">No commissions found</p>
+                    <p className="text-[10px] text-[#86868b] mt-1 normal-case">
+                      No closed escrows match the selected {commissionSelectedMonth !== 'all' ? 'month and year' : 'year'}.
+                    </p>
                   </div>
                 </div>
               )}
