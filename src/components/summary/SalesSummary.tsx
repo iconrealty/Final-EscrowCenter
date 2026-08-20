@@ -535,24 +535,38 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
         {activeSubTab === 'monthly' && (
           /* SIMPLE MONTHLY SALES VIEW - EXPECTED MONEY & MONTH */
           <div className="flex-1 flex flex-col overflow-hidden p-5 gap-4 animate-fade-in">
-            {/* Top Bar: Month Selector & Expected Summary */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
-              <div>
-                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">
-                  Expected to Receive ({formatMonthName(selectedMonth)})
-                </span>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-2xl sm:text-3xl font-black font-mono text-[#059669] tracking-tight">
-                    {formatCurrency(monthlyStats.expectedCommission)}
+            {/* Top Bar: Month Selector & Summary (Already Received + Expected to Receive) */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
+              <div className="flex flex-wrap items-center gap-6">
+                {/* Already Received */}
+                <div>
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider block">
+                    Already Received
                   </span>
-                  <span className="text-xs text-slate-500 font-medium">
-                    ({monthlyStats.expectedCount} pending {monthlyStats.expectedCount === 1 ? 'deal' : 'deals'} based on COE)
+                  <div className="mt-0.5">
+                    <span className="text-xl sm:text-2xl font-bold font-mono text-[#1B3A5C] tracking-tight">
+                      {formatCurrency(monthlyStats.closedCommission)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="hidden sm:block w-px h-8 bg-slate-200" />
+
+                {/* Expected to Receive */}
+                <div>
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider block">
+                    Expected to Receive ({formatMonthName(selectedMonth)})
                   </span>
+                  <div className="mt-0.5">
+                    <span className="text-xl sm:text-2xl font-bold font-mono text-[#059669] tracking-tight">
+                      {formatCurrency(monthlyStats.expectedCommission)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               {/* Month Selector dropdown */}
-              <div className="flex items-center gap-2 self-start sm:self-center">
+              <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
                 <span className="text-[11px] font-bold text-[#86868b] whitespace-nowrap">Month:</span>
                 <div className="relative inline-flex items-center">
                   <select
@@ -601,13 +615,13 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                         }`}
                       >
                         <div className="w-8 text-center shrink-0 mr-1">
-                          <span className={`inline-flex items-center justify-center min-w-[22px] h-5 px-1 rounded text-[10px] font-mono font-bold ${
+                          <span className={`w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] font-mono font-bold ${
                             isPending ? 'bg-emerald-600 text-white' : 'bg-[#1B3A5C] text-white'
                           }`}>
                             #{index + 1}
                           </span>
                         </div>
-                        <div className="min-w-0 flex-1 pr-2">
+                        <div className="flex-1 min-w-0 pr-3">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
                               {escrow.address}
@@ -621,7 +635,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                             </span>
                           </div>
                           <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
-                            <span className="font-semibold truncate">
+                            <span className="font-semibold truncate text-[#1d1d1f]">
                               {escrow.clientFirstName} {escrow.clientLastName}
                               {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
                             </span>
@@ -640,7 +654,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                   })}
                 </div>
               ) : (
-                <div className="py-12 text-center text-[#86868b] text-sm font-medium flex flex-col items-center gap-3 justify-center h-full">
+                <div className="flex flex-col items-center justify-center p-8 text-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-neutral-50 border border-neutral-100 text-neutral-400 flex items-center justify-center shadow-sm">
                     <Calendar size={16} />
                   </div>
