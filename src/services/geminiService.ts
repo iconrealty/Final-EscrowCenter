@@ -42,7 +42,7 @@ async function parseEscrow(data: string, mimeType: string): Promise<any> {
     throw err;
   }
   
-  const modelName = "gemini-3-flash-preview";
+  const modelName = "gemini-3.7-flash";
   console.log("Using model:", modelName);
 
   const dataPart = mimeType === "text/plain" 

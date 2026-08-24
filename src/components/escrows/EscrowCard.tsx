@@ -54,34 +54,58 @@ export function EscrowCard({
     }
   };
 
+  const rawRep = escrow.representation || 'Buyer';
+  const normalizedRep = rawRep.toLowerCase();
+  const isSeller = normalizedRep.includes('seller');
+  const isDual = normalizedRep.includes('dual');
+
+  // Soft, refined pastel top header backgrounds:
+  // Buyer: Soft sky blue tone
+  // Seller: Soft mint/sage green tone
+  // Dual: Soft warm peach/apricot tone
+  const headerStyle = isSeller
+    ? {
+        bg: 'bg-emerald-50/75 border-b border-emerald-100',
+        indexBadge: 'bg-emerald-700 text-white',
+        repBadge: 'bg-emerald-600 text-white',
+        escrowNumBadge: 'bg-white border-emerald-200 text-emerald-900',
+      }
+    : isDual
+    ? {
+        bg: 'bg-orange-50/75 border-b border-orange-100',
+        indexBadge: 'bg-orange-600 text-white',
+        repBadge: 'bg-orange-500 text-white',
+        escrowNumBadge: 'bg-white border-orange-200 text-orange-900',
+      }
+    : {
+        bg: 'bg-blue-50/75 border-b border-blue-100',
+        indexBadge: 'bg-[#1B3A5C] text-white',
+        repBadge: 'bg-[#1B3A5C] text-white',
+        escrowNumBadge: 'bg-white border-blue-200 text-blue-900',
+      };
+
   return (
-    <div className="bg-white rounded-2xl border-2 border-slate-200/90 overflow-hidden shadow-[0_8px_25px_rgba(15,23,42,0.09)] hover:shadow-[0_12px_36px_rgba(27,58,92,0.15)] hover:border-[#1B3A5C]/50 transition-all duration-200 flex flex-col relative group/card">
-      {/* Upper Area: Escrow Number, Days Left and Actions */}
-      <div className="px-3.5 sm:px-4 py-2.5 sm:py-3.5 flex flex-wrap sm:flex-nowrap justify-between items-center gap-2 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 border-b-2 border-slate-200/90">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col relative overflow-hidden group/card">
+      {/* Top Part Inside Tab: Escrow Number, Representation Badge, Status */}
+      <div className={`px-3.5 sm:px-4 py-2.5 sm:py-3 flex flex-wrap sm:flex-nowrap justify-between items-center gap-2 ${headerStyle.bg}`}>
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap shrink-0">
           {typeof index === 'number' && (
-            <span className="font-mono text-xs font-black text-white bg-[#1B3A5C] px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg shadow-sm shrink-0 tracking-wide border border-[#1B3A5C]">
+            <span className={`font-mono text-xs font-black ${headerStyle.indexBadge} px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg shadow-xs shrink-0 tracking-wide`}>
               #{index + 1}
             </span>
           )}
           {escrow.escrowNumber && (
-            <span className="font-mono text-[11px] sm:text-xs font-bold text-slate-800 bg-slate-200/90 border border-slate-300/70 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md shrink-0 shadow-2xs" title={`Escrow #${escrow.escrowNumber}`}>
+            <span className={`font-mono text-[11px] sm:text-xs font-bold ${headerStyle.escrowNumBadge} border px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md shrink-0 shadow-2xs`} title={`Escrow #${escrow.escrowNumber}`}>
               Escrow #{escrow.escrowNumber}
             </span>
           )}
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap shrink-0">
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">
             {escrow.leadSource || 'Zillow'}
           </span>
-          <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 sm:px-2.5 py-0.5 rounded-full ${
-            escrow.representation === 'Seller'
-              ? 'bg-emerald-600 text-white'
-              : escrow.representation === 'Dual'
-              ? 'bg-[#11253C] text-white'
-              : 'bg-[#1B3A5C] text-white'
-          }`}>
-            {escrow.representation || 'Buyer'}
+          <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${headerStyle.repBadge}`}>
+            {rawRep}
           </span>
           <StatusBadge status={escrow.status} />
         </div>
@@ -135,7 +159,7 @@ export function EscrowCard({
               {escrow.clientFirstName || ''} {escrow.clientLastName || ''}
               {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
             </div>
-            <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#11253C]/80 tracking-tight line-clamp-2 transition-colors" title={formatPropertyAddress(escrow)}>
+            <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#11253C] tracking-tight line-clamp-2 transition-colors" title={formatPropertyAddress(escrow)}>
               {formatPropertyAddress(escrow)}
             </h3>
           </div>

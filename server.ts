@@ -48,10 +48,20 @@ async function startServer() {
 
       const ai = getGenAI();
 
-      // Clean base64 string if data URL prefix was sent
+      // Clean base64 string and extract actual MIME type if data URL prefix was sent
       let base64Clean = fileData;
-      if (fileData.includes(",")) {
-        base64Clean = fileData.split(",")[1];
+      let actualMimeType = mimeType || "application/pdf";
+      if (typeof fileData === "string" && fileData.includes(",")) {
+        const parts = fileData.split(",");
+        const header = parts[0];
+        base64Clean = parts[1];
+        const match = header.match(/data:([^;]+);base64/);
+        if (match && match[1]) {
+          actualMimeType = match[1];
+        }
+      }
+      if (typeof base64Clean === "string") {
+        base64Clean = base64Clean.replace(/\s/g, "");
       }
 
       const promptText = `
@@ -94,14 +104,12 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
    - If commission percent and price are available, compute net commission
 4. MLS SHEETS (if uploaded):
    - Extract Address, City, Zip, APN, List Price, Listing Agent Name/Phone/Email, Listing Brokerage, Buyer Broker Commission (BAC/BBAC %)
-5. Output format: Return all dates formatted as YYYY-MM-DD. Clean all text strings.
+5. Output format: Return all dates formatted strictly as YYYY-MM-DD. Clean all text strings.
 `;
 
-      // Robust multi-model cascade with fast, high-availability models
+      // Models in priority order
       const candidateModels = [
-        "gemini-3.1-flash-lite",
         "gemini-3.7-flash",
-        "gemini-3.1-pro-preview",
         "gemini-flash-latest"
       ];
 
@@ -117,7 +125,7 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
                 {
                   inlineData: {
                     data: base64Clean,
-                    mimeType: mimeType,
+                    mimeType: actualMimeType,
                   },
                 },
                 {

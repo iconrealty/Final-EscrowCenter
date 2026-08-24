@@ -142,9 +142,27 @@ export function AddEditModal({
             throw new Error('Network error connecting to AI parser.');
           }
 
-          const json = await res.json();
-          if (!json.success || !json.data) {
-            throw new Error(json.error || 'Failed to extract transaction data.');
+          let json: any = null;
+          try {
+            const rawText = await res.text();
+            try {
+              json = JSON.parse(rawText);
+            } catch (pErr) {
+              console.error('Server returned non-JSON response:', rawText.substring(0, 300));
+              if (res.status === 413) {
+                throw new Error('The uploaded file is too large for AI parsing. Please upload a smaller PDF or pages 1-5.');
+              }
+              if (!res.ok) {
+                throw new Error(`Server returned error (${res.status}): ${rawText.substring(0, 150) || res.statusText}`);
+              }
+              throw new Error('Could not parse server response.');
+            }
+          } catch (readErr: any) {
+            throw new Error(readErr.message || 'Failed to read server response.');
+          }
+
+          if (!json || !json.success || !json.data) {
+            throw new Error(json?.error || 'Failed to extract transaction data from document.');
           }
 
           const data = json.data;
@@ -155,7 +173,7 @@ export function AddEditModal({
 
           if (user) {
             try {
-              const storageRef = ref(storage, `users/${user.uid}/uploads/${docId}_${file.name}`);
+              const storageRef = ref(storage, `users/${user.uid}/uploads/${docId}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`);
               await uploadBytes(storageRef, file);
               fileDownloadUrl = await getDownloadURL(storageRef);
             } catch (storageErr) {
@@ -175,6 +193,25 @@ export function AddEditModal({
             uploadedAt: new Date().toISOString(),
           };
           setPendingDoc(newDoc);
+
+          // Helper to safely parse and format ISO dates without throwing
+          const safeIsoDate = (val?: string): string => {
+            if (!val || typeof val !== 'string') return '';
+            const t = val.trim();
+            if (!t || t === 'N/A' || t === 'TBD' || t === 'null' || t === 'undefined') return '';
+            if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(t)) {
+              const [m, d, y] = t.split('/');
+              return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            }
+            try {
+              const parsed = new Date(t);
+              if (!isNaN(parsed.getTime())) {
+                return format(parsed, 'yyyy-MM-dd');
+              }
+            } catch {}
+            return '';
+          };
 
           // Smart Role Mapping (Buyer vs Seller vs Dual)
           const isRepresentingSeller = formData.representation === 'Seller' || data.representation === 'Seller';
@@ -223,24 +260,30 @@ export function AddEditModal({
           }
 
           // Calculate or adjust COE date based on 3B days & weekend rule
-          let computedCoeDate = data.coeDate || '';
-          const baseAcceptanceDate = data.acceptanceDate || data.contingencyStartDate || formData.acceptanceDate || format(new Date(), 'yyyy-MM-dd');
+          let computedCoeDate = safeIsoDate(data.coeDate);
+          const parsedAcceptanceDate = safeIsoDate(data.acceptanceDate);
+          const baseAcceptanceDate = parsedAcceptanceDate || safeIsoDate(data.contingencyStartDate) || formData.acceptanceDate || format(new Date(), 'yyyy-MM-dd');
 
           if (data.coeDays && baseAcceptanceDate) {
             try {
-              const rawDate = addDays(parseISO(baseAcceptanceDate), Number(data.coeDays));
-              const adjustedDate = adjustWeekendToMonday(rawDate);
-              computedCoeDate = format(adjustedDate, 'yyyy-MM-dd');
+              const baseDateObj = parseISO(baseAcceptanceDate);
+              if (!isNaN(baseDateObj.getTime())) {
+                const rawDate = addDays(baseDateObj, Number(data.coeDays));
+                const adjustedDate = adjustWeekendToMonday(rawDate);
+                computedCoeDate = format(adjustedDate, 'yyyy-MM-dd');
+              }
             } catch (err) {
               console.warn('Error calculating COE date from days:', err);
             }
           } else if (computedCoeDate) {
             try {
               const parsed = parseISO(computedCoeDate);
-              const dayOfWeek = parsed.getDay();
-              if (dayOfWeek === 6 || dayOfWeek === 0) {
-                const adjusted = adjustWeekendToMonday(parsed);
-                computedCoeDate = format(adjusted, 'yyyy-MM-dd');
+              if (!isNaN(parsed.getTime())) {
+                const dayOfWeek = parsed.getDay();
+                if (dayOfWeek === 6 || dayOfWeek === 0) {
+                  const adjusted = adjustWeekendToMonday(parsed);
+                  computedCoeDate = format(adjusted, 'yyyy-MM-dd');
+                }
               }
             } catch (err) {
               // keep as is
@@ -259,7 +302,7 @@ export function AddEditModal({
             clientLastName: clientLast || data.clientLastName || prev.clientLastName,
             clientPhone: data.clientPhone || prev.clientPhone,
             clientEmail: data.clientEmail || prev.clientEmail,
-            clientBirthday: data.clientBirthday || prev.clientBirthday,
+            clientBirthday: safeIsoDate(data.clientBirthday) || prev.clientBirthday,
             client2FirstName: client2First || data.client2FirstName || prev.client2FirstName,
             client2LastName: client2Last || data.client2LastName || prev.client2LastName,
             client2Phone: data.client2Phone || prev.client2Phone,
@@ -282,9 +325,9 @@ export function AddEditModal({
             price: data.price ? data.price.toString() : prev.price,
             commissionPercent: data.commissionPercent ? data.commissionPercent.toString() : prev.commissionPercent,
             netCommission: data.netCommission ? data.netCommission.toString() : prev.netCommission,
-            acceptanceDate: data.acceptanceDate || prev.acceptanceDate,
-            coeDate: computedCoeDate || data.coeDate || prev.coeDate,
-            contingencyStartDate: data.contingencyStartDate || data.acceptanceDate || prev.contingencyStartDate,
+            acceptanceDate: parsedAcceptanceDate || prev.acceptanceDate,
+            coeDate: computedCoeDate || safeIsoDate(data.coeDate) || prev.coeDate,
+            contingencyStartDate: safeIsoDate(data.contingencyStartDate) || parsedAcceptanceDate || prev.contingencyStartDate,
             representation: (data.representation as any) || prev.representation,
             leadSource: (data.leadSource as any) || prev.leadSource,
             status: (data.status as any) || prev.status,
