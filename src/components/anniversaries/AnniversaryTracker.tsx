@@ -575,7 +575,13 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
                     </div>
 
                     {escrow.representation && (
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200/60 shrink-0">
+                      <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded shrink-0 ${
+                        escrow.representation === 'Seller'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : escrow.representation === 'Dual'
+                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                          : 'bg-blue-50 text-blue-700 border border-blue-200'
+                      }`}>
                         {escrow.representation}
                       </span>
                     )}

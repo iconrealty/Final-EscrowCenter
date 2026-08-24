@@ -2,6 +2,7 @@ import { Escrow, ALL_TASKS, parseAddressComponents } from '../types';
 
 export const CSV_HEADERS = [
   'Escrow #',
+  'APN',
   'Status',
   'Representation',
   'Lead Source',
@@ -259,6 +260,7 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
 
     const row = [
       escapeCsv(e.escrowNumber || ''),
+      escapeCsv(e.apn || ''),
       escapeCsv(e.status || 'Open'),
       escapeCsv(e.representation || ''),
       escapeCsv(e.leadSource || 'Zillow'),
@@ -563,6 +565,7 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
     // Map fields
     const escrow: Partial<Escrow> = {
       escrowNumber: getVal(['escrow #', 'escrow number', 'escrow no', 'escrowno', 'escrow_no', 'escrow_number', 'id', 'deal id', 'sisu id', 'file #', 'file number', 'transaction id']),
+      apn: getVal(['apn', 'apn #', 'parcel', 'parcel id', 'parcel number', 'apn number', 'assessor parcel number']),
       escrowCompany: escrowCompany || '',
       address,
       city,

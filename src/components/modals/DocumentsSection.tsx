@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Escrow, EscrowDocument } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { FileText, Upload, Trash2, Download, Loader2, Eye, ExternalLink, X } from 'lucide-react';
+import { FileText, Upload, Trash2, Download, Loader2, Eye, ExternalLink, X, AlertCircle } from 'lucide-react';
 import { storage } from '../../lib/firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 
@@ -436,7 +436,20 @@ export function DocumentsSection({ escrow, onUpdate }: { escrow: Escrow; onUpdat
 
             {/* Modal Body / Viewer */}
             <div className="flex-1 bg-slate-100 p-2 sm:p-4 overflow-hidden flex items-center justify-center relative">
-              {isImage(previewDoc) ? (
+              {!previewDoc.url || previewDoc.url === '#' ? (
+                <div className="text-center p-8 max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="w-14 h-14 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-3">
+                    <AlertCircle size={28} />
+                  </div>
+                  <h4 className="text-base font-bold text-slate-900 mb-1">Preview Not Available</h4>
+                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                    This document was scanned before cloud storage was connected, or its inline file data was cleared to stay within database size limits.
+                  </p>
+                  <p className="text-xs text-slate-600 font-medium bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    💡 Tip: You can drag and drop this file directly into the <strong>Documents</strong> box above to upload a permanent cloud copy with instant preview!
+                  </p>
+                </div>
+              ) : isImage(previewDoc) ? (
                 <div className="w-full h-full flex items-center justify-center p-2">
                   <img 
                     src={previewDoc.url} 

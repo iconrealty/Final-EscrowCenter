@@ -76,10 +76,10 @@ export function EscrowCard({
           </span>
           <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 sm:px-2.5 py-0.5 rounded-full ${
             escrow.representation === 'Seller'
-              ? 'bg-[#1B3A5C] text-white'
+              ? 'bg-emerald-600 text-white'
               : escrow.representation === 'Dual'
               ? 'bg-[#11253C] text-white'
-              : 'bg-[#059669] text-white'
+              : 'bg-[#1B3A5C] text-white'
           }`}>
             {escrow.representation || 'Buyer'}
           </span>

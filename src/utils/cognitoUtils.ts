@@ -142,6 +142,14 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     }
   }
 
+  if (escrow.apn && escrow.apn.trim()) {
+    const cleanApn = escrow.apn.trim();
+    entryData["APN"] = cleanApn;
+    entryData["APNNumber"] = cleanApn;
+    entryData["ParcelNumber"] = cleanApn;
+    entryData["ParcelID"] = cleanApn;
+  }
+
   if (escrow.price) {
     entryData["TransactionAmount"] = escrow.price;
   }

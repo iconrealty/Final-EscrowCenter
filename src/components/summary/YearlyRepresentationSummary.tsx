@@ -190,7 +190,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#059669]" />
+                      <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
                       <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Buyer Rep</span>
                     </div>
                     <div className="font-mono text-neutral-500 font-bold">
@@ -200,7 +200,7 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
                   <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
                     <div 
                       style={{ width: `${stats.buyerPercent}%` }} 
-                      className="bg-[#059669] h-full rounded-full transition-all duration-500" 
+                      className="bg-[#1B3A5C] h-full rounded-full transition-all duration-500" 
                     />
                   </div>
                 </div>
@@ -209,17 +209,17 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
+                      <span className="w-2 h-2 rounded-full bg-[#059669]" />
                       <span className="font-bold text-[#1d1d1f] tracking-wide text-[11px] uppercase">Seller Rep</span>
                     </div>
                     <div className="font-mono text-neutral-500 font-bold">
-                      {stats.seller} <span className="text-[10px] text-[#1B3A5C] font-semibold">({Math.round(stats.sellerPercent)}%)</span>
+                      {stats.seller} <span className="text-[10px] text-[#059669] font-semibold">({Math.round(stats.sellerPercent)}%)</span>
                     </div>
                   </div>
                   <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
                     <div 
                       style={{ width: `${stats.sellerPercent}%` }} 
-                      className="bg-[#1B3A5C] h-full rounded-full transition-all duration-500" 
+                      className="bg-[#059669] h-full rounded-full transition-all duration-500" 
                     />
                   </div>
                 </div>

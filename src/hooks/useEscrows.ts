@@ -34,6 +34,23 @@ const cleanUndefined = (obj: any): any => {
   return result;
 };
 
+const sanitizeForFirestore = (data: any): any => {
+  const cleaned = cleanUndefined(data);
+  // Ensure document URLs do not store massive inline base64 (>50KB) that blow past Firestore 1MB doc limits
+  if (cleaned.documents && Array.isArray(cleaned.documents)) {
+    cleaned.documents = cleaned.documents.map((doc: any) => {
+      if (doc.url && typeof doc.url === 'string' && doc.url.startsWith('data:') && doc.url.length > 50000) {
+        return {
+          ...doc,
+          url: '#'
+        };
+      }
+      return doc;
+    });
+  }
+  return cleaned;
+};
+
 export function useEscrows() {
   const { user } = useAuth();
   const [escrows, setEscrows] = useState<Escrow[]>([]);
@@ -160,7 +177,7 @@ export function useEscrows() {
       // Sync to cloud
       try {
         const escrowDocRef = doc(db, 'users', user.uid, 'escrows', newId);
-        await setDoc(escrowDocRef, cleanUndefined(newEscrow));
+        await setDoc(escrowDocRef, sanitizeForFirestore(newEscrow));
       } catch (error) {
         console.error("Error adding escrow to Firestore:", error);
       }
@@ -185,7 +202,7 @@ export function useEscrows() {
           }
           // Optimistically update local state so changes reflect immediately
           setEscrows((prev) => prev.map((e) => (e.id === id ? updated : e)));
-          await setDoc(escrowDocRef, cleanUndefined(updated));
+          await setDoc(escrowDocRef, sanitizeForFirestore(updated));
         }
       } catch (error) {
         console.error("Error updating escrow in Firestore:", error);
@@ -263,7 +280,7 @@ export function useEscrows() {
             updated.status = 'Closed';
           }
 
-          await setDoc(escrowDocRef, cleanUndefined(updated));
+          await setDoc(escrowDocRef, sanitizeForFirestore(updated));
         }
       } catch (error) {
         console.error("Error toggling task in Firestore:", error);
@@ -306,6 +323,7 @@ export function useEscrows() {
       return {
         id: generateSafeId(),
         escrowNumber: data.escrowNumber || '',
+        apn: data.apn || '',
         escrowCompany: data.escrowCompany || '',
         address: data.address || 'Unknown Address',
         city: data.city || '',
@@ -353,7 +371,7 @@ export function useEscrows() {
       try {
         const batch = writeBatch(db);
         newEscrows.forEach((escrow) => {
-          const cleaned = cleanUndefined(escrow);
+          const cleaned = sanitizeForFirestore(escrow);
           const docRef = doc(db, 'users', user.uid, 'escrows', escrow.id);
           batch.set(docRef, cleaned);
         });

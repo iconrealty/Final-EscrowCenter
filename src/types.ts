@@ -25,6 +25,7 @@ export interface AnniversaryInteraction {
 export interface Escrow {
   id: string;
   escrowNumber?: string;
+  apn?: string;
   escrowCompany?: string;
   address: string;
   city?: string;

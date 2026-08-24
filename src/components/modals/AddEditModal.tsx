@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Escrow, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
-import { X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Escrow, EscrowDocument, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
+import { X, Sparkles, UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { addMonths, addDays, parseISO, format } from 'date-fns';
+import { useAuth } from '../../context/AuthContext';
+import { storage } from '../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { usePreferredPartners } from '../../hooks/usePreferredPartners';
+import { PartnerDropdown } from '../common/PartnerDropdown';
+import { PreferredPartner } from '../../types/partners';
 
 export function AddEditModal({ 
   escrow, 
@@ -12,9 +18,20 @@ export function AddEditModal({
   onClose: () => void; 
   onSave: (data: any) => void;
 }) {
+  const { user } = useAuth();
+  const { partners, addPartner, deletePartner, getDefaultPartner } = usePreferredPartners();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastFileRef = useRef<File | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanSuccess, setScanSuccess] = useState('');
+  const [scanError, setScanError] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [pendingDoc, setPendingDoc] = useState<EscrowDocument | null>(null);
+
   const [formData, setFormData] = useState(() => {
     return {
       escrowNumber: '',
+      apn: '',
       escrowCompany: '',
       address: '',
       city: '',
@@ -60,6 +77,265 @@ export function AddEditModal({
     };
   });
 
+  const handleProcessFile = async (file: File) => {
+    if (!file) return;
+    lastFileRef.current = file;
+    setIsScanning(true);
+    setScanError('');
+    setScanSuccess('');
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const result = reader.result as string;
+
+          // Helper to perform fetch with abort timeout (45s) and auto-retry on 503 / 429
+          let res: Response | null = null;
+          let attempts = 0;
+          const maxAttempts = 2;
+
+          while (attempts < maxAttempts) {
+            attempts++;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+            try {
+              res = await fetch('/api/scan-rpa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
+                body: JSON.stringify({
+                  fileData: result,
+                  mimeType: file.type || 'application/pdf',
+                  fileName: file.name,
+                  userRole: formData.representation,
+                }),
+              });
+              clearTimeout(timeoutId);
+
+              if (res.ok) {
+                break;
+              }
+
+              // If 503 or 429, wait briefly and retry
+              if (res.status === 503 || res.status === 429) {
+                if (attempts < maxAttempts) {
+                  await new Promise((r) => setTimeout(r, 1000));
+                  continue;
+                }
+              }
+            } catch (networkErr: any) {
+              clearTimeout(timeoutId);
+              if (networkErr.name === 'AbortError') {
+                throw new Error('Analysis timed out. Please retry or upload a clearer/smaller page range.');
+              }
+              if (attempts < maxAttempts) {
+                await new Promise((r) => setTimeout(r, 800));
+                continue;
+              }
+              throw networkErr;
+            }
+          }
+
+          if (!res) {
+            throw new Error('Network error connecting to AI parser.');
+          }
+
+          const json = await res.json();
+          if (!json.success || !json.data) {
+            throw new Error(json.error || 'Failed to extract transaction data.');
+          }
+
+          const data = json.data;
+
+          // Automatically prepare the scanned file as an attached document
+          const docId = 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+          let fileDownloadUrl = '';
+
+          if (user) {
+            try {
+              const storageRef = ref(storage, `users/${user.uid}/uploads/${docId}_${file.name}`);
+              await uploadBytes(storageRef, file);
+              fileDownloadUrl = await getDownloadURL(storageRef);
+            } catch (storageErr) {
+              console.warn('Storage upload error for scanned RPA:', storageErr);
+            }
+          }
+
+          // Fallback: If not logged in, or storage fails, only store base64 if small (< 64KB), otherwise use '#'
+          const docUrl = fileDownloadUrl || (result.length < 65000 ? result : '#');
+
+          const newDoc: EscrowDocument = {
+            id: docId,
+            name: file.name || 'Purchase Agreement (RPA)',
+            type: 'Purchase Agreement',
+            url: docUrl,
+            size: file.size,
+            uploadedAt: new Date().toISOString(),
+          };
+          setPendingDoc(newDoc);
+
+          // Smart Role Mapping (Buyer vs Seller vs Dual)
+          const isRepresentingSeller = formData.representation === 'Seller' || data.representation === 'Seller';
+
+          let clientFirst = data.clientFirstName || '';
+          let clientLast = data.clientLastName || '';
+          let client2First = data.client2FirstName || '';
+          let client2Last = data.client2LastName || '';
+
+          if (isRepresentingSeller && data.seller1Name) {
+            const sellerParts = (data.seller1Name || '').trim().split(' ');
+            clientFirst = sellerParts[0] || '';
+            clientLast = sellerParts.slice(1).join(' ') || '';
+            if (data.seller2Name) {
+              const s2Parts = (data.seller2Name || '').trim().split(' ');
+              client2First = s2Parts[0] || '';
+              client2Last = s2Parts.slice(1).join(' ') || '';
+            }
+          } else if (!isRepresentingSeller && data.buyer1Name && !clientFirst) {
+            const buyerParts = (data.buyer1Name || '').trim().split(' ');
+            clientFirst = buyerParts[0] || '';
+            clientLast = buyerParts.slice(1).join(' ') || '';
+            if (data.buyer2Name) {
+              const b2Parts = (data.buyer2Name || '').trim().split(' ');
+              client2First = b2Parts[0] || '';
+              client2Last = b2Parts.slice(1).join(' ') || '';
+            }
+          }
+
+          // Identify the Cooperating (Other Side) Agent
+          let coopAgentName = data.agentName || '';
+          let coopAgentPhone = data.agentPhone || '';
+          let coopAgentEmail = data.agentEmail || '';
+          let coopBrokerage = data.cooperatingBrokerage || '';
+
+          if (isRepresentingSeller) {
+            if (data.buyerAgentName) coopAgentName = data.buyerAgentName;
+            if (data.buyerAgentPhone) coopAgentPhone = data.buyerAgentPhone;
+            if (data.buyerAgentEmail) coopAgentEmail = data.buyerAgentEmail;
+            if (data.buyerBrokerage) coopBrokerage = data.buyerBrokerage;
+          } else {
+            if (data.listingAgentName) coopAgentName = data.listingAgentName;
+            if (data.listingAgentPhone) coopAgentPhone = data.listingAgentPhone;
+            if (data.listingAgentEmail) coopAgentEmail = data.listingAgentEmail;
+            if (data.listingBrokerage) coopBrokerage = data.listingBrokerage;
+          }
+
+          // Calculate or adjust COE date based on 3B days & weekend rule
+          let computedCoeDate = data.coeDate || '';
+          const baseAcceptanceDate = data.acceptanceDate || data.contingencyStartDate || formData.acceptanceDate || format(new Date(), 'yyyy-MM-dd');
+
+          if (data.coeDays && baseAcceptanceDate) {
+            try {
+              const rawDate = addDays(parseISO(baseAcceptanceDate), Number(data.coeDays));
+              const adjustedDate = adjustWeekendToMonday(rawDate);
+              computedCoeDate = format(adjustedDate, 'yyyy-MM-dd');
+            } catch (err) {
+              console.warn('Error calculating COE date from days:', err);
+            }
+          } else if (computedCoeDate) {
+            try {
+              const parsed = parseISO(computedCoeDate);
+              const dayOfWeek = parsed.getDay();
+              if (dayOfWeek === 6 || dayOfWeek === 0) {
+                const adjusted = adjustWeekendToMonday(parsed);
+                computedCoeDate = format(adjusted, 'yyyy-MM-dd');
+              }
+            } catch (err) {
+              // keep as is
+            }
+          }
+
+          setFormData((prev) => ({
+            ...prev,
+            escrowNumber: data.escrowNumber || prev.escrowNumber,
+            apn: data.apn || prev.apn,
+            escrowCompany: data.escrowCompany || prev.escrowCompany,
+            address: data.address || prev.address,
+            city: data.city || prev.city,
+            zipCode: data.zipCode || prev.zipCode,
+            clientFirstName: clientFirst || data.clientFirstName || prev.clientFirstName,
+            clientLastName: clientLast || data.clientLastName || prev.clientLastName,
+            clientPhone: data.clientPhone || prev.clientPhone,
+            clientEmail: data.clientEmail || prev.clientEmail,
+            clientBirthday: data.clientBirthday || prev.clientBirthday,
+            client2FirstName: client2First || data.client2FirstName || prev.client2FirstName,
+            client2LastName: client2Last || data.client2LastName || prev.client2LastName,
+            client2Phone: data.client2Phone || prev.client2Phone,
+            client2Email: data.client2Email || prev.client2Email,
+            collaborator: data.collaborator || prev.collaborator,
+            agentName: coopAgentName || prev.agentName,
+            agentPhone: coopAgentPhone || prev.agentPhone,
+            agentEmail: coopAgentEmail || prev.agentEmail,
+            cooperatingBrokerage: coopBrokerage || prev.cooperatingBrokerage,
+            escrowOfficer: data.escrowOfficer || prev.escrowOfficer,
+            escrowPhone: data.escrowPhone || prev.escrowPhone,
+            escrowEmail: data.escrowEmail || prev.escrowEmail,
+            titleCompany: data.titleCompany || prev.titleCompany,
+            titleOfficer: data.titleOfficer || prev.titleOfficer,
+            titlePhone: data.titlePhone || prev.titlePhone,
+            titleEmail: data.titleEmail || prev.titleEmail,
+            lenderName: data.lenderName || prev.lenderName,
+            lenderPhone: data.lenderPhone || prev.lenderPhone,
+            lenderEmail: data.lenderEmail || prev.lenderEmail,
+            price: data.price ? data.price.toString() : prev.price,
+            commissionPercent: data.commissionPercent ? data.commissionPercent.toString() : prev.commissionPercent,
+            netCommission: data.netCommission ? data.netCommission.toString() : prev.netCommission,
+            acceptanceDate: data.acceptanceDate || prev.acceptanceDate,
+            coeDate: computedCoeDate || data.coeDate || prev.coeDate,
+            contingencyStartDate: data.contingencyStartDate || data.acceptanceDate || prev.contingencyStartDate,
+            representation: (data.representation as any) || prev.representation,
+            leadSource: (data.leadSource as any) || prev.leadSource,
+            status: (data.status as any) || prev.status,
+            notes: data.notes ? (prev.notes ? `${prev.notes}\n\n${data.notes}` : data.notes) : prev.notes,
+            contingencyDays: data.contingencyDays
+              ? {
+                  ...prev.contingencyDays,
+                  ...Object.fromEntries(
+                    Object.entries(data.contingencyDays)
+                      .filter(([_, v]) => v !== undefined && v !== null)
+                      .map(([k, v]) => [k, String(v)])
+                  ),
+                }
+              : prev.contingencyDays,
+          }));
+
+          setScanSuccess('Document has been extracted.');
+        } catch (err: any) {
+          setScanError(err.message || 'Failed to scan document.');
+        } finally {
+          setIsScanning(false);
+        }
+      };
+      reader.onerror = () => {
+        setScanError('Failed to read selected file.');
+        setIsScanning(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      setScanError(err.message || 'Failed to process file.');
+      setIsScanning(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleProcessFile(e.dataTransfer.files[0]);
+    }
+  };
+
   useEffect(() => {
     if (escrow) {
       const stringifiedDays: Record<string, string> = {};
@@ -97,6 +373,7 @@ export function AddEditModal({
 
       setFormData({
         escrowNumber: escrow.escrowNumber || '',
+        apn: escrow.apn || '',
         escrowCompany: escrow.escrowCompany || '',
         address: initAddress,
         city: initCity,
@@ -141,6 +418,7 @@ export function AddEditModal({
     } else {
       setFormData({
         escrowNumber: '',
+        apn: '',
         escrowCompany: '',
         address: '',
         city: '',
@@ -197,13 +475,20 @@ export function AddEditModal({
       }
     });
 
-    onSave({
+    const cleanedData: any = {
       ...formData,
       price: Number(formData.price) || 0,
       netCommission: Number(formData.netCommission) || 0,
       commissionPercent: formData.commissionPercent ? Number(formData.commissionPercent) : undefined,
       contingencyDays: parsedDays
-    });
+    };
+
+    if (pendingDoc) {
+      const existingDocs = escrow?.documents || [];
+      cleanedData.documents = [pendingDoc, ...existingDocs];
+    }
+
+    onSave(cleanedData);
   };
 
   const handleAcceptanceDateChange = (val: string) => {
@@ -234,6 +519,119 @@ export function AddEditModal({
         </div>
         
         <div className="p-6 overflow-y-auto flex-1">
+          {/* AI Contract / MLS Document Scanner Banner */}
+          <div className="mb-5 bg-gradient-to-br from-slate-50 to-blue-50/40 border border-blue-200/60 rounded-2xl p-4 sm:p-5 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3.5 pb-3 border-b border-blue-100">
+              <div className="flex items-center gap-2.5">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 leading-tight">Document Scanner</h4>
+                </div>
+              </div>
+
+              {/* Explicit Representation Selector for Scanner Guidance */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-300/80 p-1 rounded-xl shadow-xs self-start sm:self-auto">
+                <span className="text-[11px] font-bold text-slate-600 px-2">I am representing:</span>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, representation: 'Buyer' }))}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    formData.representation === 'Buyer'
+                      ? 'bg-[#1B3A5C] text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Buyer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, representation: 'Seller' }))}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    formData.representation === 'Seller'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+                  }`}
+                >
+                  Seller
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, representation: 'Dual' }))}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    formData.representation === 'Dual'
+                      ? 'bg-[#11253C] text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Dual
+                </button>
+              </div>
+            </div>
+
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={e => e.target.files?.[0] && handleProcessFile(e.target.files[0])} 
+              accept=".pdf,image/png,image/jpeg,image/webp" 
+              className="hidden" 
+            />
+
+            <div 
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => !isScanning && fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all duration-200 ${
+                isDragging 
+                  ? 'border-[#1B3A5C] bg-[#1B3A5C]/5 scale-[0.99]' 
+                  : 'border-slate-300 hover:border-[#1B3A5C]/60 bg-white/70 hover:bg-white'
+              }`}
+            >
+              {isScanning ? (
+                <div className="py-2 flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="animate-spin text-[#1B3A5C]" size={24} />
+                  <span className="text-xs font-bold text-slate-800">Analyzing California RPA & Broker Confirmation pages...</span>
+                  <span className="text-[10px] text-slate-500">Extracting Paragraph 3 Grid (Price, COE, Contingencies, APN) and Contact info</span>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                    <UploadCloud size={20} />
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <div className="text-xs font-bold text-slate-800">
+                      Drop signed California RPA (or MLS Sheet) PDF here, or <span className="text-[#1B3A5C] underline">browse</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {scanSuccess && (
+              <div className="mt-2.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2">
+                <span>{scanSuccess}</span>
+              </div>
+            )}
+
+            {scanError && (
+              <div className="mt-2.5 flex items-center justify-between gap-2 text-xs font-bold text-red-800 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={16} className="text-red-600 shrink-0" />
+                  <span>{scanError}</span>
+                </div>
+                {lastFileRef.current && (
+                  <button
+                    type="button"
+                    onClick={() => lastFileRef.current && handleProcessFile(lastFileRef.current)}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-900 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
+                  >
+                    <RefreshCw size={12} />
+                    <span>Retry Scan</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-4">
             {/* Section 1: Property & Financial Terms */}
             <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-4">
@@ -259,6 +657,20 @@ export function AddEditModal({
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">APN # (Parcel ID)</label>
+                  <input type="text" placeholder="e.g. 402-192-14" value={formData.apn} onChange={e => setFormData({...formData, apn: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Representation</label>
+                  <select value={formData.representation} onChange={e => setFormData({...formData, representation: e.target.value as any})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]">
+                    <option value="Buyer">Representing Buyer</option>
+                    <option value="Seller">Representing Seller</option>
+                    <option value="Dual">Representing Dual</option>
+                  </select>
+                </div>
+
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">Property Address (Street) *</label>
                   <input required type="text" placeholder="e.g. 1206 Louise St" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
@@ -272,15 +684,6 @@ export function AddEditModal({
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Zip Code</label>
                   <input type="text" placeholder="e.g. 92703" value={formData.zipCode} onChange={e => setFormData({...formData, zipCode: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Representation</label>
-                  <select value={formData.representation} onChange={e => setFormData({...formData, representation: e.target.value as any})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]">
-                    <option value="Buyer">Representing Buyer</option>
-                    <option value="Seller">Representing Seller</option>
-                    <option value="Dual">Representing Dual</option>
-                  </select>
                 </div>
 
                 <div>
@@ -439,10 +842,27 @@ export function AddEditModal({
             {/* Section 5: Lender Details */}
             <div className="bg-amber-50/40 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-amber-200/70">
-                <h3 className="text-sm font-bold text-amber-950">Lender</h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold uppercase tracking-wider">
-                  Lender
-                </span>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-amber-950">Lender</h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold uppercase tracking-wider">
+                    Lender
+                  </span>
+                </div>
+                <PartnerDropdown
+                  category="lender"
+                  categoryLabel="Lender"
+                  partners={partners}
+                  onAddNew={addPartner}
+                  onDelete={deletePartner}
+                  onSelect={(p: PreferredPartner) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      lenderName: p.company || p.name,
+                      lenderPhone: p.phone,
+                      lenderEmail: p.email,
+                    }));
+                  }}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -466,10 +886,28 @@ export function AddEditModal({
             {/* Section 6: Escrow Company & Officer */}
             <div className="bg-indigo-50/40 border border-indigo-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-indigo-200/70">
-                <h3 className="text-sm font-bold text-indigo-950">Escrow</h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-bold uppercase tracking-wider">
-                  Escrow
-                </span>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-indigo-950">Escrow</h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-bold uppercase tracking-wider">
+                    Escrow
+                  </span>
+                </div>
+                <PartnerDropdown
+                  category="escrow"
+                  categoryLabel="Escrow"
+                  partners={partners}
+                  onAddNew={addPartner}
+                  onDelete={deletePartner}
+                  onSelect={(p: PreferredPartner) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      escrowCompany: p.company,
+                      escrowOfficer: p.name,
+                      escrowPhone: p.phone,
+                      escrowEmail: p.email,
+                    }));
+                  }}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -498,10 +936,28 @@ export function AddEditModal({
             {/* Section 7: Title Company Details */}
             <div className="bg-cyan-50/40 border border-cyan-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-cyan-200/70">
-                <h3 className="text-sm font-bold text-cyan-950">Title</h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200 text-[10px] font-bold uppercase tracking-wider">
-                  Title
-                </span>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-cyan-950">Title</h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200 text-[10px] font-bold uppercase tracking-wider">
+                    Title
+                  </span>
+                </div>
+                <PartnerDropdown
+                  category="title"
+                  categoryLabel="Title"
+                  partners={partners}
+                  onAddNew={addPartner}
+                  onDelete={deletePartner}
+                  onSelect={(p: PreferredPartner) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      titleCompany: p.company,
+                      titleOfficer: p.name,
+                      titlePhone: p.phone,
+                      titleEmail: p.email,
+                    }));
+                  }}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
