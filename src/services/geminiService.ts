@@ -1,16 +1,22 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { extractTextFromPdfBase64, parseRpaText } from "./localRpaParser";
 
 let aiInstance: GoogleGenAI | null = null;
 
-function getAi(): GoogleGenAI {
+function getAi(): GoogleGenAI | null {
   try {
+    // In browser/client environment, check various env bindings safely
+    const apiKey = 
+      (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) ||
+      (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_GEMINI_API_KEY);
+
+    if (!apiKey || apiKey === "undefined" || apiKey.trim() === "") {
+      return null;
+    }
+
     if (!aiInstance) {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey || apiKey === "undefined") {
-        console.warn("GEMINI_API_KEY not found in environment, checking fallback...");
-      }
       aiInstance = new GoogleGenAI({
-        apiKey: apiKey || "",
+        apiKey: apiKey.trim(),
         httpOptions: {
           headers: {
             'User-Agent': 'aistudio-build',
@@ -20,8 +26,8 @@ function getAi(): GoogleGenAI {
     }
     return aiInstance;
   } catch (error) {
-    console.error("Error in getAi initialization:", error);
-    throw error;
+    console.warn("Client GoogleGenAI initialization skipped:", error);
+    return null;
   }
 }
 
@@ -38,9 +44,7 @@ export async function parseFullEscrowRPA(
   mimeType: string,
   fileName?: string
 ): Promise<any> {
-  const ai = getAi();
-
-  let base64Clean = fileData;
+  let base64Clean = fileData || "";
   let actualMimeType = mimeType || "application/pdf";
   if (typeof fileData === "string" && fileData.includes(",")) {
     const parts = fileData.split(",");
@@ -55,7 +59,10 @@ export async function parseFullEscrowRPA(
     base64Clean = base64Clean.replace(/\s/g, "");
   }
 
-  const promptText = `
+  // 1. Try Gemini API if an AI instance / API key is available
+  const ai = getAi();
+  if (ai) {
+    const promptText = `
 You are an expert California Real Estate Transaction Coordinator (TC) and Escrow Assistant specializing in California Residential Purchase Agreements (C.A.R. Form RPA-CA), Addenda, and MLS Listing Sheets.
 Analyze the provided document (${fileName || "Real Estate Document"}) and extract all transaction, property, client, agent, escrow, title, and contingency timeline details.
 
@@ -98,114 +105,118 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
 5. Output format: Return all dates formatted strictly as YYYY-MM-DD. Clean all text strings.
 `;
 
-  const candidateModels = [
-    "gemini-3.7-flash",
-    "gemini-flash-latest"
-  ];
+    const candidateModels = ["gemini-3.7-flash", "gemini-flash-latest"];
 
-  let lastError: any = null;
+    for (const modelName of candidateModels) {
+      try {
+        const dataPart =
+          actualMimeType === "text/plain"
+            ? { text: base64Clean }
+            : { inlineData: { mimeType: actualMimeType, data: base64Clean } };
 
-  for (const modelName of candidateModels) {
-    try {
-      const dataPart = actualMimeType === "text/plain"
-        ? { text: base64Clean }
-        : { inlineData: { mimeType: actualMimeType, data: base64Clean } };
-
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents: [
-          {
-            role: "user",
-            parts: [
-              dataPart,
-              { text: promptText },
-            ],
-          },
-        ],
-        config: {
-          systemInstruction: "You are a fast, accurate Real Estate Document and California RPA contract parser that outputs strict JSON matching the schema.",
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              escrowNumber: { type: Type.STRING, description: "Escrow file number if present" },
-              apn: { type: Type.STRING, description: "Assessor's Parcel Number (APN) e.g. 402-192-14" },
-              address: { type: Type.STRING, description: "Property street address without city/zip" },
-              city: { type: Type.STRING, description: "City name" },
-              zipCode: { type: Type.STRING, description: "5-digit zip code" },
-              clientFirstName: { type: Type.STRING, description: "First name of primary buyer or client" },
-              clientLastName: { type: Type.STRING, description: "Last name of primary buyer or client" },
-              clientPhone: { type: Type.STRING, description: "Phone number of client" },
-              clientEmail: { type: Type.STRING, description: "Email address of client" },
-              clientBirthday: { type: Type.STRING, description: "Client birthday YYYY-MM-DD if available" },
-              client2FirstName: { type: Type.STRING, description: "First name of co-buyer or second client" },
-              client2LastName: { type: Type.STRING, description: "Last name of co-buyer or second client" },
-              client2Phone: { type: Type.STRING, description: "Phone of second client" },
-              client2Email: { type: Type.STRING, description: "Email of second client" },
-              seller1Name: { type: Type.STRING, description: "Seller full name or entity" },
-              seller2Name: { type: Type.STRING, description: "Second seller full name or entity" },
-              buyer1Name: { type: Type.STRING, description: "Buyer 1 full name" },
-              buyer2Name: { type: Type.STRING, description: "Buyer 2 full name" },
-              collaborator: { type: Type.STRING, description: "Co-agent or collaborator" },
-              agentName: { type: Type.STRING, description: "Cooperating agent full name" },
-              agentPhone: { type: Type.STRING, description: "Cooperating agent phone" },
-              agentEmail: { type: Type.STRING, description: "Cooperating agent email" },
-              cooperatingBrokerage: { type: Type.STRING, description: "Cooperating broker firm name" },
-              listingAgentName: { type: Type.STRING, description: "Listing agent name" },
-              listingAgentPhone: { type: Type.STRING, description: "Listing agent phone" },
-              listingAgentEmail: { type: Type.STRING, description: "Listing agent email" },
-              listingBrokerage: { type: Type.STRING, description: "Listing brokerage company" },
-              buyerAgentName: { type: Type.STRING, description: "Buyer's agent name" },
-              buyerAgentPhone: { type: Type.STRING, description: "Buyer's agent phone" },
-              buyerAgentEmail: { type: Type.STRING, description: "Buyer's agent email" },
-              buyerBrokerage: { type: Type.STRING, description: "Buyer brokerage company" },
-              lenderName: { type: Type.STRING, description: "Lender company or loan officer name" },
-              lenderPhone: { type: Type.STRING, description: "Lender phone number" },
-              lenderEmail: { type: Type.STRING, description: "Lender email address" },
-              loanType: { type: Type.STRING, description: "Loan type e.g. Conventional, FHA, VA, Cash" },
-              loanAmount: { type: Type.NUMBER, description: "Loan amount in dollars" },
-              initialDeposit: { type: Type.NUMBER, description: "Initial earnest money deposit EMD in dollars" },
-              escrowCompany: { type: Type.STRING, description: "Escrow company name" },
-              escrowOfficer: { type: Type.STRING, description: "Escrow officer full name" },
-              escrowPhone: { type: Type.STRING, description: "Escrow officer phone number" },
-              escrowEmail: { type: Type.STRING, description: "Escrow officer email address" },
-              titleCompany: { type: Type.STRING, description: "Title company name" },
-              titleOfficer: { type: Type.STRING, description: "Title officer name" },
-              titlePhone: { type: Type.STRING, description: "Title contact phone" },
-              titleEmail: { type: Type.STRING, description: "Title contact email" },
-              price: { type: Type.NUMBER, description: "Purchase price / contract price" },
-              commissionPercent: { type: Type.NUMBER, description: "Commission percentage (e.g. 2.5)" },
-              netCommission: { type: Type.NUMBER, description: "Calculated or stated net commission dollar amount" },
-              acceptanceDate: { type: Type.STRING, description: "Date of final acceptance YYYY-MM-DD" },
-              coeDate: { type: Type.STRING, description: "Close of escrow date YYYY-MM-DD" },
-              coeDays: { type: Type.NUMBER, description: "Close of escrow timeline in days from acceptance (e.g. 30)" },
-              contingencyStartDate: { type: Type.STRING, description: "Contingency timeline start date YYYY-MM-DD" },
-              loanContingencyDays: { type: Type.NUMBER, description: "Loan contingency duration in days (default 14)" },
-              appraisalContingencyDays: { type: Type.NUMBER, description: "Appraisal contingency duration in days (default 17 or 10)" },
-              inspectionContingencyDays: { type: Type.NUMBER, description: "Physical investigation/inspection duration in days (default 17 or 7)" },
-              sellerDisclosureDays: { type: Type.NUMBER, description: "Seller disclosures duration in days (default 7)" },
-              titleReportDays: { type: Type.NUMBER, description: "Title review contingency duration in days (default 7)" },
-              hoaDocDays: { type: Type.NUMBER, description: "HOA / Common Interest doc review in days (default 7)" },
-              insuranceDays: { type: Type.NUMBER, description: "Insurance contingency duration in days (default 17 or 7)" },
-              leasedItemsDays: { type: Type.NUMBER, description: "Leased items review in days (default 7)" },
-              copDays: { type: Type.NUMBER, description: "Sale of Buyer Property / COP duration in days if applicable" },
-              representation: { type: Type.STRING, description: "Representation: 'Buyer', 'Seller', or 'Dual'" },
-              leadSource: { type: Type.STRING, description: "Lead source e.g. Zillow, Referral, Open House, Sphere, Agent Referral" },
-              status: { type: Type.STRING, description: "Initial status: 'Active', 'Pending', 'Closed', or 'Cancelled'" },
-              notes: { type: Type.STRING, description: "Important key notes, special terms, or TC instructions" },
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: [
+            {
+              role: "user",
+              parts: [dataPart, { text: promptText }],
+            },
+          ],
+          config: {
+            systemInstruction:
+              "You are a fast, accurate Real Estate Document and California RPA contract parser that outputs strict JSON matching the schema.",
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                escrowNumber: { type: Type.STRING },
+                apn: { type: Type.STRING },
+                address: { type: Type.STRING },
+                city: { type: Type.STRING },
+                zipCode: { type: Type.STRING },
+                clientFirstName: { type: Type.STRING },
+                clientLastName: { type: Type.STRING },
+                clientPhone: { type: Type.STRING },
+                clientEmail: { type: Type.STRING },
+                clientBirthday: { type: Type.STRING },
+                client2FirstName: { type: Type.STRING },
+                client2LastName: { type: Type.STRING },
+                client2Phone: { type: Type.STRING },
+                client2Email: { type: Type.STRING },
+                seller1Name: { type: Type.STRING },
+                seller2Name: { type: Type.STRING },
+                buyer1Name: { type: Type.STRING },
+                buyer2Name: { type: Type.STRING },
+                collaborator: { type: Type.STRING },
+                agentName: { type: Type.STRING },
+                agentPhone: { type: Type.STRING },
+                agentEmail: { type: Type.STRING },
+                cooperatingBrokerage: { type: Type.STRING },
+                listingAgentName: { type: Type.STRING },
+                listingAgentPhone: { type: Type.STRING },
+                listingAgentEmail: { type: Type.STRING },
+                listingBrokerage: { type: Type.STRING },
+                buyerAgentName: { type: Type.STRING },
+                buyerAgentPhone: { type: Type.STRING },
+                buyerAgentEmail: { type: Type.STRING },
+                buyerBrokerage: { type: Type.STRING },
+                lenderName: { type: Type.STRING },
+                lenderPhone: { type: Type.STRING },
+                lenderEmail: { type: Type.STRING },
+                loanType: { type: Type.STRING },
+                loanAmount: { type: Type.NUMBER },
+                initialDeposit: { type: Type.NUMBER },
+                escrowCompany: { type: Type.STRING },
+                escrowOfficer: { type: Type.STRING },
+                escrowPhone: { type: Type.STRING },
+                escrowEmail: { type: Type.STRING },
+                titleCompany: { type: Type.STRING },
+                titleOfficer: { type: Type.STRING },
+                titlePhone: { type: Type.STRING },
+                titleEmail: { type: Type.STRING },
+                price: { type: Type.NUMBER },
+                commissionPercent: { type: Type.NUMBER },
+                netCommission: { type: Type.NUMBER },
+                acceptanceDate: { type: Type.STRING },
+                coeDate: { type: Type.STRING },
+                coeDays: { type: Type.NUMBER },
+                contingencyStartDate: { type: Type.STRING },
+                loanContingencyDays: { type: Type.NUMBER },
+                appraisalContingencyDays: { type: Type.NUMBER },
+                inspectionContingencyDays: { type: Type.NUMBER },
+                sellerDisclosureDays: { type: Type.NUMBER },
+                titleReportDays: { type: Type.NUMBER },
+                hoaDocDays: { type: Type.NUMBER },
+                insuranceDays: { type: Type.NUMBER },
+                leasedItemsDays: { type: Type.NUMBER },
+                copDays: { type: Type.NUMBER },
+                representation: { type: Type.STRING },
+                leadSource: { type: Type.STRING },
+                status: { type: Type.STRING },
+                notes: { type: Type.STRING },
+              },
             },
           },
-        },
-      });
+        });
 
-      if (response && response.text) {
-        return JSON.parse(response.text.trim());
+        if (response && response.text) {
+          const parsed = JSON.parse(response.text.trim());
+          if (parsed && (parsed.address || parsed.price || parsed.clientLastName || parsed.escrowNumber)) {
+            return parsed;
+          }
+        }
+      } catch (err: any) {
+        console.warn(`Gemini call with ${modelName} encountered an issue:`, err.message);
       }
-    } catch (err: any) {
-      lastError = err;
-      console.warn(`Model ${modelName} failed in client fallback parser:`, err.message);
     }
   }
 
-  throw lastError || new Error("Failed to parse document with Gemini AI.");
+  // 2. Seamless Local Parser Fallback (Requires NO external API key)
+  console.log("Parsing California RPA using built-in high-performance local parser...");
+  const rawText = actualMimeType === "application/pdf"
+    ? extractTextFromPdfBase64(base64Clean)
+    : base64Clean;
+
+  const localParsed = parseRpaText(rawText, fileName);
+  return localParsed;
 }
