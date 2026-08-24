@@ -8,6 +8,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { usePreferredPartners } from '../../hooks/usePreferredPartners';
 import { PartnerDropdown } from '../common/PartnerDropdown';
 import { PreferredPartner } from '../../types/partners';
+import { parseFullEscrowRPA } from '../../services/geminiService';
 
 export function AddEditModal({ 
   escrow, 
@@ -90,82 +91,82 @@ export function AddEditModal({
         try {
           const result = reader.result as string;
 
-          // Helper to perform fetch with abort timeout (45s) and auto-retry on 503 / 429
-          let res: Response | null = null;
-          let attempts = 0;
-          const maxAttempts = 2;
+          let data: any = null;
 
-          while (attempts < maxAttempts) {
-            attempts++;
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 45000);
+          // Step 1: Attempt to use the backend /api/scan-rpa endpoint
+          try {
+            let res: Response | null = null;
+            let attempts = 0;
+            const maxAttempts = 2;
 
-            try {
-              res = await fetch('/api/scan-rpa', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                signal: controller.signal,
-                body: JSON.stringify({
-                  fileData: result,
-                  mimeType: file.type || 'application/pdf',
-                  fileName: file.name,
-                  userRole: formData.representation,
-                }),
-              });
-              clearTimeout(timeoutId);
+            while (attempts < maxAttempts) {
+              attempts++;
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 40000);
 
-              if (res.ok) {
-                break;
-              }
+              try {
+                res = await fetch('/api/scan-rpa', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  signal: controller.signal,
+                  body: JSON.stringify({
+                    fileData: result,
+                    mimeType: file.type || 'application/pdf',
+                    fileName: file.name,
+                    userRole: formData.representation,
+                  }),
+                });
+                clearTimeout(timeoutId);
 
-              // If 503 or 429, wait briefly and retry
-              if (res.status === 503 || res.status === 429) {
+                if (res.ok) {
+                  break;
+                }
+
+                // If 404 (e.g. static / edge deployment without server route), don't retry, fail immediately to client fallback
+                if (res.status === 404) {
+                  console.warn('/api/scan-rpa returned 404. Falling back to direct client-side Gemini engine...');
+                  break;
+                }
+
+                // If 503 or 429, wait briefly and retry
+                if (res.status === 503 || res.status === 429) {
+                  if (attempts < maxAttempts) {
+                    await new Promise((r) => setTimeout(r, 1000));
+                    continue;
+                  }
+                }
+              } catch (networkErr: any) {
+                clearTimeout(timeoutId);
                 if (attempts < maxAttempts) {
-                  await new Promise((r) => setTimeout(r, 1000));
+                  await new Promise((r) => setTimeout(r, 800));
                   continue;
                 }
               }
-            } catch (networkErr: any) {
-              clearTimeout(timeoutId);
-              if (networkErr.name === 'AbortError') {
-                throw new Error('Analysis timed out. Please retry or upload a clearer/smaller page range.');
-              }
-              if (attempts < maxAttempts) {
-                await new Promise((r) => setTimeout(r, 800));
-                continue;
-              }
-              throw networkErr;
             }
-          }
 
-          if (!res) {
-            throw new Error('Network error connecting to AI parser.');
-          }
-
-          let json: any = null;
-          try {
-            const rawText = await res.text();
-            try {
-              json = JSON.parse(rawText);
-            } catch (pErr) {
-              console.error('Server returned non-JSON response:', rawText.substring(0, 300));
-              if (res.status === 413) {
-                throw new Error('The uploaded file is too large for AI parsing. Please upload a smaller PDF or pages 1-5.');
+            if (res && res.ok) {
+              const json = await res.json();
+              if (json && json.success && json.data) {
+                data = json.data;
               }
-              if (!res.ok) {
-                throw new Error(`Server returned error (${res.status}): ${rawText.substring(0, 150) || res.statusText}`);
-              }
-              throw new Error('Could not parse server response.');
             }
-          } catch (readErr: any) {
-            throw new Error(readErr.message || 'Failed to read server response.');
+          } catch (serverErr) {
+            console.warn('Backend /api/scan-rpa route unreachable, switching to fallback parser:', serverErr);
           }
 
-          if (!json || !json.success || !json.data) {
-            throw new Error(json?.error || 'Failed to extract transaction data from document.');
+          // Step 2: Fallback to direct Gemini extraction if backend route returned 404 or failed
+          if (!data) {
+            console.log('Running direct Gemini RPA extractor fallback...');
+            data = await parseFullEscrowRPA(
+              result,
+              file.type || 'application/pdf',
+              file.name
+            );
           }
 
-          const data = json.data;
+          if (!data) {
+            throw new Error('Failed to extract transaction data from document. Please try again.');
+          }
 
           // Automatically prepare the scanned file as an attached document
           const docId = 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
