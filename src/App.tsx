@@ -24,12 +24,14 @@ import { DocumentsModal } from './components/modals/DocumentsModal';
 import { EscrowTableModal } from './components/modals/EscrowTableModal';
 
 import { useEscrows } from './hooks/useEscrows';
+import { useToast } from './context/ToastContext';
 import { Escrow } from './types';
 import { differenceInCalendarDays, parseISO, getISOWeek, getISOWeekYear } from 'date-fns';
 import { Home, LayoutDashboard, Calendar, Gift } from 'lucide-react';
 
 function App() {
-  const { escrows, addEscrow, editEscrow, deleteEscrow, clearAllEscrows, toggleTask, importEscrows } = useEscrows();
+  const { escrows, addEscrow, editEscrow, deleteEscrow, restoreEscrow, clearAllEscrows, toggleTask, importEscrows } = useEscrows();
+  const { info: showInfo } = useToast();
   
   const [activeTab, setActiveTab] = useState('active');
   const [filter, setFilter] = useState('Open');
@@ -105,10 +107,21 @@ function App() {
 
   const handleDelete = () => {
     if (confirmDeleteId) {
+      const escrowToDelete = escrows.find(e => e.id === confirmDeleteId);
       deleteEscrow(confirmDeleteId);
       setConfirmDeleteId(null);
       if (detailEscrow?.id === confirmDeleteId) {
         setDetailEscrow(null);
+      }
+
+      if (escrowToDelete) {
+        const propertyLabel = escrowToDelete.address || `${escrowToDelete.clientFirstName} ${escrowToDelete.clientLastName}` || 'Escrow';
+        showInfo(`Deleted "${propertyLabel}"`, {
+          label: 'Undo',
+          onClick: () => {
+            restoreEscrow(escrowToDelete);
+          }
+        });
       }
     }
   };
@@ -352,7 +365,19 @@ function App() {
             setEditingEscrow(escrow);
             setIsAddEditOpen(true);
           }}
-          onDeleteEscrow={(id) => deleteEscrow(id)}
+          onDeleteEscrow={(id) => {
+            const escrowToDelete = escrows.find(e => e.id === id);
+            deleteEscrow(id);
+            if (escrowToDelete) {
+              const propertyLabel = escrowToDelete.address || `${escrowToDelete.clientFirstName} ${escrowToDelete.clientLastName}` || 'Escrow';
+              showInfo(`Deleted "${propertyLabel}"`, {
+                label: 'Undo',
+                onClick: () => {
+                  restoreEscrow(escrowToDelete);
+                }
+              });
+            }
+          }}
         />
       )}
 

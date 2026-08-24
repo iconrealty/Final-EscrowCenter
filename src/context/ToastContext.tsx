@@ -4,18 +4,24 @@ import { AlertCircle, CheckCircle2, Info, X, AlertTriangle } from 'lucide-react'
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface Toast {
   id: string;
   message: string;
   type: ToastType;
+  action?: ToastAction;
 }
 
 interface ToastContextProps {
-  showToast: (message: string, type?: ToastType) => void;
-  success: (message: string) => void;
-  error: (message: string) => void;
-  info: (message: string) => void;
-  warning: (message: string) => void;
+  showToast: (message: string, type?: ToastType, action?: ToastAction) => void;
+  success: (message: string, action?: ToastAction) => void;
+  error: (message: string, action?: ToastAction) => void;
+  info: (message: string, action?: ToastAction) => void;
+  warning: (message: string, action?: ToastAction) => void;
 }
 
 const ToastContext = createContext<ToastContextProps | undefined>(undefined);
@@ -35,20 +41,21 @@ interface ToastProviderProps {
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const showToast = (message: string, type: ToastType = 'info') => {
+  const showToast = (message: string, type: ToastType = 'info', action?: ToastAction) => {
     const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts((prev) => [...prev, { id, message, type, action }]);
 
-    // Auto remove after 4 seconds
+    // Auto remove after 6 seconds if it has an action, otherwise 4 seconds
+    const duration = action ? 7000 : 4000;
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, duration);
   };
 
-  const success = (message: string) => showToast(message, 'success');
-  const error = (message: string) => showToast(message, 'error');
-  const info = (message: string) => showToast(message, 'info');
-  const warning = (message: string) => showToast(message, 'warning');
+  const success = (message: string, action?: ToastAction) => showToast(message, 'success', action);
+  const error = (message: string, action?: ToastAction) => showToast(message, 'error', action);
+  const info = (message: string, action?: ToastAction) => showToast(message, 'info', action);
+  const warning = (message: string, action?: ToastAction) => showToast(message, 'warning', action);
 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -95,9 +102,20 @@ export function ToastProvider({ children }: ToastProviderProps) {
                 <div className="flex-1 text-xs font-semibold leading-relaxed break-words">
                   {toast.message}
                 </div>
+                {toast.action && (
+                  <button
+                    onClick={() => {
+                      toast.action?.onClick();
+                      removeToast(toast.id);
+                    }}
+                    className="shrink-0 px-2.5 py-1 bg-[#1B3A5C] text-white hover:bg-[#11253C] rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                  >
+                    {toast.action.label}
+                  </button>
+                )}
                 <button
                   onClick={() => removeToast(toast.id)}
-                  className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded-md hover:bg-slate-50"
+                  className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded-md hover:bg-slate-50 cursor-pointer"
                 >
                   <X size={14} />
                 </button>

@@ -240,6 +240,19 @@ export function useEscrows() {
     }
   };
 
+  const restoreEscrow = async (escrowToRestore: Escrow) => {
+    if (user) {
+      try {
+        const escrowDocRef = doc(db, 'users', user.uid, 'escrows', escrowToRestore.id);
+        await setDoc(escrowDocRef, sanitizeForFirestore(escrowToRestore));
+      } catch (error) {
+        console.error("Error restoring escrow in Firestore:", error);
+      }
+    } else {
+      setEscrows((prev) => [escrowToRestore, ...prev.filter((e) => e.id !== escrowToRestore.id)]);
+    }
+  };
+
   const clearAllEscrows = async () => {
     if (user) {
       try {
@@ -392,6 +405,7 @@ export function useEscrows() {
     addEscrow, 
     editEscrow, 
     deleteEscrow, 
+    restoreEscrow,
     clearAllEscrows,
     toggleTask, 
     importEscrows,
