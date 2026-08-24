@@ -127,10 +127,11 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
       let parsedData: any = null;
 
       if (ai) {
-        // Models in priority order
+        // High-availability valid Gemini models
         const candidateModels = [
           "gemini-3.7-flash",
-          "gemini-flash-latest"
+          "gemini-flash-latest",
+          "gemini-3.1-flash-lite",
         ];
 
         for (const modelName of candidateModels) {
@@ -151,7 +152,7 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
                 ],
               },
               config: {
-                systemInstruction: "You are a fast, accurate Real Estate Document and California RPA contract parser that outputs strict JSON matching the schema.",
+                systemInstruction: "You are an expert California Real Estate Transaction Coordinator and RPA parser that outputs strict JSON matching the schema.",
                 responseMimeType: "application/json",
                 responseSchema: {
                   type: Type.OBJECT,
@@ -213,6 +214,21 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
                     leadSource: { type: Type.STRING, description: "Lead source if identified, e.g. Zillow, Self, Team Lead" },
                     status: { type: Type.STRING, description: "Open, Closed, or Cancelled" },
                     notes: { type: Type.STRING, description: "Summary notes on financing, EMD deposit, special terms, etc." },
+                    contingencyDays: {
+                      type: Type.OBJECT,
+                      description: "Contingency day counts for California contract timeline",
+                      properties: {
+                        L1: { type: Type.INTEGER, description: "Loan contingency days (e.g. 14)" },
+                        L2: { type: Type.INTEGER, description: "Appraisal contingency days (e.g. 17 or 10)" },
+                        L3: { type: Type.INTEGER, description: "Investigation / Inspection contingency days (e.g. 17 or 7)" },
+                        L4: { type: Type.INTEGER, description: "Insurance contingency days (e.g. 17 or 7)" },
+                        L5: { type: Type.INTEGER, description: "Seller Disclosures contingency days (e.g. 7)" },
+                        L6: { type: Type.INTEGER, description: "Title report contingency days (e.g. 7)" },
+                        L7: { type: Type.INTEGER, description: "Common Interest / HOA contingency days (e.g. 7)" },
+                        L8: { type: Type.INTEGER, description: "Leased items contingency days (e.g. 7)" },
+                        L9: { type: Type.INTEGER, description: "Sale of Buyer's Property / COP contingency days (e.g. 17)" },
+                      },
+                    },
                   },
                   required: ["address"],
                 },
@@ -225,23 +241,41 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
               break; // Success! Exit model loop
             }
           } catch (err: any) {
-            console.warn("AI generation attempt encountered an issue:", err.message);
+            console.warn(`Model ${modelName} failed, trying next:`, err?.message || err);
+            continue;
           }
         }
       }
 
-      // If AI did not return data (e.g. missing API key, rate limit, or model error), fall back to local parser
+      // If AI succeeded in parsing
+      if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName || parsedData.escrowNumber)) {
+        return res.json({
+          success: true,
+          data: parsedData,
+        });
+      }
+
+      // If text/plain document or PDF text is readable, try local parse as secondary fallback only if valid address found
       if (!parsedData || !parsedData.address) {
-        console.log("Using built-in local RPA parser fallback in server handler...");
         const rawText = actualMimeType === "application/pdf"
           ? extractTextFromPdfBase64(base64Clean)
           : base64Clean;
-        parsedData = parseRpaText(rawText, fileName);
+        const localData = parseRpaText(rawText, fileName);
+        if (localData && (localData.address || localData.price)) {
+          parsedData = localData;
+        }
       }
 
-      return res.json({
-        success: true,
-        data: parsedData,
+      if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName)) {
+        return res.json({
+          success: true,
+          data: parsedData,
+        });
+      }
+
+      return res.status(422).json({
+        success: false,
+        error: "Could not accurately parse real estate details from this document. Please verify the document format or input the details directly.",
       });
     } catch (error: any) {
       console.error("Error scanning document with Gemini:", error);

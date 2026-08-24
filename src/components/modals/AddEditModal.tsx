@@ -93,70 +93,36 @@ export function AddEditModal({
 
           let data: any = null;
 
-          // Step 1: Attempt to use the backend /api/scan-rpa endpoint
+          // Step 1: Call backend /api/scan-rpa endpoint
           try {
-            let res: Response | null = null;
-            let attempts = 0;
-            const maxAttempts = 2;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-            while (attempts < maxAttempts) {
-              attempts++;
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 40000);
+            const res = await fetch('/api/scan-rpa', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              signal: controller.signal,
+              body: JSON.stringify({
+                fileData: result,
+                mimeType: file.type || 'application/pdf',
+                fileName: file.name,
+                userRole: formData.representation,
+              }),
+            });
+            clearTimeout(timeoutId);
 
-              try {
-                res = await fetch('/api/scan-rpa', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  signal: controller.signal,
-                  body: JSON.stringify({
-                    fileData: result,
-                    mimeType: file.type || 'application/pdf',
-                    fileName: file.name,
-                    userRole: formData.representation,
-                  }),
-                });
-                clearTimeout(timeoutId);
-
-                if (res.ok) {
-                  break;
-                }
-
-                // If 404 (e.g. static / edge deployment without server route), don't retry, fail immediately to client fallback
-                if (res.status === 404) {
-                  console.warn('/api/scan-rpa returned 404. Falling back to direct client-side Gemini engine...');
-                  break;
-                }
-
-                // If 503 or 429, wait briefly and retry
-                if (res.status === 503 || res.status === 429) {
-                  if (attempts < maxAttempts) {
-                    await new Promise((r) => setTimeout(r, 1000));
-                    continue;
-                  }
-                }
-              } catch (networkErr: any) {
-                clearTimeout(timeoutId);
-                if (attempts < maxAttempts) {
-                  await new Promise((r) => setTimeout(r, 800));
-                  continue;
-                }
-              }
-            }
-
-            if (res && res.ok) {
+            if (res.ok) {
               const json = await res.json();
               if (json && json.success && json.data) {
                 data = json.data;
               }
             }
           } catch (serverErr) {
-            console.warn('Backend /api/scan-rpa route unreachable, switching to fallback parser:', serverErr);
+            console.warn('Backend /api/scan-rpa route unreachable, attempting fallback:', serverErr);
           }
 
-          // Step 2: Fallback to direct Gemini extraction if backend route returned 404 or failed
-          if (!data) {
-            console.log('Running direct Gemini RPA extractor fallback...');
+          // Step 2: Fallback to direct Gemini extraction if backend didn't return data
+          if (!data || (!data.address && !data.price && !data.clientLastName)) {
             data = await parseFullEscrowRPA(
               result,
               file.type || 'application/pdf',
@@ -164,8 +130,8 @@ export function AddEditModal({
             );
           }
 
-          if (!data) {
-            throw new Error('Failed to extract transaction data from document. Please try again.');
+          if (!data || (!data.address && !data.price && !data.clientLastName && !data.escrowNumber)) {
+            throw new Error('Unable to extract transaction details from this document. Please check the document or fill the fields directly.');
           }
 
           // Automatically prepare the scanned file as an attached document

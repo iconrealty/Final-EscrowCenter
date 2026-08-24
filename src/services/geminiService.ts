@@ -105,7 +105,11 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
 5. Output format: Return all dates formatted strictly as YYYY-MM-DD. Clean all text strings.
 `;
 
-    const candidateModels = ["gemini-3.7-flash", "gemini-flash-latest"];
+    const candidateModels = [
+      "gemini-3.7-flash",
+      "gemini-flash-latest",
+      "gemini-3.1-flash-lite",
+    ];
 
     for (const modelName of candidateModels) {
       try {
@@ -205,8 +209,9 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
             return parsed;
           }
         }
-      } catch (err: any) {
-        console.warn(`Gemini call with ${modelName} encountered an issue:`, err.message);
+      } catch (_modelErr) {
+        // High demand spike or model unavailability - smoothly cascade to next model
+        continue;
       }
     }
   }

@@ -117,7 +117,8 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
 
       const candidateModels = [
         "gemini-3.7-flash",
-        "gemini-flash-latest"
+        "gemini-flash-latest",
+        "gemini-3.1-flash-lite",
       ];
 
       for (const modelName of candidateModels) {
@@ -219,35 +220,47 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
               break;
             }
           }
-        } catch (err: any) {
-          console.warn(`Model ${modelName} failed in /api/scan-rpa handler:`, err.message);
+        } catch (_modelErr) {
+          // Move smoothly to next model on 503 / spike
+          continue;
         }
       }
     }
 
+    // If AI succeeded in parsing
+    if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName)) {
+      return res.status(200).json({
+        success: true,
+        data: parsedData,
+      });
+    }
+
     if (!parsedData || !parsedData.address) {
-      console.log("Using built-in local RPA parser in serverless handler...");
       const rawText = actualMimeType === "application/pdf"
         ? extractTextFromPdfBase64(base64Clean)
         : base64Clean;
-      parsedData = parseRpaText(rawText, fileName);
+      const localData = parseRpaText(rawText, fileName);
+      if (localData && (localData.address || localData.price)) {
+        parsedData = localData;
+      }
     }
 
-    return res.status(200).json({
-      success: true,
-      data: parsedData,
+    if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName)) {
+      return res.status(200).json({
+        success: true,
+        data: parsedData,
+      });
+    }
+
+    return res.status(422).json({
+      success: false,
+      error: "Could not extract accurate transaction fields from the document. Please verify the document is an RPA or MLS listing, or fill the fields directly.",
     });
   } catch (error: any) {
     console.error("Error scanning document in API handler:", error);
-    // Even in error, return a fallback object rather than 500
-    return res.status(200).json({
-      success: true,
-      data: {
-        representation: 'Buyer',
-        status: 'Active',
-        leadSource: 'Zillow',
-        notes: 'Document uploaded. Review contract details.'
-      },
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Failed to scan document.",
     });
   }
 }
