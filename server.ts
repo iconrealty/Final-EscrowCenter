@@ -150,14 +150,15 @@ Output format: Return all dates formatted as YYYY-MM-DD. Return clean strings an
 `;
 
       const candidateModels = [
-        "gemini-2.5-flash",
+        "gemini-3.7-flash",
         "gemini-flash-latest",
         "gemini-3.1-flash-lite",
-        "gemini-3.7-flash",
+        "gemini-3.1-pro-preview",
       ];
 
       let parsedData: any = null;
       let lastErrorMessage = "";
+      let isQuotaError = false;
 
       for (const modelName of candidateModels) {
         try {
@@ -293,16 +294,28 @@ Output format: Return all dates formatted as YYYY-MM-DD. Return clean strings an
           }
         } catch (err: any) {
           lastErrorMessage = err?.message || String(err);
+          if (
+            lastErrorMessage.includes("prepayment credits are depleted") ||
+            lastErrorMessage.includes("RESOURCE_EXHAUSTED") ||
+            lastErrorMessage.includes("429")
+          ) {
+            isQuotaError = true;
+          }
           console.warn(`Model ${modelName} encountered error:`, lastErrorMessage);
         }
       }
 
+      let userFriendlyError = "Could not extract valid transaction fields from the document.";
+      if (isQuotaError) {
+        userFriendlyError =
+          "Google AI Studio quota / prepayment credits depleted for this API key. Please check your project billing or generate a new Gemini API Key at https://aistudio.google.com/app/apikey.";
+      } else if (lastErrorMessage) {
+        userFriendlyError = `Document analysis error: ${lastErrorMessage}`;
+      }
+
       return res.status(422).json({
         success: false,
-        error:
-          lastErrorMessage
-            ? `Document analysis error: ${lastErrorMessage}`
-            : "Could not extract valid transaction fields from the document.",
+        error: userFriendlyError,
       });
     } catch (error: any) {
       console.error("Error in /api/scan-rpa handler:", error);
