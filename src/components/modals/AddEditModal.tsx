@@ -91,47 +91,16 @@ export function AddEditModal({
         try {
           const result = reader.result as string;
 
-          let data: any = null;
-
-          // Step 1: Call backend /api/scan-rpa endpoint
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 25000);
-
-            const res = await fetch('/api/scan-rpa', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              signal: controller.signal,
-              body: JSON.stringify({
-                fileData: result,
-                mimeType: file.type || 'application/pdf',
-                fileName: file.name,
-                userRole: formData.representation,
-              }),
-            });
-            clearTimeout(timeoutId);
-
-            if (res.ok) {
-              const json = await res.json();
-              if (json && json.success && json.data) {
-                data = json.data;
-              }
-            }
-          } catch (serverErr) {
-            console.warn('Backend /api/scan-rpa route unreachable, attempting fallback:', serverErr);
-          }
-
-          // Step 2: Fallback to direct Gemini extraction if backend didn't return data
-          if (!data || (!data.address && !data.price && !data.clientLastName)) {
-            data = await parseFullEscrowRPA(
-              result,
-              file.type || 'application/pdf',
-              file.name
-            );
-          }
+          // Call backend Gemini RPA extraction
+          const data = await parseFullEscrowRPA(
+            result,
+            file.type || 'application/pdf',
+            file.name,
+            formData.representation
+          );
 
           if (!data || (!data.address && !data.price && !data.clientLastName && !data.escrowNumber)) {
-            throw new Error('Unable to extract transaction details from this document. Please check the document or fill the fields directly.');
+            throw new Error('Unable to extract transaction details from this document. Please check the document format or input the fields manually.');
           }
 
           // Automatically prepare the scanned file as an attached document

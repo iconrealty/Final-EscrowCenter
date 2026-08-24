@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
-import { extractTextFromPdfBase64, parseRpaText } from "./src/services/localRpaParser";
 
 let genAIClient: GoogleGenAI | null = null;
 function getGenAI(): GoogleGenAI | null {
@@ -16,7 +15,7 @@ function getGenAI(): GoogleGenAI | null {
         apiKey: apiKey.trim(),
         httpOptions: {
           headers: {
-            'User-Agent': 'aistudio-build',
+            "User-Agent": "aistudio-build",
           },
         },
       });
@@ -32,10 +31,13 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // CORS middleware for multi-environment & deployment compatibility
+  // Multi-environment CORS middleware
   app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    );
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     if (req.method === "OPTIONS") {
       return res.sendStatus(200);
@@ -43,29 +45,41 @@ async function startServer() {
     next();
   });
 
-  // Increase payload limit for PDF base64 payloads
+  // Support large document/PDF uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // API Health Check
   app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
+    res.json({
+      status: "ok",
+      aiAvailable: !!process.env.GEMINI_API_KEY,
+      timestamp: new Date().toISOString(),
+    });
   });
 
-  // AI RPA & Document Scanner Endpoint
+  // AI RPA & Contract Scanner Endpoint
   app.post("/api/scan-rpa", async (req, res) => {
     try {
-      const { fileData, mimeType, fileName } = req.body;
+      const { fileData, mimeType, fileName } = req.body || {};
 
       if (!fileData || !mimeType) {
-        return res.status(400).json({ 
-          error: "Missing required file data or mimeType." 
+        return res.status(400).json({
+          success: false,
+          error: "Missing required file data or mimeType.",
         });
       }
 
       const ai = getGenAI();
+      if (!ai) {
+        return res.status(503).json({
+          success: false,
+          error:
+            "GEMINI_API_KEY is not configured on the server environment. Please ensure the API key is provided.",
+        });
+      }
 
-      // Clean base64 string and extract actual MIME type if data URL prefix was sent
+      // Clean base64 string and extract actual MIME type if data URL header was sent
       let base64Clean = fileData;
       let actualMimeType = mimeType || "application/pdf";
       if (typeof fileData === "string" && fileData.includes(",")) {
@@ -82,83 +96,100 @@ async function startServer() {
       }
 
       const promptText = `
-You are an expert California Real Estate Transaction Coordinator (TC) and Escrow Assistant specializing in California Residential Purchase Agreements (C.A.R. Form RPA-CA), Addenda, and MLS Listing Sheets.
-Analyze the provided document (${fileName || "Real Estate Document"}) and extract all transaction, property, client, agent, escrow, title, and contingency timeline details.
+You are an expert California Real Estate Transaction Coordinator (TC) and Escrow Officer specializing in California Residential Purchase Agreements (C.A.R. Form RPA, RPA-CA), Addenda, and MLS Listing Sheets.
+Analyze the provided document (${fileName || "Real Estate Contract"}) and extract all transaction, property, client, agent, escrow, title, financing, and contingency timeline details.
 
-CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
+CRITICAL FIELD EXTRACTION RULES:
 1. PARAGRAPH 3 GRID (Pages 1-3 of RPA-CA):
-   - 3A: Purchase Price (number, e.g. 850000)
-   - 3B: Close of Escrow (COE) Date (convert to YYYY-MM-DD). If stated as "X days from acceptance", calculate COE based on acceptance date or leave standard.
-   - 3D(1): Initial Deposit (EMD)
-   - 3E: Loan Amount, financing terms (Conventional, FHA, VA, Cash)
+   - 3A: Purchase Price (numeric, e.g. 850000)
+   - 3B: Close of Escrow (COE) Date (formatted YYYY-MM-DD) or number of days from acceptance (coeDays, e.g. 30)
+   - 3D(1): Initial Deposit / EMD in dollars (numeric)
+   - 3E: Loan Amount, loan type (Conventional, FHA, VA, Cash)
    - 3L: Contingency timelines in days:
-        * Loan (L1): default 14 or specified number of days
-        * Appraisal (L2): default 17 (or 10) or specified number of days
-        * Investigation / Physical Inspection (L3): default 17 (or 7) or specified number of days
-        * Insurance (L4): default 17 (or 7) or specified number of days
-        * Seller Documents (L5): default 7 or specified number of days
-        * Title Report (L6): default 7 or specified number of days
-        * Common Interest / HOA (L7): default 7 or specified number of days
-        * Leased Items (L8): default 7 or specified number of days
-        * Sale of Buyer's Property / COP (L9): default 17 or specified number of days
+        * Loan (L1): default 14 or specified days
+        * Appraisal (L2): default 17 (or 10) or specified days
+        * Physical Investigation / Inspection (L3): default 17 (or 7) or specified days
+        * Insurance (L4): default 17 (or 7) or specified days
+        * Seller Disclosures (L5): default 7 or specified days
+        * Title Report (L6): default 7 or specified days
+        * Common Interest / HOA (L7): default 7 or specified days
+        * Leased Items (L8): default 7 or specified days
+        * Sale of Buyer's Property / COP (L9): default 17 or specified days
    - Document Header / Grid:
-        * Property Address (street address, e.g. 1206 Louise St)
-        * City (e.g. Santa Ana)
-        * Zip Code (e.g. 92703)
-        * APN (Assessor's Parcel Number, e.g. 402-192-14)
-        * Buyer Full Names -> clientFirstName, clientLastName (and client2 if second buyer)
-        * Seller Full Names
-2. REAL ESTATE BROKERS & ESCROW CONFIRMATION (Page 16 or Final Pages of RPA-CA):
-   - Real Estate Broker Firm (Listing Broker & Buyer Broker), DRE License Numbers
-   - Real Estate Agents (Listing Agent & Buyer's Agent), Full Names, DRE #s, Email, Phone
-   - Cooperating Brokerage name
-   - Escrow Holder Section: Escrow Company Name, Escrow Officer Name, Escrow Number, Phone, Email
+        * Street Address (e.g. 1206 Louise St) -> 'address' (WITHOUT city or zip)
+        * City (e.g. Santa Ana) -> 'city'
+        * Zip Code (e.g. 92703) -> 'zipCode'
+        * APN (Assessor's Parcel Number, e.g. 402-192-14) -> 'apn'
+        * Buyer Names -> clientFirstName, clientLastName (and client2FirstName, client2LastName for second buyer)
+        * Seller Names -> seller1Name, seller2Name
+
+2. REAL ESTATE BROKERS & ESCROW CONFIRMATION (Pages 15-16 of RPA):
+   - Buyer's Brokerage & Agent Name, Email, Phone, DRE License Numbers
+   - Listing Brokerage & Agent Name, Email, Phone, DRE License Numbers
+   - Escrow Holder: Escrow Company Name, Escrow Officer, Escrow File #, Email, Phone
    - Title Company / Officer contact details if specified
-   - Date of Final Acceptance / Mutual Acceptance Date (convert to YYYY-MM-DD)
+   - Mutual Acceptance Date (formatted YYYY-MM-DD)
+
 3. COMMISSIONS & REPRESENTATION:
-   - Identify if representing Buyer, Seller, or Dual
-   - Commission Percent (e.g. 2.5) or Net Commission if stated
-   - If commission percent and price are available, compute net commission
-4. MLS SHEETS (if uploaded):
-   - Extract Address, City, Zip, APN, List Price, Listing Agent Name/Phone/Email, Listing Brokerage, Buyer Broker Commission (BAC/BBAC %)
-5. Output format: Return all dates formatted strictly as YYYY-MM-DD. Clean all text strings.
+   - Identify representation: 'Buyer', 'Seller', or 'Dual'
+   - Commission percentage (e.g. 2.5) and calculate net commission in dollars if price is known
+
+4. MLS SHEETS / LISTINGS:
+   - Extract Address, City, Zip, APN, List Price, Listing Agent/Brokerage, Buyer Broker Commission (BAC %)
+
+Output format: Return all dates formatted as YYYY-MM-DD. Return clean strings and numbers matching the schema.
 `;
 
       let parsedData: any = null;
+      let lastErrorMessage = "";
 
-      if (ai) {
-        // High-availability valid Gemini models
-        const candidateModels = [
-          "gemini-3.7-flash",
-          "gemini-flash-latest",
-          "gemini-3.1-flash-lite",
-        ];
+      // Valid current Gemini models with fallback cascade
+      const candidateModels = [
+        "gemini-3.7-flash",
+        "gemini-flash-latest",
+        "gemini-3.1-flash-lite",
+      ];
 
-        for (const modelName of candidateModels) {
+      for (const modelName of candidateModels) {
+        let attempts = 0;
+        const maxAttemptsForModel = 2;
+
+        while (attempts < maxAttemptsForModel) {
+          attempts++;
           try {
+            const parts: any[] = [];
+            if (actualMimeType.startsWith("text/")) {
+              // Pass text directly
+              let textContent = Buffer.from(base64Clean, "base64").toString("utf-8");
+              if (!textContent || textContent.trim().length === 0) {
+                textContent = base64Clean;
+              }
+              parts.push({ text: `Document content:\n${textContent}\n\n${promptText}` });
+            } else {
+              // Pass inline binary (PDF or Image)
+              parts.push({
+                inlineData: {
+                  data: base64Clean,
+                  mimeType: actualMimeType,
+                },
+              });
+              parts.push({ text: promptText });
+            }
+
             const response = await ai.models.generateContent({
               model: modelName,
               contents: {
-                parts: [
-                  {
-                    inlineData: {
-                      data: base64Clean,
-                      mimeType: actualMimeType,
-                    },
-                  },
-                  {
-                    text: promptText,
-                  },
-                ],
+                parts,
               },
               config: {
-                systemInstruction: "You are an expert California Real Estate Transaction Coordinator and RPA parser that outputs strict JSON matching the schema.",
+                systemInstruction:
+                  "You are an expert California Real Estate Transaction Coordinator and RPA parser that outputs strict JSON matching the schema.",
                 responseMimeType: "application/json",
                 responseSchema: {
                   type: Type.OBJECT,
                   properties: {
                     escrowNumber: { type: Type.STRING, description: "Escrow file number if present" },
-                    apn: { type: Type.STRING, description: "Assessor's Parcel Number (APN) e.g. 402-192-14" },
+                    apn: { type: Type.STRING, description: "Assessor's Parcel Number (APN)" },
                     address: { type: Type.STRING, description: "Property street address without city/zip" },
                     city: { type: Type.STRING, description: "City name" },
                     zipCode: { type: Type.STRING, description: "5-digit zip code" },
@@ -166,13 +197,13 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
                     clientLastName: { type: Type.STRING, description: "Last name of primary buyer or client" },
                     clientPhone: { type: Type.STRING, description: "Phone number of client" },
                     clientEmail: { type: Type.STRING, description: "Email address of client" },
-                    clientBirthday: { type: Type.STRING, description: "Client birthday YYYY-MM-DD if available" },
+                    clientBirthday: { type: Type.STRING, description: "Client birthday YYYY-MM-DD" },
                     client2FirstName: { type: Type.STRING, description: "First name of co-buyer or second client" },
                     client2LastName: { type: Type.STRING, description: "Last name of co-buyer or second client" },
                     client2Phone: { type: Type.STRING, description: "Phone of second client" },
                     client2Email: { type: Type.STRING, description: "Email of second client" },
-                    seller1Name: { type: Type.STRING, description: "Seller full name or entity" },
-                    seller2Name: { type: Type.STRING, description: "Second seller full name or entity" },
+                    seller1Name: { type: Type.STRING, description: "Seller 1 full name" },
+                    seller2Name: { type: Type.STRING, description: "Seller 2 full name" },
                     buyer1Name: { type: Type.STRING, description: "Buyer 1 full name" },
                     buyer2Name: { type: Type.STRING, description: "Buyer 2 full name" },
                     collaborator: { type: Type.STRING, description: "Co-agent or collaborator" },
@@ -188,10 +219,10 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
                     listingBrokerage: { type: Type.STRING, description: "Listing brokerage firm name" },
                     listingAgentDRE: { type: Type.STRING, description: "Listing agent DRE license number" },
                     listingBrokerDRE: { type: Type.STRING, description: "Listing brokerage DRE license number" },
-                    agentName: { type: Type.STRING, description: "The cooperating / other party agent name" },
-                    agentPhone: { type: Type.STRING, description: "The cooperating / other party agent phone" },
-                    agentEmail: { type: Type.STRING, description: "The cooperating / other party agent email" },
-                    cooperatingBrokerage: { type: Type.STRING, description: "The cooperating / other party brokerage name" },
+                    agentName: { type: Type.STRING, description: "The other party agent name" },
+                    agentPhone: { type: Type.STRING, description: "The other party agent phone" },
+                    agentEmail: { type: Type.STRING, description: "The other party agent email" },
+                    cooperatingBrokerage: { type: Type.STRING, description: "The other party brokerage name" },
                     escrowCompany: { type: Type.STRING, description: "Escrow company name" },
                     escrowOfficer: { type: Type.STRING, description: "Escrow officer full name" },
                     escrowPhone: { type: Type.STRING, description: "Escrow officer phone number" },
@@ -203,30 +234,42 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
                     lenderName: { type: Type.STRING, description: "Lender or Loan Officer name / company" },
                     lenderPhone: { type: Type.STRING, description: "Lender phone" },
                     lenderEmail: { type: Type.STRING, description: "Lender email" },
+                    loanType: { type: Type.STRING, description: "Conventional, FHA, VA, or Cash" },
+                    loanAmount: { type: Type.NUMBER, description: "Loan amount in dollars" },
+                    initialDeposit: { type: Type.NUMBER, description: "Initial deposit / EMD in dollars" },
                     price: { type: Type.NUMBER, description: "Purchase / Sale price in dollars" },
                     commissionPercent: { type: Type.NUMBER, description: "Commission percentage (e.g. 2.5)" },
-                    netCommission: { type: Type.NUMBER, description: "Estimated or stated net commission in dollars" },
+                    netCommission: { type: Type.NUMBER, description: "Estimated net commission in dollars" },
                     acceptanceDate: { type: Type.STRING, description: "Mutual acceptance date in YYYY-MM-DD format" },
-                    coeDays: { type: Type.INTEGER, description: "Number of days for Close of Escrow from 3B (e.g. 30, 21, 45)" },
+                    coeDays: { type: Type.INTEGER, description: "Number of days for Close of Escrow from 3B" },
                     coeDate: { type: Type.STRING, description: "Close of Escrow (COE) date in YYYY-MM-DD format" },
                     contingencyStartDate: { type: Type.STRING, description: "Contingency start date in YYYY-MM-DD format" },
+                    loanContingencyDays: { type: Type.INTEGER, description: "Loan contingency days count" },
+                    appraisalContingencyDays: { type: Type.INTEGER, description: "Appraisal contingency days count" },
+                    inspectionContingencyDays: { type: Type.INTEGER, description: "Inspection contingency days count" },
+                    sellerDisclosureDays: { type: Type.INTEGER, description: "Seller disclosure days count" },
+                    titleReportDays: { type: Type.INTEGER, description: "Title report days count" },
+                    hoaDocDays: { type: Type.INTEGER, description: "HOA doc review days count" },
+                    insuranceDays: { type: Type.INTEGER, description: "Insurance contingency days count" },
+                    leasedItemsDays: { type: Type.INTEGER, description: "Leased items days count" },
+                    copDays: { type: Type.INTEGER, description: "COP days count" },
                     representation: { type: Type.STRING, description: "Buyer, Seller, or Dual" },
-                    leadSource: { type: Type.STRING, description: "Lead source if identified, e.g. Zillow, Self, Team Lead" },
+                    leadSource: { type: Type.STRING, description: "Lead source if identified" },
                     status: { type: Type.STRING, description: "Open, Closed, or Cancelled" },
-                    notes: { type: Type.STRING, description: "Summary notes on financing, EMD deposit, special terms, etc." },
+                    notes: { type: Type.STRING, description: "Summary notes on financing, terms, etc." },
                     contingencyDays: {
                       type: Type.OBJECT,
                       description: "Contingency day counts for California contract timeline",
                       properties: {
-                        L1: { type: Type.INTEGER, description: "Loan contingency days (e.g. 14)" },
-                        L2: { type: Type.INTEGER, description: "Appraisal contingency days (e.g. 17 or 10)" },
-                        L3: { type: Type.INTEGER, description: "Investigation / Inspection contingency days (e.g. 17 or 7)" },
-                        L4: { type: Type.INTEGER, description: "Insurance contingency days (e.g. 17 or 7)" },
-                        L5: { type: Type.INTEGER, description: "Seller Disclosures contingency days (e.g. 7)" },
-                        L6: { type: Type.INTEGER, description: "Title report contingency days (e.g. 7)" },
-                        L7: { type: Type.INTEGER, description: "Common Interest / HOA contingency days (e.g. 7)" },
-                        L8: { type: Type.INTEGER, description: "Leased items contingency days (e.g. 7)" },
-                        L9: { type: Type.INTEGER, description: "Sale of Buyer's Property / COP contingency days (e.g. 17)" },
+                        L1: { type: Type.INTEGER, description: "Loan contingency days" },
+                        L2: { type: Type.INTEGER, description: "Appraisal contingency days" },
+                        L3: { type: Type.INTEGER, description: "Inspection contingency days" },
+                        L4: { type: Type.INTEGER, description: "Insurance contingency days" },
+                        L5: { type: Type.INTEGER, description: "Seller Disclosures contingency days" },
+                        L6: { type: Type.INTEGER, description: "Title report contingency days" },
+                        L7: { type: Type.INTEGER, description: "HOA contingency days" },
+                        L8: { type: Type.INTEGER, description: "Leased items contingency days" },
+                        L9: { type: Type.INTEGER, description: "COP contingency days" },
                       },
                     },
                   },
@@ -237,36 +280,32 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
 
             const responseText = response.text || "{}";
             parsedData = JSON.parse(responseText);
-            if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName || parsedData.escrowNumber)) {
+
+            if (
+              parsedData &&
+              (parsedData.address || parsedData.price || parsedData.clientLastName || parsedData.escrowNumber)
+            ) {
               break; // Success! Exit model loop
             }
           } catch (err: any) {
-            console.warn(`Model ${modelName} failed, trying next:`, err?.message || err);
-            continue;
+            lastErrorMessage = err?.message || String(err);
+            console.warn(`Model ${modelName} attempt ${attempts} encountered error:`, lastErrorMessage);
+
+            // If 503 or 429, wait 1.2s before retry
+            if (lastErrorMessage.includes("503") || lastErrorMessage.includes("429") || lastErrorMessage.includes("high demand")) {
+              await new Promise((resolve) => setTimeout(resolve, 1200));
+            } else {
+              break; // Switch to next model immediately for other errors
+            }
           }
         }
-      }
 
-      // If AI succeeded in parsing
-      if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName || parsedData.escrowNumber)) {
-        return res.json({
-          success: true,
-          data: parsedData,
-        });
-      }
-
-      // If text/plain document or PDF text is readable, try local parse as secondary fallback only if valid address found
-      if (!parsedData || !parsedData.address) {
-        const rawText = actualMimeType === "application/pdf"
-          ? extractTextFromPdfBase64(base64Clean)
-          : base64Clean;
-        const localData = parseRpaText(rawText, fileName);
-        if (localData && (localData.address || localData.price)) {
-          parsedData = localData;
+        if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName || parsedData.escrowNumber)) {
+          break;
         }
       }
 
-      if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName)) {
+      if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName || parsedData.escrowNumber)) {
         return res.json({
           success: true,
           data: parsedData,
@@ -275,18 +314,21 @@ CRITICAL INSTRUCTIONS FOR CALIFORNIA RPA & MLS FORMS:
 
       return res.status(422).json({
         success: false,
-        error: "Could not accurately parse real estate details from this document. Please verify the document format or input the details directly.",
+        error:
+          lastErrorMessage
+            ? `Gemini scanning error: ${lastErrorMessage}`
+            : "Could not extract valid transaction fields from this document. Please ensure the document is a California RPA or MLS sheet.",
       });
     } catch (error: any) {
-      console.error("Error scanning document with Gemini:", error);
+      console.error("Error in /api/scan-rpa handler:", error);
       return res.status(500).json({
         success: false,
-        error: error.message || "Failed to scan document with Gemini AI.",
+        error: error.message || "Failed to scan document.",
       });
     }
   });
 
-  // Vite middleware for development
+  // Vite middleware for development vs static build in production
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
