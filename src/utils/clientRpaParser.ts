@@ -5,6 +5,21 @@ import { calculateNetFromGross } from './commissionUtils';
 
 let pdfWorkerConfigured = false;
 
+async function readFileAsArrayBuffer(file: File | Blob): Promise<ArrayBuffer> {
+  if (typeof file.arrayBuffer === 'function') {
+    try {
+      const buf = await file.arrayBuffer();
+      if (buf && buf.byteLength > 0) return buf;
+    } catch {}
+  }
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error || new Error('Failed to read file buffer'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 interface TextItemWithPos {
   str: string;
   x: number;
@@ -25,15 +40,25 @@ export async function extractPdfPagesText(file: File): Promise<{
   
   if (!pdfWorkerConfigured) {
     try {
-      // Import legacy worker in-memory handler to guarantee worker availability without external fetch
-      await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+      // Import legacy worker in-memory handler and register on globalThis for zero-network execution
+      const workerModule = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+      (globalThis as any).pdfjsWorker = workerModule;
+      if (typeof window !== 'undefined') {
+        (window as any).pdfjsWorker = workerModule;
+      }
+      if (typeof self !== 'undefined') {
+        (self as any).pdfjsWorker = workerModule;
+      }
+      if (pdfjsLib.GlobalWorkerOptions) {
+        (pdfjsLib.GlobalWorkerOptions as any).workerSrc = '';
+      }
     } catch (workerErr) {
       console.warn('Worker module in-memory load notice:', workerErr);
     }
     pdfWorkerConfigured = true;
   }
 
-  const arrayBuffer = await file.arrayBuffer();
+  const arrayBuffer = await readFileAsArrayBuffer(file);
   const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(arrayBuffer),
     useSystemFonts: true,
@@ -46,53 +71,57 @@ export async function extractPdfPagesText(file: File): Promise<{
   const allLines: string[] = [];
 
   for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-    const content = await page.getTextContent();
-    
-    // Group text items by roughly the same Y coordinate (line reconstruction)
-    const items: TextItemWithPos[] = [];
-    for (const item of content.items) {
-      if ('str' in item && typeof item.str === 'string' && item.str.trim()) {
-        const transform = (item as any).transform;
-        const x = transform ? transform[4] : 0;
-        const y = transform ? transform[5] : 0;
-        items.push({ str: item.str, x, y, page: pageNum });
-      }
-    }
-
-    // Sort by Y (descending: top to bottom) then X (ascending: left to right)
-    items.sort((a, b) => {
-      const yDiff = b.y - a.y;
-      if (Math.abs(yDiff) > 6) { // on different lines if Y difference > 6pt
-        return yDiff;
-      }
-      return a.x - b.x;
-    });
-
-    // Reconstruct lines
-    const lineBuckets: string[] = [];
-    let currentY: number | null = null;
-    let currentLineParts: string[] = [];
-
-    for (const item of items) {
-      if (currentY === null || Math.abs(item.y - currentY) <= 6) {
-        currentLineParts.push(item.str);
-        currentY = item.y;
-      } else {
-        if (currentLineParts.length > 0) {
-          lineBuckets.push(currentLineParts.join(' ').trim());
+    try {
+      const page = await pdf.getPage(pageNum);
+      const content = await page.getTextContent();
+      
+      // Group text items by roughly the same Y coordinate (line reconstruction)
+      const items: TextItemWithPos[] = [];
+      for (const item of content.items) {
+        if ('str' in item && typeof item.str === 'string' && item.str.trim()) {
+          const transform = (item as any).transform;
+          const x = transform ? transform[4] : 0;
+          const y = transform ? transform[5] : 0;
+          items.push({ str: item.str, x, y, page: pageNum });
         }
-        currentLineParts = [item.str];
-        currentY = item.y;
       }
-    }
-    if (currentLineParts.length > 0) {
-      lineBuckets.push(currentLineParts.join(' ').trim());
-    }
 
-    const pageStr = lineBuckets.join('\n');
-    pagesText.push(pageStr);
-    allLines.push(...lineBuckets);
+      // Sort by Y (descending: top to bottom) then X (ascending: left to right)
+      items.sort((a, b) => {
+        const yDiff = b.y - a.y;
+        if (Math.abs(yDiff) > 6) { // on different lines if Y difference > 6pt
+          return yDiff;
+        }
+        return a.x - b.x;
+      });
+
+      // Reconstruct lines
+      const lineBuckets: string[] = [];
+      let currentY: number | null = null;
+      let currentLineParts: string[] = [];
+
+      for (const item of items) {
+        if (currentY === null || Math.abs(item.y - currentY) <= 6) {
+          currentLineParts.push(item.str);
+          currentY = item.y;
+        } else {
+          if (currentLineParts.length > 0) {
+            lineBuckets.push(currentLineParts.join(' ').trim());
+          }
+          currentLineParts = [item.str];
+          currentY = item.y;
+        }
+      }
+      if (currentLineParts.length > 0) {
+        lineBuckets.push(currentLineParts.join(' ').trim());
+      }
+
+      const pageStr = lineBuckets.join('\n');
+      pagesText.push(pageStr);
+      allLines.push(...lineBuckets);
+    } catch (pageErr) {
+      console.warn(`Error extracting text on page ${pageNum}:`, pageErr);
+    }
   }
 
   return {

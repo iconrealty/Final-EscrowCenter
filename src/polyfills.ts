@@ -200,4 +200,16 @@ if (typeof globalThis !== 'undefined' && typeof globalThis.structuredClone === '
   };
 }
 
+// 13. URL.canParse (Safari < 17)
+if (typeof (URL as any).canParse === 'undefined') {
+  (URL as any).canParse = function (url: string, base?: string): boolean {
+    try {
+      new URL(url, base);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+}
+
 export {};
