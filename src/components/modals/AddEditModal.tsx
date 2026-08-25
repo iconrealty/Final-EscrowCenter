@@ -563,7 +563,7 @@ export function AddEditModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Escrow #</label>
-                  <input type="text" placeholder="e.g. 98453-PC" value={formData.escrowNumber} onChange={e => setFormData({...formData, escrowNumber: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                  <input type="text" placeholder="98453-PC" value={formData.escrowNumber} onChange={e => setFormData({...formData, escrowNumber: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
                 </div>
 
                 <div>
@@ -577,7 +577,7 @@ export function AddEditModal({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">APN # (Parcel ID)</label>
-                  <input type="text" placeholder="e.g. 402-192-14" value={formData.apn} onChange={e => setFormData({...formData, apn: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                  <input type="text" placeholder="402-192-14" value={formData.apn} onChange={e => setFormData({...formData, apn: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
                 </div>
 
                 <div>
@@ -597,7 +597,7 @@ export function AddEditModal({
                   <input 
                     required 
                     type="text" 
-                    placeholder="e.g. 1206 Louise St, Santa Ana, CA 92703" 
+                    placeholder="1206 Louise St, Santa Ana, CA 92703" 
                     value={formData.address} 
                     onChange={e => handleAddressInputChange(e.target.value)} 
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
@@ -608,7 +608,7 @@ export function AddEditModal({
                   <label className="block text-xs font-bold text-slate-700 mb-1">City</label>
                   <input 
                     type="text" 
-                    placeholder="e.g. Santa Ana" 
+                    placeholder="Santa Ana" 
                     value={formData.city} 
                     onChange={e => setFormData({...formData, city: e.target.value})} 
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
@@ -622,7 +622,7 @@ export function AddEditModal({
                   </div>
                   <input 
                     type="text" 
-                    placeholder="e.g. 92703" 
+                    placeholder="92703" 
                     value={formData.zipCode} 
                     onChange={e => handleZipInputChange(e.target.value)} 
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
@@ -660,7 +660,7 @@ export function AddEditModal({
                     type="number" 
                     value={formData.price} 
                     onChange={e => handlePriceChange(e.target.value)} 
-                    placeholder="e.g. 750000" 
+                    placeholder="750000" 
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
                   />
                 </div>
@@ -679,7 +679,7 @@ export function AddEditModal({
                     step="0.01" 
                     value={formData.commissionPercent} 
                     onChange={e => handleCommissionPercentChange(e.target.value)} 
-                    placeholder="e.g. 2.5" 
+                    placeholder="2.5" 
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
                   />
                 </div>
@@ -701,7 +701,7 @@ export function AddEditModal({
                     type="number" 
                     value={formData.netCommission} 
                     onChange={e => setFormData({...formData, netCommission: e.target.value})} 
-                    placeholder="e.g. 18750" 
+                    placeholder="18750" 
                     className="w-full bg-emerald-50/30 border border-emerald-300 text-emerald-950 font-mono font-bold rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600" 
                   />
                 </div>
@@ -777,12 +777,12 @@ export function AddEditModal({
                 
                 <div>
                   <label className="block text-xs font-bold text-blue-950 mb-1">Client 1 Phone</label>
-                  <input type="tel" value={formData.clientPhone} placeholder="e.g. 310-555-0100" onChange={e => setFormData({...formData, clientPhone: e.target.value})} className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                  <input type="tel" value={formData.clientPhone} placeholder="310-555-0100" onChange={e => setFormData({...formData, clientPhone: e.target.value})} className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-blue-950 mb-1">Client 1 Email</label>
-                  <input type="email" value={formData.clientEmail} placeholder="e.g. client@email.com" onChange={e => setFormData({...formData, clientEmail: e.target.value})} className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                  <input type="email" value={formData.clientEmail} placeholder="client@email.com" onChange={e => setFormData({...formData, clientEmail: e.target.value})} className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
                 </div>
 
                 <div className="md:col-span-2">
@@ -817,12 +817,12 @@ export function AddEditModal({
                 
                 <div>
                   <label className="block text-xs font-bold text-purple-950 mb-1">Client 2 Phone</label>
-                  <input type="tel" value={formData.client2Phone} placeholder="e.g. 310-555-0200" onChange={e => setFormData({...formData, client2Phone: e.target.value})} className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
+                  <input type="tel" value={formData.client2Phone} placeholder="310-555-0200" onChange={e => setFormData({...formData, client2Phone: e.target.value})} className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-purple-950 mb-1">Client 2 Email</label>
-                  <input type="email" value={formData.client2Email} placeholder="e.g. client2@email.com" onChange={e => setFormData({...formData, client2Email: e.target.value})} className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
+                  <input type="email" value={formData.client2Email} placeholder="client2@email.com" onChange={e => setFormData({...formData, client2Email: e.target.value})} className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
                 </div>
 
                 <div className="md:col-span-2">
@@ -847,22 +847,22 @@ export function AddEditModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-bold text-emerald-950 mb-1">Other Agent Name</label>
-                  <input type="text" placeholder="e.g. John Doe" value={formData.agentName} onChange={e => setFormData({...formData, agentName: e.target.value})} className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                  <input type="text" placeholder="John Doe" value={formData.agentName} onChange={e => setFormData({...formData, agentName: e.target.value})} className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-emerald-950 mb-1">Cooperating Brokerage</label>
-                  <input type="text" value={formData.cooperatingBrokerage} placeholder="e.g. Compass, Coldwell Banker" onChange={e => setFormData({...formData, cooperatingBrokerage: e.target.value})} className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                  <input type="text" value={formData.cooperatingBrokerage} placeholder="Compass, Coldwell Banker" onChange={e => setFormData({...formData, cooperatingBrokerage: e.target.value})} className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-emerald-950 mb-1">Other Agent Phone</label>
-                  <input type="tel" value={formData.agentPhone} placeholder="e.g. 310-555-0155" onChange={e => setFormData({...formData, agentPhone: e.target.value})} className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                  <input type="tel" value={formData.agentPhone} placeholder="310-555-0155" onChange={e => setFormData({...formData, agentPhone: e.target.value})} className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-emerald-950 mb-1">Other Agent Email</label>
-                  <input type="email" value={formData.agentEmail} placeholder="e.g. agent@brokerage.com" onChange={e => setFormData({...formData, agentEmail: e.target.value})} className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                  <input type="email" value={formData.agentEmail} placeholder="agent@brokerage.com" onChange={e => setFormData({...formData, agentEmail: e.target.value})} className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
                 </div>
               </div>
             </div>
@@ -896,17 +896,17 @@ export function AddEditModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-bold text-amber-950 mb-1">Lender / Bank Name</label>
-                  <input type="text" value={formData.lenderName} placeholder="e.g. Chase Mortgage, LoanDepot" onChange={e => setFormData({...formData, lenderName: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
+                  <input type="text" value={formData.lenderName} placeholder="Chase Mortgage, LoanDepot" onChange={e => setFormData({...formData, lenderName: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-amber-950 mb-1">Lender Phone</label>
-                  <input type="tel" value={formData.lenderPhone} placeholder="e.g. 555-0100" onChange={e => setFormData({...formData, lenderPhone: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
+                  <input type="tel" value={formData.lenderPhone} placeholder="555-0100" onChange={e => setFormData({...formData, lenderPhone: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-amber-950 mb-1">Lender Email</label>
-                  <input type="email" value={formData.lenderEmail} placeholder="e.g. loan.officer@lender.com" onChange={e => setFormData({...formData, lenderEmail: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
+                  <input type="email" value={formData.lenderEmail} placeholder="loan.officer@lender.com" onChange={e => setFormData({...formData, lenderEmail: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
                 </div>
               </div>
             </div>
@@ -941,22 +941,22 @@ export function AddEditModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-indigo-950 mb-1">Escrow Company Name</label>
-                  <input type="text" placeholder="e.g. Orange County Escrow, First Class Escrow" value={formData.escrowCompany} onChange={e => setFormData({...formData, escrowCompany: e.target.value})} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
+                  <input type="text" placeholder="Orange County Escrow, First Class Escrow" value={formData.escrowCompany} onChange={e => setFormData({...formData, escrowCompany: e.target.value})} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-indigo-950 mb-1">Escrow Officer Name</label>
-                  <input type="text" placeholder="e.g. Sarah Jenkins" value={formData.escrowOfficer} onChange={e => setFormData({...formData, escrowOfficer: e.target.value})} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
+                  <input type="text" placeholder="Sarah Jenkins" value={formData.escrowOfficer} onChange={e => setFormData({...formData, escrowOfficer: e.target.value})} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-indigo-950 mb-1">Escrow Phone</label>
-                  <input type="tel" placeholder="e.g. 714-555-0144" value={formData.escrowPhone} onChange={e => setFormData({...formData, escrowPhone: e.target.value})} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
+                  <input type="tel" placeholder="714-555-0144" value={formData.escrowPhone} onChange={e => setFormData({...formData, escrowPhone: e.target.value})} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-indigo-950 mb-1">Escrow Officer Email</label>
-                  <input type="email" placeholder="e.g. escrow@ocescrow.com" value={formData.escrowEmail} onChange={e => setFormData({...formData, escrowEmail: e.target.value})} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
+                  <input type="email" placeholder="escrow@ocescrow.com" value={formData.escrowEmail} onChange={e => setFormData({...formData, escrowEmail: e.target.value})} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
                 </div>
               </div>
             </div>
@@ -991,22 +991,22 @@ export function AddEditModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-cyan-950 mb-1">Title Company Name</label>
-                  <input type="text" placeholder="e.g. First American Title, Lawyers Title" value={formData.titleCompany} onChange={e => setFormData({...formData, titleCompany: e.target.value})} className="w-full bg-white border border-cyan-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" />
+                  <input type="text" placeholder="First American Title, Lawyers Title" value={formData.titleCompany} onChange={e => setFormData({...formData, titleCompany: e.target.value})} className="w-full bg-white border border-cyan-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-cyan-950 mb-1">Title Officer / Contact Name</label>
-                  <input type="text" placeholder="e.g. Jane Doe" value={formData.titleOfficer} onChange={e => setFormData({...formData, titleOfficer: e.target.value})} className="w-full bg-white border border-cyan-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" />
+                  <input type="text" placeholder="Jane Doe" value={formData.titleOfficer} onChange={e => setFormData({...formData, titleOfficer: e.target.value})} className="w-full bg-white border border-cyan-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-cyan-950 mb-1">Title Phone</label>
-                  <input type="tel" placeholder="e.g. 714-555-0199" value={formData.titlePhone} onChange={e => setFormData({...formData, titlePhone: e.target.value})} className="w-full bg-white border border-cyan-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" />
+                  <input type="tel" placeholder="714-555-0199" value={formData.titlePhone} onChange={e => setFormData({...formData, titlePhone: e.target.value})} className="w-full bg-white border border-cyan-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" />
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-cyan-950 mb-1">Title Email</label>
-                  <input type="email" placeholder="e.g. title@company.com" value={formData.titleEmail} onChange={e => setFormData({...formData, titleEmail: e.target.value})} className="w-full bg-white border border-cyan-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" />
+                  <input type="email" placeholder="title@company.com" value={formData.titleEmail} onChange={e => setFormData({...formData, titleEmail: e.target.value})} className="w-full bg-white border border-cyan-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" />
                 </div>
               </div>
             </div>
@@ -1023,7 +1023,7 @@ export function AddEditModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">Collaborator / Co-Agent</label>
-                  <input type="text" placeholder="e.g. Team Partner Name" value={formData.collaborator} onChange={e => setFormData({...formData, collaborator: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                  <input type="text" placeholder="Team Partner Name" value={formData.collaborator} onChange={e => setFormData({...formData, collaborator: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
                 </div>
 
                 <div className="md:col-span-2">
