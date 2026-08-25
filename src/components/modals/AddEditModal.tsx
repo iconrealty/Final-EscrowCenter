@@ -7,7 +7,7 @@ import { usePreferredPartners } from '../../hooks/usePreferredPartners';
 import { PartnerDropdown } from '../common/PartnerDropdown';
 import { PreferredPartner } from '../../types/partners';
 import { parseMlsText } from '../../utils/mlsParser';
-import { extractPdfPagesText } from '../../utils/clientRpaParser';
+import { extractPdfPagesText, parseCaliforniaRpaText } from '../../utils/clientRpaParser';
 import { parseFullEscrowRPA } from '../../services/geminiService';
 import { getCityFromZip } from '../../utils/californiaZipDb';
 import { calculateNetFromGross, calculateCommissionBreakdown, getFormulaLabel } from '../../utils/commissionUtils';
@@ -113,9 +113,20 @@ export function AddEditModal({
     }));
   };
 
-  const applyExtractedMlsData = (data: ReturnType<typeof parseMlsText>, sourceLabel: string) => {
-    if (!data.address && !data.price && !data.apn && !data.agentName) {
-      setScanError('Could not find listing details in the provided PDF. You can enter them manually below.');
+  const applyExtractedDocumentData = (data: any, sourceLabel: string) => {
+    if (!data) {
+      setScanError('Could not find listing details in the provided file. You can enter them manually below.');
+      return;
+    }
+
+    const hasAnyField = Boolean(
+      data.address || data.price || data.apn || data.agentName || 
+      data.listingAgentName || data.buyerAgentName || data.clientFirstName || 
+      data.clientLastName || data.escrowNumber || data.city || data.zipCode
+    );
+
+    if (!hasAnyField) {
+      setScanError('Could not find readable listing details in the provided file. You can enter them manually below.');
       return;
     }
 
@@ -123,10 +134,20 @@ export function AddEditModal({
       const priceVal = data.price ? String(data.price) : prev.price;
       const compRate = data.commissionPercent || (prev.commissionPercent ? Number(prev.commissionPercent) : 2.5);
       const gross = priceVal ? Math.round(Number(priceVal) * (compRate / 100)) : 0;
-      const computedNet = gross ? calculateNetFromGross(gross, prev.leadSource) : (prev.netCommission ? Number(prev.netCommission) : 0);
+      const computedNet = data.netCommission || (gross ? calculateNetFromGross(gross, prev.leadSource) : (prev.netCommission ? Number(prev.netCommission) : 0));
+
+      const updatedContingencyDays = { ...prev.contingencyDays };
+      if (data.contingencyDays && typeof data.contingencyDays === 'object') {
+        Object.entries(data.contingencyDays).forEach(([k, v]) => {
+          if (v !== undefined && v !== null) {
+            updatedContingencyDays[k] = String(v);
+          }
+        });
+      }
 
       return {
         ...prev,
+        escrowNumber: data.escrowNumber || prev.escrowNumber,
         address: data.address || prev.address,
         city: data.city || prev.city,
         zipCode: data.zipCode || prev.zipCode,
@@ -134,14 +155,37 @@ export function AddEditModal({
         price: priceVal,
         commissionPercent: String(compRate),
         netCommission: computedNet ? String(computedNet) : prev.netCommission,
-        agentName: data.agentName || prev.agentName,
-        agentPhone: data.agentPhone || prev.agentPhone,
-        agentEmail: data.agentEmail || prev.agentEmail,
-        cooperatingBrokerage: data.cooperatingBrokerage || prev.cooperatingBrokerage,
+        agentName: data.agentName || data.listingAgentName || data.buyerAgentName || prev.agentName,
+        agentPhone: data.agentPhone || data.listingAgentPhone || data.buyerAgentPhone || prev.agentPhone,
+        agentEmail: data.agentEmail || data.listingAgentEmail || data.buyerAgentEmail || prev.agentEmail,
+        cooperatingBrokerage: data.cooperatingBrokerage || data.listingBrokerage || data.buyerBrokerage || prev.cooperatingBrokerage,
+        clientFirstName: data.clientFirstName || prev.clientFirstName,
+        clientLastName: data.clientLastName || prev.clientLastName,
+        clientPhone: data.clientPhone || prev.clientPhone,
+        clientEmail: data.clientEmail || prev.clientEmail,
+        client2FirstName: data.client2FirstName || prev.client2FirstName,
+        client2LastName: data.client2LastName || prev.client2LastName,
+        client2Phone: data.client2Phone || prev.client2Phone,
+        client2Email: data.client2Email || prev.client2Email,
+        escrowCompany: data.escrowCompany || prev.escrowCompany,
+        escrowOfficer: data.escrowOfficer || prev.escrowOfficer,
+        escrowPhone: data.escrowPhone || prev.escrowPhone,
+        escrowEmail: data.escrowEmail || prev.escrowEmail,
+        titleCompany: data.titleCompany || prev.titleCompany,
+        titleOfficer: data.titleOfficer || prev.titleOfficer,
+        titlePhone: data.titlePhone || prev.titlePhone,
+        titleEmail: data.titleEmail || prev.titleEmail,
+        lenderName: data.lenderName || prev.lenderName,
+        lenderPhone: data.lenderPhone || prev.lenderPhone,
+        lenderEmail: data.lenderEmail || prev.lenderEmail,
+        acceptanceDate: data.acceptanceDate || prev.acceptanceDate,
+        coeDate: data.coeDate || prev.coeDate,
+        contingencyStartDate: data.contingencyStartDate || prev.contingencyStartDate,
+        contingencyDays: updatedContingencyDays,
       };
     });
 
-    setScanSuccess(`Listing details extracted successfully from ${sourceLabel}!`);
+    setScanSuccess(`Details extracted successfully from ${sourceLabel}!`);
     setScanError('');
   };
 
@@ -154,56 +198,78 @@ export function AddEditModal({
 
     try {
       if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-        let fullText = '';
+        let extractedData: any = null;
+
+        // Step 1: Client-Side instant extraction (100% in-browser, no token cost)
         try {
           const res = await extractPdfPagesText(file);
-          fullText = res.fullText;
-        } catch (clientPdfErr: any) {
-          console.warn('Client-side PDF extraction encountered error:', clientPdfErr);
+          if (res && res.fullText && res.fullText.trim().length > 10) {
+            // Check MLS patterns
+            const mls = parseMlsText(res.fullText);
+            // Check RPA / contract patterns
+            const rpa = parseCaliforniaRpaText(res.fullText, res.pagesText, res.lines, formData.representation);
+            
+            // Merge both intelligently
+            extractedData = {
+              ...rpa,
+              ...mls,
+              address: mls.address || rpa.address,
+              city: mls.city || rpa.city,
+              zipCode: mls.zipCode || rpa.zipCode,
+              apn: mls.apn || rpa.apn,
+              price: mls.price || rpa.price,
+              commissionPercent: mls.commissionPercent || rpa.commissionPercent,
+              agentName: mls.agentName || rpa.agentName || rpa.listingAgentName || rpa.buyerAgentName,
+              agentPhone: mls.agentPhone || rpa.agentPhone || rpa.listingAgentPhone || rpa.buyerAgentPhone,
+              agentEmail: mls.agentEmail || rpa.agentEmail || rpa.listingAgentEmail || rpa.buyerAgentEmail,
+              cooperatingBrokerage: mls.cooperatingBrokerage || rpa.cooperatingBrokerage || rpa.listingBrokerage,
+            };
+          }
+        } catch (clientErr) {
+          console.warn('Client-side PDF extraction notice:', clientErr);
         }
 
-        if (fullText && fullText.trim().length > 20) {
-          const parsed = parseMlsText(fullText);
-          applyExtractedMlsData(parsed, file.name);
-        } else {
-          // If client-side text was empty or failed (e.g. scanned image PDF), attempt server scanner fallback
-          try {
-            const reader = new FileReader();
-            const base64Promise = new Promise<string>((resolve, reject) => {
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = reject;
-            });
-            reader.readAsDataURL(file);
-            const dataUrl = await base64Promise;
-            const doc = await parseFullEscrowRPA(dataUrl, file.type || 'application/pdf', file.name, formData.representation);
-            if (doc && (doc.address || doc.price || doc.agentName || doc.listingAgentName || doc.apn)) {
-              applyExtractedMlsData({
-                address: doc.address,
-                city: doc.city,
-                zipCode: doc.zipCode,
-                apn: doc.apn,
-                price: doc.price,
-                commissionPercent: doc.commissionPercent,
-                agentName: doc.agentName || doc.listingAgentName || doc.buyerAgentName,
-                agentPhone: doc.agentPhone || doc.listingAgentPhone || doc.buyerAgentPhone,
-                agentEmail: doc.agentEmail || doc.listingAgentEmail || doc.buyerAgentEmail,
-                cooperatingBrokerage: doc.cooperatingBrokerage || doc.listingBrokerage || doc.buyerBrokerage,
-              }, file.name);
-              return;
-            }
-          } catch (serverErr) {
-            console.warn('Server fallback scan error:', serverErr);
-          }
-          throw new Error('PDF appears empty or contains non-selectable images.');
+        const hasValidClientData = extractedData && (
+          extractedData.address || extractedData.price || extractedData.apn || extractedData.agentName || extractedData.listingAgentName
+        );
+
+        if (hasValidClientData) {
+          applyExtractedDocumentData(extractedData, file.name);
+          return;
         }
+
+        // Step 2: Server-Side AI Vision / OCR fallback for image-only PDFs
+        try {
+          const reader = new FileReader();
+          const base64Promise = new Promise<string>((resolve, reject) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+          });
+          reader.readAsDataURL(file);
+          const dataUrl = await base64Promise;
+          const serverDoc = await parseFullEscrowRPA(dataUrl, file.type || 'application/pdf', file.name, formData.representation);
+          if (serverDoc && (serverDoc.address || serverDoc.price || serverDoc.agentName || serverDoc.apn || serverDoc.clientLastName)) {
+            applyExtractedDocumentData(serverDoc, file.name);
+            return;
+          }
+        } catch (serverErr: any) {
+          console.warn('Server fallback scan notice:', serverErr);
+        }
+
+        if (extractedData && (extractedData.address || extractedData.price || extractedData.apn)) {
+          applyExtractedDocumentData(extractedData, file.name);
+          return;
+        }
+
+        throw new Error('This PDF does not appear to contain readable listing text. You can enter details manually below.');
       } else {
         // Plain text or CSV file
         const text = await file.text();
         const parsed = parseMlsText(text);
-        applyExtractedMlsData(parsed, file.name);
+        applyExtractedDocumentData(parsed, file.name);
       }
     } catch (err: any) {
-      setScanError(err.message || 'Failed to read MLS sheet.');
+      setScanError(err.message || 'Failed to read document.');
     } finally {
       setIsScanning(false);
     }

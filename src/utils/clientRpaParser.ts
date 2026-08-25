@@ -23,17 +23,12 @@ export async function extractPdfPagesText(file: File): Promise<{
   // Use legacy build for maximum Safari / iOS / WebKit compatibility
   const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
   
-  if (!pdfWorkerConfigured && typeof window !== 'undefined') {
+  if (!pdfWorkerConfigured) {
     try {
-      const pdfjsWorker = (await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url')).default;
-      if (pdfjsLib.GlobalWorkerOptions) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-      }
-    } catch {
-      // Fallback
-      if (pdfjsLib.GlobalWorkerOptions) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version || '4.10.38'}/legacy/build/pdf.worker.min.mjs`;
-      }
+      // Import legacy worker in-memory handler to guarantee worker availability without external fetch
+      await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+    } catch (workerErr) {
+      console.warn('Worker module in-memory load notice:', workerErr);
     }
     pdfWorkerConfigured = true;
   }
@@ -42,6 +37,7 @@ export async function extractPdfPagesText(file: File): Promise<{
   const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(arrayBuffer),
     useSystemFonts: true,
+    disableFontFace: true,
   });
 
   const pdf = await loadingTask.promise;

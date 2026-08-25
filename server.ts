@@ -276,7 +276,6 @@ Output format: Return all dates formatted as YYYY-MM-DD. Return clean strings an
                     },
                   },
                 },
-                required: ["address"],
               },
             },
           });
@@ -284,7 +283,7 @@ Output format: Return all dates formatted as YYYY-MM-DD. Return clean strings an
           const responseText = response.text || "{}";
           parsedData = JSON.parse(responseText);
 
-          if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName || parsedData.escrowNumber)) {
+          if (parsedData && (parsedData.address || parsedData.price || parsedData.clientLastName || parsedData.escrowNumber || parsedData.agentName || parsedData.listingAgentName || parsedData.apn)) {
             return res.json({
               success: true,
               data: parsedData,
