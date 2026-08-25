@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Escrow, CONTINGENCIES, getContingencyDaysLeft, getContingencyDueDate, formatPropertyAddress } from '../../types';
-import { X, Pencil, Trash2, ExternalLink, Check } from 'lucide-react';
+import { X, Pencil, Trash2, ExternalLink, Check, Calculator } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
 import { useAuth } from '../../context/AuthContext';
 import { DocumentsSection } from './DocumentsSection';
+import { getFormulaLabel } from '../../utils/commissionUtils';
 
 export function DetailModal({ 
   escrow, 
@@ -144,6 +145,9 @@ export function DetailModal({
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-black mb-1">Net Commission</span>
                 <span className="text-lg sm:text-xl font-normal text-[#1d1d1f]">
                   {formatCurrency(escrow.netCommission)}
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono mt-0.5" title={getFormulaLabel(escrow.leadSource || 'Zillow')}>
+                  {getFormulaLabel(escrow.leadSource || 'Zillow').split(':')[1] || getFormulaLabel(escrow.leadSource || 'Zillow')}
                 </span>
               </div>
 

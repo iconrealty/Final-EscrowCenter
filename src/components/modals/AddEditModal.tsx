@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Escrow, EscrowDocument, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
-import { X, FileText, CheckCircle2 } from 'lucide-react';
+import { X, FileText, CheckCircle2, Calculator, Sparkles, RefreshCw, Info } from 'lucide-react';
 import { addMonths, addDays, parseISO, format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { usePreferredPartners } from '../../hooks/usePreferredPartners';
@@ -9,6 +9,7 @@ import { PreferredPartner } from '../../types/partners';
 import { parseMlsText } from '../../utils/mlsParser';
 import { extractPdfPagesText } from '../../utils/clientRpaParser';
 import { getCityFromZip } from '../../utils/californiaZipDb';
+import { calculateNetFromGross, calculateCommissionBreakdown, getFormulaLabel } from '../../utils/commissionUtils';
 
 export function AddEditModal({ 
   escrow, 
@@ -120,7 +121,8 @@ export function AddEditModal({
     setFormData((prev) => {
       const priceVal = data.price ? String(data.price) : prev.price;
       const compRate = data.commissionPercent || (prev.commissionPercent ? Number(prev.commissionPercent) : 2.5);
-      const computedNet = priceVal ? Math.round(Number(priceVal) * (compRate / 100)) : (prev.netCommission ? Number(prev.netCommission) : 0);
+      const gross = priceVal ? Math.round(Number(priceVal) * (compRate / 100)) : 0;
+      const computedNet = gross ? calculateNetFromGross(gross, prev.leadSource) : (prev.netCommission ? Number(prev.netCommission) : 0);
 
       return {
         ...prev,
@@ -346,6 +348,56 @@ export function AddEditModal({
     }
 
     onSave(cleanedData);
+  };
+
+  const handlePriceChange = (val: string) => {
+    const numPrice = Number(val) || 0;
+    const numCommPercent = formData.commissionPercent ? Number(formData.commissionPercent) : 2.5;
+    const gross = Math.round((numPrice * numCommPercent) / 100);
+    const calculatedNet = calculateNetFromGross(gross, formData.leadSource);
+
+    setFormData(prev => ({
+      ...prev,
+      price: val,
+      netCommission: val && numPrice > 0 ? String(calculatedNet) : (val === '' ? '' : prev.netCommission)
+    }));
+  };
+
+  const handleCommissionPercentChange = (val: string) => {
+    const numPrice = Number(formData.price) || 0;
+    const numCommPercent = Number(val) || 0;
+    const gross = Math.round((numPrice * numCommPercent) / 100);
+    const calculatedNet = calculateNetFromGross(gross, formData.leadSource);
+
+    setFormData(prev => ({
+      ...prev,
+      commissionPercent: val,
+      netCommission: numPrice > 0 && val ? String(calculatedNet) : prev.netCommission
+    }));
+  };
+
+  const handleLeadSourceChange = (newSource: string) => {
+    const numPrice = Number(formData.price) || 0;
+    const numCommPercent = formData.commissionPercent ? Number(formData.commissionPercent) : 2.5;
+    const gross = Math.round((numPrice * numCommPercent) / 100);
+    const calculatedNet = calculateNetFromGross(gross, newSource);
+
+    setFormData(prev => ({
+      ...prev,
+      leadSource: newSource as any,
+      netCommission: numPrice > 0 ? String(calculatedNet) : prev.netCommission
+    }));
+  };
+
+  const handleRecalculateNet = () => {
+    const numPrice = Number(formData.price) || 0;
+    const numCommPercent = formData.commissionPercent ? Number(formData.commissionPercent) : 2.5;
+    const gross = Math.round((numPrice * numCommPercent) / 100);
+    const calculatedNet = calculateNetFromGross(gross, formData.leadSource);
+    setFormData(prev => ({
+      ...prev,
+      netCommission: String(calculatedNet)
+    }));
   };
 
   const handleAcceptanceDateChange = (val: string) => {
@@ -579,7 +631,11 @@ export function AddEditModal({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Lead Source</label>
-                  <select value={formData.leadSource} onChange={e => setFormData({...formData, leadSource: e.target.value as any})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]">
+                  <select 
+                    value={formData.leadSource} 
+                    onChange={e => handleLeadSourceChange(e.target.value)} 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] font-semibold text-slate-800"
+                  >
                     <option value="Zillow">Zillow</option>
                     <option value="Self">Self</option>
                     <option value="Team Lead">Team Lead</option>
@@ -600,18 +656,99 @@ export function AddEditModal({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Sale Price ($)</label>
-                  <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} placeholder="e.g. 750000" className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                  <input 
+                    type="number" 
+                    value={formData.price} 
+                    onChange={e => handlePriceChange(e.target.value)} 
+                    placeholder="e.g. 750000" 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Gross Commission (%)</label>
-                  <input type="number" step="0.01" value={formData.commissionPercent} onChange={e => setFormData({...formData, commissionPercent: e.target.value})} placeholder="e.g. 2.5" className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700">Gross Commission (%)</label>
+                    {Boolean(formData.price && formData.commissionPercent && Number(formData.price) > 0) && (
+                      <span className="text-[10px] font-bold text-slate-500 font-mono">
+                        Gross: ${Math.round((Number(formData.price) * Number(formData.commissionPercent)) / 100).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    value={formData.commissionPercent} 
+                    onChange={e => handleCommissionPercentChange(e.target.value)} 
+                    placeholder="e.g. 2.5" 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
+                  />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Net Commission ($)</label>
-                  <input type="number" value={formData.netCommission} onChange={e => setFormData({...formData, netCommission: e.target.value})} placeholder="e.g. 18750" className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700">Net Commission ($)</label>
+                    <button
+                      type="button"
+                      onClick={handleRecalculateNet}
+                      className="text-[11px] text-[#1B3A5C] hover:text-blue-700 font-bold flex items-center gap-1 cursor-pointer transition-colors px-2 py-0.5 rounded-md hover:bg-slate-100"
+                      title="Recalculate from formula"
+                    >
+                      <RefreshCw size={11} />
+                      <span>Auto-Calculate</span>
+                    </button>
+                  </div>
+                  <input 
+                    type="number" 
+                    value={formData.netCommission} 
+                    onChange={e => setFormData({...formData, netCommission: e.target.value})} 
+                    placeholder="e.g. 18750" 
+                    className="w-full bg-emerald-50/30 border border-emerald-300 text-emerald-950 font-mono font-bold rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600" 
+                  />
                 </div>
+
+                {/* Live Formula & Calculation Breakdown Card */}
+                {(() => {
+                  const commBreakdown = calculateCommissionBreakdown(
+                    Number(formData.price) || 0,
+                    Number(formData.commissionPercent) || 0,
+                    formData.leadSource
+                  );
+                  return (
+                    <div className="md:col-span-2 bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200/90 rounded-xl p-3 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5 border-b border-slate-200/70">
+                        <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                          <Calculator size={13} className="text-[#1B3A5C]" />
+                          <span>Lead Source Formula:</span>
+                          <span className="px-2 py-0.5 rounded-md bg-[#1B3A5C]/10 text-[#1B3A5C] font-bold text-[11px]">
+                            {getFormulaLabel(formData.leadSource)}
+                          </span>
+                        </div>
+                        {Number(formData.price) > 0 && Number(formData.commissionPercent) > 0 && (
+                          <span className="text-[11px] font-bold text-emerald-700 font-mono bg-emerald-100/70 px-2 py-0.5 rounded-md">
+                            Calculated Net: ${commBreakdown.netCommission.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+
+                      {Number(formData.price) > 0 && Number(formData.commissionPercent) > 0 ? (
+                        <div className="pt-2 text-[11px] text-slate-600 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
+                          {commBreakdown.steps.map((step, idx) => (
+                            <span key={idx} className="inline-flex items-center gap-1">
+                              {idx > 0 && <span className="text-slate-400">→</span>}
+                              <span className={idx === commBreakdown.steps.length - 1 ? 'font-bold text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200' : ''}>
+                                {step}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="pt-1.5 text-[11px] text-slate-500 italic">
+                          Enter Sale Price and Gross Commission % to see instant automated breakdown.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

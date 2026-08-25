@@ -1,13 +1,9 @@
-import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { ParsedEscrowDoc } from '../services/geminiService';
 import { adjustWeekendToMonday, parseAddressComponents } from '../types';
 import { addDays, format, parseISO } from 'date-fns';
+import { calculateNetFromGross } from './commissionUtils';
 
-// Set up pdf.js worker URL via bundled local worker asset
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-}
+let pdfWorkerConfigured = false;
 
 interface TextItemWithPos {
   str: string;
@@ -24,6 +20,23 @@ export async function extractPdfPagesText(file: File): Promise<{
   pagesText: string[];
   lines: string[];
 }> {
+  const pdfjsLib = await import('pdfjs-dist');
+  
+  if (!pdfWorkerConfigured && typeof window !== 'undefined') {
+    try {
+      const pdfjsWorker = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
+      if (pdfjsLib.GlobalWorkerOptions) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+      }
+    } catch {
+      // Fallback
+      if (pdfjsLib.GlobalWorkerOptions) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version || '4.10.38'}/build/pdf.worker.min.mjs`;
+      }
+    }
+    pdfWorkerConfigured = true;
+  }
+
   const arrayBuffer = await file.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(arrayBuffer),
@@ -369,7 +382,8 @@ export function parseCaliforniaRpaText(
   }
 
   if (result.price && result.commissionPercent) {
-    result.netCommission = Math.round(result.price * (result.commissionPercent / 100));
+    const gross = Math.round(result.price * (result.commissionPercent / 100));
+    result.netCommission = calculateNetFromGross(gross, result.leadSource || 'Zillow');
   }
 
   return result;
