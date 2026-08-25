@@ -383,7 +383,7 @@ export function AnniversaryWishModal({
                   </label>
                   <textarea
                     rows={3}
-                    placeholder={`e.g., Spoke on phone. Loved the ${yearsOrdinalVal} anniversary note! Planning to remodel kitchen this summer.`}
+                    placeholder={`Spoke on phone. Loved the ${yearsOrdinalVal} anniversary note! Planning to remodel kitchen this summer.`}
                     value={logNotes}
                     onChange={(e) => setLogNotes(e.target.value)}
                     className="w-full text-xs font-medium text-[#1d1d1f] bg-white border border-slate-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C] resize-none"

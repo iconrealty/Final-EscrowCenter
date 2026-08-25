@@ -725,7 +725,7 @@ export function ClientUpdatesModal({
                   value={masterSubject}
                   onChange={(e) => setMasterSubject(e.target.value)}
                   className="w-full bg-white border border-[#e5e5ea] rounded-xl px-3 py-2 text-xs font-bold text-[#1B3A5C] focus:outline-none focus:border-[#1B3A5C]"
-                  placeholder="e.g. Escrow Opened - [Address]"
+                  placeholder="Escrow Opened - [Address]"
                 />
               </div>
 

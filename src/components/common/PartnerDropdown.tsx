@@ -231,10 +231,9 @@ export function PartnerDropdown({
                 <input
                   type="text"
                   required
-                  placeholder={category === 'lender' ? 'Wells Fargo Mortgage' : category === 'escrow' ? 'West Coast Escrow' : 'Ticor Title'}
                   value={newCompany}
                   onChange={(e) => setNewCompany(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400 placeholder:font-normal"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
                 />
               </div>
 
@@ -242,10 +241,9 @@ export function PartnerDropdown({
                 <label className="block text-xs font-bold text-slate-800 mb-1">Officer / Contact Name</label>
                 <input
                   type="text"
-                  placeholder="Jane Smith"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400 placeholder:font-normal"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
                 />
               </div>
 
@@ -253,10 +251,9 @@ export function PartnerDropdown({
                 <label className="block text-xs font-bold text-slate-800 mb-1">Phone Number</label>
                 <input
                   type="tel"
-                  placeholder="(555) 123-4567"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400 placeholder:font-normal"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
                 />
               </div>
 
@@ -264,10 +261,9 @@ export function PartnerDropdown({
                 <label className="block text-xs font-bold text-slate-800 mb-1">Email Address</label>
                 <input
                   type="email"
-                  placeholder="contact@company.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400 placeholder:font-normal"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
                 />
               </div>
 
