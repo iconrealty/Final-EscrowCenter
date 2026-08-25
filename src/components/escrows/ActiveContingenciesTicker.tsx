@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CONTINGENCIES, Escrow, getContingencyDaysLeft, getContingencyDueDate, isContingencyUrgent } from '../../types';
+import { Escrow, getApplicableContingencies, getContingencyDaysLeft, getContingencyDueDate, isContingencyUrgent } from '../../types';
 import { CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -10,7 +10,8 @@ export function ActiveContingenciesTicker({
   escrow: Escrow;
   onUpdateTasks?: () => void;
 }) {
-  const activeContingencies = CONTINGENCIES.filter(c => !escrow.tasks[c.key]);
+  const applicableContingencies = getApplicableContingencies(escrow);
+  const activeContingencies = applicableContingencies.filter(c => !escrow.tasks[c.key]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -54,11 +55,11 @@ export function ActiveContingenciesTicker({
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <CheckCircle2 size={16} className="text-white shrink-0" />
             <span className="text-xs font-bold text-white truncate">
-              All 9 Contingencies Removed / Cleared
+              All {applicableContingencies.length} Contingencies Removed / Cleared
             </span>
           </div>
           <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded-md shrink-0 shadow-2xs whitespace-nowrap">
-            9 / 9 Done
+            {applicableContingencies.length} / {applicableContingencies.length} Done
           </span>
         </div>
       </div>

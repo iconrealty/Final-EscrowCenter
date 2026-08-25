@@ -1,5 +1,5 @@
 import React from 'react';
-import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, formatPropertyAddress } from '../../types';
+import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, getApplicableContingencies, formatPropertyAddress } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
@@ -30,9 +30,11 @@ export function EscrowCard({
   const daysToCoe = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
   
-  const completedTasks = ALL_TASKS.filter(t => escrow.tasks[t.key]).length;
+  const applicableContingencies = getApplicableContingencies(escrow);
+  const totalTasksCount = MILESTONES.length + applicableContingencies.length;
   const completedMilestones = MILESTONES.filter(t => escrow.tasks[t.key]).length;
-  const completedContingencies = CONTINGENCIES.filter(t => escrow.tasks[t.key]).length;
+  const completedContingencies = applicableContingencies.filter(t => escrow.tasks[t.key]).length;
+  const completedTasks = completedMilestones + completedContingencies;
 
   // Find next pending milestone
   const nextMilestone = MILESTONES.find(m => !escrow.tasks[m.key]);
@@ -270,9 +272,9 @@ export function EscrowCard({
                 <span className="text-[11px] font-bold text-[#1B3A5C] uppercase tracking-wider">Escrow Completion</span>
               </div>
               <div className="flex items-center gap-2 font-mono text-xs">
-                <span className="font-extrabold text-[#1d1d1f]">{completedTasks} / {ALL_TASKS.length} Tasks</span>
+                <span className="font-extrabold text-[#1d1d1f]">{completedTasks} / {totalTasksCount} Tasks</span>
                 <span className="font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-1.5 py-0.5 rounded text-[10px]">
-                  {Math.round((completedTasks / ALL_TASKS.length) * 100)}%
+                  {Math.round((completedTasks / (totalTasksCount || 1)) * 100)}%
                 </span>
               </div>
             </div>
@@ -281,7 +283,7 @@ export function EscrowCard({
             <div className="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden mb-2.5">
               <div 
                 className="h-full bg-gradient-to-r from-[#1B3A5C] to-[#2B5A8C] rounded-full transition-all duration-500"
-                style={{ width: `${Math.round((completedTasks / ALL_TASKS.length) * 100)}%` }}
+                style={{ width: `${Math.round((completedTasks / (totalTasksCount || 1)) * 100)}%` }}
               />
             </div>
 

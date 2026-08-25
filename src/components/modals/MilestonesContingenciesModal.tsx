@@ -1,5 +1,5 @@
 import React from 'react';
-import { Escrow, MILESTONES, CONTINGENCIES, isContingencyUrgent, getContingencyDaysLeft, getContingencyDueDate, ALL_TASKS } from '../../types';
+import { Escrow, MILESTONES, CONTINGENCIES, getApplicableContingencies, isContingencyUrgent, getContingencyDaysLeft, getContingencyDueDate, ALL_TASKS } from '../../types';
 import { X, Check } from 'lucide-react';
 import { MilestoneChip } from '../escrows/MilestoneChip';
 import { ContingencyChip } from '../escrows/ContingencyChip';
@@ -20,12 +20,14 @@ export function MilestonesContingenciesModal({
   const daysToCoe = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
 
-  const completedTasks = ALL_TASKS.filter(t => escrow.tasks[t.key]).length;
+  const applicableContingencies = getApplicableContingencies(escrow);
+  const totalTasksCount = MILESTONES.length + applicableContingencies.length;
+  const completedTasks = MILESTONES.filter(t => escrow.tasks[t.key]).length + applicableContingencies.filter(t => escrow.tasks[t.key]).length;
   const completedMilestones = MILESTONES.filter(t => escrow.tasks[t.key]).length;
-  const completedContingencies = CONTINGENCIES.filter(t => escrow.tasks[t.key]).length;
+  const completedContingencies = applicableContingencies.filter(t => escrow.tasks[t.key]).length;
 
   const hasIncompleteMilestones = MILESTONES.some(m => !escrow.tasks[m.key]);
-  const hasIncompleteContingencies = CONTINGENCIES.some(c => !escrow.tasks[c.key]);
+  const hasIncompleteContingencies = applicableContingencies.some(c => !escrow.tasks[c.key]);
 
   const handleCompleteAllMilestones = () => {
     const updatedTasks = { ...escrow.tasks };
@@ -37,7 +39,7 @@ export function MilestonesContingenciesModal({
 
   const handleCompleteAllContingencies = () => {
     const updatedTasks = { ...escrow.tasks };
-    CONTINGENCIES.forEach(c => {
+    applicableContingencies.forEach(c => {
       updatedTasks[c.key] = true;
     });
     onUpdateTasks(escrow.id, updatedTasks);
@@ -73,13 +75,13 @@ export function MilestonesContingenciesModal({
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs font-bold text-[#1B3A5C]">Overall Progress</span>
               <span className="text-xs font-black font-mono text-[#1B3A5C] bg-[#1B3A5C]/10 px-2 py-0.5 rounded">
-                {completedTasks} / {ALL_TASKS.length} Completed
+                {completedTasks} / {totalTasksCount} Completed
               </span>
             </div>
             <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
               <div 
                 className="bg-[#1B3A5C] h-full transition-all duration-300 rounded-full"
-                style={{ width: `${(completedTasks / ALL_TASKS.length) * 100}%` }}
+                style={{ width: `${totalTasksCount > 0 ? (completedTasks / totalTasksCount) * 100 : 0}%` }}
               />
             </div>
             
@@ -93,7 +95,7 @@ export function MilestonesContingenciesModal({
               <div className="text-center">
                 <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Contingencies</div>
                 <div className="text-sm font-extrabold text-[#1B3A5C] font-mono mt-0.5">
-                  {completedContingencies} / {CONTINGENCIES.length}
+                  {completedContingencies} / {applicableContingencies.length}
                 </div>
               </div>
             </div>
@@ -136,7 +138,7 @@ export function MilestonesContingenciesModal({
           <div id="tasks-contingencies-section" className="border border-[#e5e5ea] rounded-xl p-4">
             <div className="flex justify-between items-center mb-3.5 pb-1.5 border-b border-slate-100">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1B3A5C]">
-                Contingencies Removed ({completedContingencies}/{CONTINGENCIES.length})
+                Contingencies Removed ({completedContingencies}/{applicableContingencies.length})
               </h3>
               {hasIncompleteContingencies && (
                 <button 
@@ -148,7 +150,7 @@ export function MilestonesContingenciesModal({
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {CONTINGENCIES.map(c => (
+              {applicableContingencies.map(c => (
                 <ContingencyChip 
                   key={c.key}
                   taskKey={c.key}

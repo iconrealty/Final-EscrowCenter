@@ -40,9 +40,18 @@ export function PartnerDropdown({
     }
   };
 
-  const handleAddSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCompany.trim() && !newName.trim()) return;
+  const [formError, setFormError] = useState('');
+
+  const handleAddSubmit = (e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!newCompany.trim() && !newName.trim()) {
+      setFormError('Please provide a company or contact name.');
+      return;
+    }
+    setFormError('');
     if (onAddNew) {
       onAddNew({
         category,
@@ -202,7 +211,21 @@ export function PartnerDropdown({
               </button>
             </div>
 
-            <form onSubmit={handleAddSubmit} className="space-y-3">
+            <div 
+              className="space-y-3"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddSubmit(e);
+                }
+              }}
+            >
+              {formError && (
+                <div className="text-[11px] font-semibold text-red-600 bg-red-50 p-2 rounded-lg border border-red-200">
+                  {formError}
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-800 mb-1">Company / Bank Name *</label>
                 <input
@@ -252,18 +275,19 @@ export function PartnerDropdown({
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                  className="flex-1 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  className="flex-1 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-2xs"
+                  type="button"
+                  onClick={handleAddSubmit}
+                  className="flex-1 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-2xs cursor-pointer"
                 >
                   Save to Profile & Select
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

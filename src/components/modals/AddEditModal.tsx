@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Escrow, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
-import { X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Escrow, EscrowDocument, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
+import { X, FileText, CheckCircle2 } from 'lucide-react';
 import { addMonths, addDays, parseISO, format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { usePreferredPartners } from '../../hooks/usePreferredPartners';
 import { PartnerDropdown } from '../common/PartnerDropdown';
 import { PreferredPartner } from '../../types/partners';
+import { parseMlsText } from '../../utils/mlsParser';
+import { extractPdfPagesText } from '../../utils/clientRpaParser';
+import { getCityFromZip } from '../../utils/californiaZipDb';
 
 export function AddEditModal({ 
   escrow, 
@@ -18,6 +21,14 @@ export function AddEditModal({
 }) {
   const { user } = useAuth();
   const { partners, addPartner, deletePartner, getDefaultPartner } = usePreferredPartners();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastFileRef = useRef<File | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanSuccess, setScanSuccess] = useState('');
+  const [scanError, setScanError] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [pendingDoc, setPendingDoc] = useState<EscrowDocument | null>(null);
+  const [l9Enabled, setL9Enabled] = useState(() => Boolean(escrow?.contingencyDays?.['L9'] && Number(escrow?.contingencyDays?.['L9']) > 0));
 
   const [formData, setFormData] = useState(() => {
     return {
@@ -67,6 +78,115 @@ export function AddEditModal({
       } as Record<string, string>
     };
   });
+
+  // Address auto-fill helper: when pasting full address like "123 Main St, Santa Ana, CA 92701"
+  const handleAddressInputChange = (rawVal: string) => {
+    const parsed = parseAddressComponents(rawVal);
+    
+    // Check if zip was in the address string and can resolve city
+    let derivedCity = parsed.city;
+    if (!derivedCity && parsed.zipCode) {
+      const cityLookup = getCityFromZip(parsed.zipCode);
+      if (cityLookup) derivedCity = cityLookup;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      address: parsed.address || rawVal,
+      city: derivedCity ? derivedCity : prev.city,
+      zipCode: parsed.zipCode ? parsed.zipCode : prev.zipCode,
+    }));
+  };
+
+  // Zip Code auto-fill helper: when typing a 5-digit California zip (e.g. 92703 -> Santa Ana, 92618 -> Irvine)
+  const handleZipInputChange = (rawZip: string) => {
+    const cleanZip = rawZip.trim().substring(0, 5);
+    const lookupCity = getCityFromZip(cleanZip);
+
+    setFormData(prev => ({
+      ...prev,
+      zipCode: rawZip,
+      // Auto-fill city if empty or if zip matches a known California city
+      city: lookupCity ? lookupCity : prev.city,
+    }));
+  };
+
+  const applyExtractedMlsData = (data: ReturnType<typeof parseMlsText>, sourceLabel: string) => {
+    if (!data.address && !data.price && !data.apn && !data.agentName) {
+      setScanError('Could not find listing details in the provided PDF. You can enter them manually below.');
+      return;
+    }
+
+    setFormData((prev) => {
+      const priceVal = data.price ? String(data.price) : prev.price;
+      const compRate = data.commissionPercent || (prev.commissionPercent ? Number(prev.commissionPercent) : 2.5);
+      const computedNet = priceVal ? Math.round(Number(priceVal) * (compRate / 100)) : (prev.netCommission ? Number(prev.netCommission) : 0);
+
+      return {
+        ...prev,
+        address: data.address || prev.address,
+        city: data.city || prev.city,
+        zipCode: data.zipCode || prev.zipCode,
+        apn: data.apn || prev.apn,
+        price: priceVal,
+        commissionPercent: String(compRate),
+        netCommission: computedNet ? String(computedNet) : prev.netCommission,
+        agentName: data.agentName || prev.agentName,
+        agentPhone: data.agentPhone || prev.agentPhone,
+        agentEmail: data.agentEmail || prev.agentEmail,
+        cooperatingBrokerage: data.cooperatingBrokerage || prev.cooperatingBrokerage,
+      };
+    });
+
+    setScanSuccess(`Listing details extracted successfully from ${sourceLabel}!`);
+    setScanError('');
+  };
+
+  const handleProcessFile = async (file: File) => {
+    if (!file) return;
+    lastFileRef.current = file;
+    setIsScanning(true);
+    setScanError('');
+    setScanSuccess('');
+
+    try {
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        const { fullText } = await extractPdfPagesText(file);
+        if (fullText && fullText.trim().length > 20) {
+          const parsed = parseMlsText(fullText);
+          applyExtractedMlsData(parsed, file.name);
+        } else {
+          throw new Error('PDF appears empty or contains only non-selectable images.');
+        }
+      } else {
+        // Plain text or CSV file
+        const text = await file.text();
+        const parsed = parseMlsText(text);
+        applyExtractedMlsData(parsed, file.name);
+      }
+    } catch (err: any) {
+      setScanError(err.message || 'Failed to read MLS sheet.');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleProcessFile(e.dataTransfer.files[0]);
+    }
+  };
 
   useEffect(() => {
     if (escrow) {
@@ -147,7 +267,9 @@ export function AddEditModal({
         notes: escrow.notes || '',
         contingencyDays: stringifiedDays
       });
+      setL9Enabled(Boolean(escrow.contingencyDays?.['L9'] && Number(escrow.contingencyDays?.['L9']) > 0));
     } else {
+      setL9Enabled(false);
       setFormData({
         escrowNumber: '',
         apn: '',
@@ -202,6 +324,9 @@ export function AddEditModal({
     
     const parsedDays: Record<string, number> = {};
     Object.keys(formData.contingencyDays).forEach(k => {
+      if (k === 'L9' && !l9Enabled) {
+        return; // Omit L9 when deactivated
+      }
       if (formData.contingencyDays[k]) {
         parsedDays[k] = Number(formData.contingencyDays[k]);
       }
@@ -214,6 +339,11 @@ export function AddEditModal({
       commissionPercent: formData.commissionPercent ? Number(formData.commissionPercent) : undefined,
       contingencyDays: parsedDays
     };
+
+    if (pendingDoc) {
+      const existingDocs = escrow?.documents || [];
+      cleanedData.documents = [pendingDoc, ...existingDocs];
+    }
 
     onSave(cleanedData);
   };
@@ -235,7 +365,38 @@ export function AddEditModal({
     }));
   };
 
-  const contingencyList = CONTINGENCIES.filter(c => ['L1','L2','L3','L4','L5','L6','L7','L8','L9'].includes(c.key));
+  const handleBatchL3ToL8 = (daysVal: string) => {
+    setFormData(prev => {
+      const updated = { ...prev.contingencyDays };
+      ['L3', 'L4', 'L5', 'L6', 'L7', 'L8'].forEach(k => {
+        updated[k] = daysVal;
+      });
+      return {
+        ...prev,
+        contingencyDays: updated
+      };
+    });
+  };
+
+  const getContingencyExpDate = (daysVal?: string | number) => {
+    const daysNum = Number(daysVal) || 0;
+    const startDateStr = formData.contingencyStartDate || formData.acceptanceDate;
+    if (!startDateStr) return null;
+    try {
+      const sDate = parseISO(startDateStr);
+      if (!isNaN(sDate.getTime())) {
+        const rawEnd = addDays(sDate, daysNum);
+        const adjustedEnd = adjustWeekendToMonday(rawEnd);
+        return format(adjustedEnd, 'MMM d');
+      }
+    } catch (e) {}
+    return null;
+  };
+
+  const l3ToL8Keys = ['L3', 'L4', 'L5', 'L6', 'L7', 'L8'];
+  const firstL3Val = formData.contingencyDays['L3'] || '';
+  const isL3ToL8Synced = l3ToL8Keys.every(k => (formData.contingencyDays[k] || '') === firstL3Val);
+  const commonL3ToL8Val = isL3ToL8Synced ? firstL3Val : '';
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-3 pt-12 pb-6 sm:p-6 overflow-hidden">
@@ -246,6 +407,97 @@ export function AddEditModal({
         </div>
         
         <div className="p-6 overflow-y-auto flex-1">
+          {/* MLS Quick-Importer & Auto-Fill Banner */}
+          <div className="mb-5 bg-gradient-to-br from-slate-50 to-blue-50/40 border border-blue-200/60 rounded-2xl p-4 sm:p-5 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-blue-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#1B3A5C] flex items-center justify-center text-white shrink-0">
+                  <FileText size={16} />
+                </div>
+                <h4 className="text-sm font-bold text-slate-900 leading-tight">MLS Quick-Fill</h4>
+              </div>
+
+              {/* Representation Selector */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-300/80 p-1 rounded-xl shadow-xs self-start sm:self-auto">
+                <span className="text-[11px] font-bold text-slate-600 px-2">Representing:</span>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, representation: 'Buyer' }))}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    formData.representation === 'Buyer'
+                      ? 'bg-[#1B3A5C] text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Buyer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, representation: 'Seller' }))}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    formData.representation === 'Seller'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+                  }`}
+                >
+                  Seller
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, representation: 'Dual' }))}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    formData.representation === 'Dual'
+                      ? 'bg-[#11253C] text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Dual
+                </button>
+              </div>
+            </div>
+
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={e => e.target.files?.[0] && handleProcessFile(e.target.files[0])} 
+              accept=".pdf,.txt,.csv" 
+              className="hidden" 
+            />
+
+            {/* Drop MLS PDF */}
+            <div 
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => !isScanning && fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-3.5 text-center cursor-pointer transition-all duration-200 ${
+                isDragging 
+                  ? 'border-[#1B3A5C] bg-[#1B3A5C]/5 scale-[0.99]' 
+                  : 'border-slate-300 hover:border-[#1B3A5C]/60 bg-white hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <FileText size={18} className="text-[#1B3A5C]" />
+                <span className="text-xs font-bold text-slate-800">
+                  Drop MLS PDF Sheet <span className="text-[#1B3A5C] underline font-normal">(or browse)</span>
+                </span>
+              </div>
+            </div>
+
+            {scanSuccess && (
+              <div className="mt-2.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2 flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                <span>{scanSuccess}</span>
+              </div>
+            )}
+
+            {scanError && (
+              <div className="mt-2.5 text-xs font-bold text-red-800 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                <span>{scanError}</span>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-4">
             {/* Section 1: Property & Financial Terms */}
             <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-4">
@@ -286,18 +538,43 @@ export function AddEditModal({
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Property Address (Street) *</label>
-                  <input required type="text" placeholder="e.g. 1206 Louise St" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700">Property Address (Street) *</label>
+                    <span className="text-[10px] text-slate-500">Pasting full address auto-fills City & Zip</span>
+                  </div>
+                  <input 
+                    required 
+                    type="text" 
+                    placeholder="e.g. 1206 Louise St, Santa Ana, CA 92703" 
+                    value={formData.address} 
+                    onChange={e => handleAddressInputChange(e.target.value)} 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">City</label>
-                  <input type="text" placeholder="e.g. Santa Ana" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Santa Ana" 
+                    value={formData.city} 
+                    onChange={e => setFormData({...formData, city: e.target.value})} 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Zip Code</label>
-                  <input type="text" placeholder="e.g. 92703" value={formData.zipCode} onChange={e => setFormData({...formData, zipCode: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700">Zip Code</label>
+                    <span className="text-[10px] text-slate-500">Auto-finds CA City</span>
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. 92703" 
+                    value={formData.zipCode} 
+                    onChange={e => handleZipInputChange(e.target.value)} 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
+                  />
                 </div>
 
                 <div>
@@ -620,12 +897,16 @@ export function AddEditModal({
             </div>
 
             {/* Section 9: Contingency Days Timeline */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <h3 className="text-sm font-bold text-slate-900">Contingency Milestones</h3>
-                <span className="text-[11px] text-slate-400 font-normal italic">
-                  click days to edit
-                </span>
+            <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-3 border-b border-slate-200">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Contingency Milestones</h3>
+                  <p className="text-[11px] text-slate-500">Timeline days automatically calculate weekend-adjusted due dates</p>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>Saturday / Sunday rollover to Monday</span>
+                </div>
               </div>
               
               <div>
@@ -639,52 +920,284 @@ export function AddEditModal({
                 <p className="text-[10px] text-slate-500 mt-1">Leave empty to default to Acceptance Date.</p>
               </div>
 
-              <div className="flex flex-wrap gap-2 pt-1">
-                {contingencyList.map(c => {
-                  const isLoan = c.key === 'L1';
-                  const isAppraisal = c.key === 'L2';
-                  const dotColor = isLoan ? 'bg-[#1B3A5C]' : isAppraisal ? 'bg-indigo-500' : 'bg-amber-500';
-                  
-                  const daysNum = Number(formData.contingencyDays[c.key]) || 0;
-                  const startDateStr = formData.contingencyStartDate || formData.acceptanceDate;
-                  let expDateStr = '';
-                  if (startDateStr) {
-                    try {
-                      const sDate = parseISO(startDateStr);
-                      if (!isNaN(sDate.getTime())) {
-                        const rawEnd = addDays(sDate, daysNum);
-                        const adjustedEnd = adjustWeekendToMonday(rawEnd);
-                        expDateStr = format(adjustedEnd, 'MMM d');
-                      }
-                    } catch (e) {}
-                  }
+              {/* Financing Contingencies: L1 (Loan) & L2 (Appraisal) */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* L1 Loan */}
+                  {(() => {
+                    const c = CONTINGENCIES.find(item => item.key === 'L1') || { key: 'L1', label: 'Loan' };
+                    const exp = getContingencyExpDate(formData.contingencyDays['L1']);
+                    const currentVal = formData.contingencyDays['L1'] || '';
+                    return (
+                      <div className="bg-slate-50/80 border border-slate-200 hover:border-slate-300 rounded-xl p-2.5 space-y-2 transition-all">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="w-2 h-2 rounded-full bg-[#1B3A5C] shrink-0" />
+                            <span className="text-xs font-bold text-slate-900">{c.key} - {c.label}</span>
+                          </div>
+                          {exp && (
+                            <span className="text-[10px] font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-2 py-0.5 rounded-md">
+                              {exp}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                          <div className="flex items-center gap-1">
+                            {['14', '17', '21'].map(p => (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={() => handleDayChange('L1', p)}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                                  currentVal === p 
+                                    ? 'bg-[#1B3A5C] text-white' 
+                                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                                }`}
+                              >
+                                {p}d
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center bg-white border border-slate-300 rounded-lg px-1.5 py-0.5 shadow-2xs focus-within:border-[#1B3A5C]">
+                            <input 
+                              type="number"
+                              value={currentVal}
+                              onChange={e => handleDayChange('L1', e.target.value)}
+                              className="w-8 text-center font-bold text-xs text-slate-900 bg-transparent focus:outline-none"
+                              placeholder="0"
+                              min="0"
+                            />
+                            <span className="text-[10px] text-slate-400 select-none">d</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
-                  return (
-                    <div 
-                      key={c.key} 
-                      className="flex items-center gap-2 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-full pl-3 pr-2 py-1 transition-all"
+                  {/* L2 Appraisal */}
+                  {(() => {
+                    const c = CONTINGENCIES.find(item => item.key === 'L2') || { key: 'L2', label: 'Appraisal' };
+                    const exp = getContingencyExpDate(formData.contingencyDays['L2']);
+                    const currentVal = formData.contingencyDays['L2'] || '';
+                    return (
+                      <div className="bg-slate-50/80 border border-slate-200 hover:border-slate-300 rounded-xl p-2.5 space-y-2 transition-all">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+                            <span className="text-xs font-bold text-slate-900">{c.key} - {c.label}</span>
+                          </div>
+                          {exp && (
+                            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                              {exp}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                          <div className="flex items-center gap-1">
+                            {['10', '14', '17'].map(p => (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={() => handleDayChange('L2', p)}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                                  currentVal === p 
+                                    ? 'bg-indigo-600 text-white' 
+                                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                                }`}
+                              >
+                                {p}d
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center bg-white border border-slate-300 rounded-lg px-1.5 py-0.5 shadow-2xs focus-within:border-indigo-500">
+                            <input 
+                              type="number"
+                              value={currentVal}
+                              onChange={e => handleDayChange('L2', e.target.value)}
+                              className="w-8 text-center font-bold text-xs text-slate-900 bg-transparent focus:outline-none"
+                              placeholder="0"
+                              min="0"
+                            />
+                            <span className="text-[10px] text-slate-400 select-none">d</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Contingencies (L3–L8) with Minimalist Quick Batch Setter */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+                  <div className="text-xs font-bold text-slate-900">
+                    Contingencies (L3 – L8)
+                  </div>
+                  
+                  {/* Minimalist Batch Setter */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-bold text-slate-600">Set all L3–L8:</span>
+                    <div className="flex items-center bg-slate-50 border border-slate-300 rounded-lg px-1.5 py-0.5 shadow-2xs focus-within:border-[#1B3A5C] focus-within:bg-white">
+                      <input 
+                        type="number"
+                        value={commonL3ToL8Val}
+                        placeholder={isL3ToL8Synced ? '0' : 'Mix'}
+                        onChange={e => handleBatchL3ToL8(e.target.value)}
+                        className="w-9 text-center font-bold text-xs text-[#1B3A5C] bg-transparent focus:outline-none"
+                        min="0"
+                      />
+                      <span className="text-[10px] text-slate-400 pr-0.5 select-none">d</span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {['7', '10', '14', '17'].map(preset => {
+                        const isActive = isL3ToL8Synced && commonL3ToL8Val === preset;
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleBatchL3ToL8(preset)}
+                            className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                              isActive 
+                                ? 'bg-[#1B3A5C] text-white shadow-2xs' 
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60'
+                            }`}
+                          >
+                            {preset}d
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Individual L3-L8 items with direct editable inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  {['L3', 'L4', 'L5', 'L6', 'L7', 'L8'].map(key => {
+                    const c = CONTINGENCIES.find(item => item.key === key) || { key, label: key };
+                    const exp = getContingencyExpDate(formData.contingencyDays[key]);
+                    const currentVal = formData.contingencyDays[key] ?? '';
+
+                    return (
+                      <div 
+                        key={key} 
+                        className="flex items-center justify-between gap-1.5 bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-xl px-2.5 py-1.5 transition-all"
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                          <span className="text-xs font-semibold text-slate-800 truncate" title={`${c.key} - ${c.label}`}>
+                            <span className="font-bold text-slate-900">{c.key}</span> {c.label}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          {exp && (
+                            <span className="text-[10px] font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-1.5 py-0.5 rounded-md">
+                              {exp}
+                            </span>
+                          )}
+                          <div className="flex items-center bg-white border border-slate-300 rounded-md px-1 py-0.5 shadow-2xs focus-within:border-[#1B3A5C]">
+                            <input 
+                              type="number" 
+                              value={currentVal} 
+                              onChange={e => handleDayChange(key, e.target.value)} 
+                              className="w-7 text-center font-bold text-xs text-slate-900 focus:outline-none bg-transparent" 
+                              placeholder="0"
+                              min="0"
+                            />
+                            <span className="text-[9px] text-slate-400 select-none">d</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Optional: L9 (COP - Contingency of Sale) with Active Toggle (Off by default) */}
+              <div className={`border rounded-xl p-3 transition-all ${
+                l9Enabled 
+                  ? 'bg-white border-purple-200 shadow-2xs' 
+                  : 'bg-slate-50/80 border-dashed border-slate-200'
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={l9Enabled}
+                      onClick={() => {
+                        const nextVal = !l9Enabled;
+                        setL9Enabled(nextVal);
+                        if (nextVal && !formData.contingencyDays['L9']) {
+                          handleDayChange('L9', '7');
+                        }
+                      }}
+                      className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
+                        l9Enabled ? 'bg-purple-600' : 'bg-slate-300 hover:bg-slate-400'
+                      }`}
                     >
-                      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-                      <span className="text-xs font-medium text-[#48484a]">{c.key} - {c.label}</span>
-                      {expDateStr && (
-                        <span className="text-[10px] font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-1.5 py-0.5 rounded-md">
-                          {expDateStr}
+                      <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                        l9Enabled ? 'translate-x-4' : 'translate-x-0'
+                      }`} />
+                    </button>
+
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`w-1.5 h-1.5 rounded-full ${l9Enabled ? 'bg-purple-500' : 'bg-slate-400'}`} />
+                      <span className={`text-xs font-bold ${l9Enabled ? 'text-slate-900' : 'text-slate-600'}`}>
+                        L9 - COP
+                      </span>
+                      <span className="text-[11px] text-slate-400">(Contingency of Sale)</span>
+                      {!l9Enabled && (
+                        <span className="text-[10px] text-slate-400 font-medium italic ml-0.5">
+                          — Off by default (click toggle to activate)
                         </span>
                       )}
-                      <div className="flex items-center bg-white border border-[#e5e5ea] rounded-md px-1 py-0.5 ml-1 shadow-xs focus-within:border-[#1B3A5C]">
+                    </div>
+                  </div>
+
+                  {l9Enabled && (
+                    <div className="flex items-center gap-2 flex-wrap pl-11 sm:pl-0">
+                      {(() => {
+                        const exp = getContingencyExpDate(formData.contingencyDays['L9']);
+                        return exp ? (
+                          <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
+                            {exp}
+                          </span>
+                        ) : null;
+                      })()}
+                      
+                      <div className="flex items-center gap-1">
+                        {['7', '10', '14', '17'].map(p => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => handleDayChange('L9', p)}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                              formData.contingencyDays['L9'] === p 
+                                ? 'bg-purple-600 text-white' 
+                                : 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200'
+                            }`}
+                          >
+                            {p}d
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center bg-white border border-purple-300 rounded-lg px-1.5 py-0.5 shadow-2xs focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600">
                         <input 
-                          type="number" 
-                          value={formData.contingencyDays[c.key] || ''} 
-                          onChange={e => handleDayChange(c.key, e.target.value)} 
-                          className="w-10 text-center font-bold text-xs text-[#1d1d1f] focus:outline-none bg-transparent" 
-                          placeholder="0"
+                          type="number"
+                          value={formData.contingencyDays['L9'] ?? '7'}
+                          onChange={e => handleDayChange('L9', e.target.value)}
+                          className="w-8 text-center font-bold text-xs text-purple-900 bg-transparent focus:outline-none"
+                          placeholder="7"
                           min="0"
                         />
-                        <span className="text-[10px] text-slate-400 pr-1 select-none">d</span>
+                        <span className="text-[10px] text-purple-400 select-none">d</span>
                       </div>
                     </div>
-                  );
-                })}
+                  )}
+                </div>
               </div>
             </div>
           </div>

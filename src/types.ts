@@ -117,6 +117,17 @@ export const DEFAULT_CONTINGENCY_DAYS: Record<string, number> = {
   'L9': 7,
 };
 
+export function isContingencyActive(escrow: Escrow, taskKey: string): boolean {
+  if (taskKey === 'L9') {
+    return Boolean(escrow.contingencyDays?.['L9'] && Number(escrow.contingencyDays?.['L9']) > 0);
+  }
+  return true;
+}
+
+export function getApplicableContingencies(escrow: Escrow) {
+  return CONTINGENCIES.filter(c => isContingencyActive(escrow, c.key));
+}
+
 export function adjustWeekendToMonday(date: Date): Date {
   const day = date.getDay(); // 0 = Sunday, 6 = Saturday
   if (day === 6) {
@@ -128,7 +139,13 @@ export function adjustWeekendToMonday(date: Date): Date {
 }
 
 export function getContingencyDueDate(escrow: Escrow, taskKey: string): Date | null {
-  const days = escrow.contingencyDays?.[taskKey] ?? DEFAULT_CONTINGENCY_DAYS[taskKey] ?? 7;
+  if (taskKey === 'L9' && !isContingencyActive(escrow, 'L9')) {
+    return null;
+  }
+  const days = escrow.contingencyDays?.[taskKey] ?? (taskKey === 'L9' ? null : (DEFAULT_CONTINGENCY_DAYS[taskKey] ?? 7));
+  if (days === null || days === undefined) {
+    return null;
+  }
   const startDateStr = escrow.contingencyStartDate || escrow.acceptanceDate || escrow.lastUpdated || escrow.coeDate;
   if (!startDateStr) {
     return null;
@@ -148,6 +165,7 @@ export function getContingencyDueDate(escrow: Escrow, taskKey: string): Date | n
 
 export function isContingencyUrgent(escrow: Escrow, taskKey: string): boolean {
   if (escrow.status !== 'Open') return false;
+  if (!isContingencyActive(escrow, taskKey)) return false;
   if (escrow.tasks[taskKey]) return false; // Already done
   
   const daysLeft = getContingencyDaysLeft(escrow, taskKey);
@@ -157,10 +175,13 @@ export function isContingencyUrgent(escrow: Escrow, taskKey: string): boolean {
 }
 
 export function getContingencyDaysLeft(escrow: Escrow, taskKey: string): number | null {
+  if (taskKey === 'L9' && !isContingencyActive(escrow, 'L9')) {
+    return null;
+  }
   const dueDate = getContingencyDueDate(escrow, taskKey);
   if (!dueDate) {
-    const days = escrow.contingencyDays?.[taskKey] ?? DEFAULT_CONTINGENCY_DAYS[taskKey] ?? 7;
-    return days;
+    const days = escrow.contingencyDays?.[taskKey] ?? (taskKey === 'L9' ? null : DEFAULT_CONTINGENCY_DAYS[taskKey]);
+    return days ?? null;
   }
   return differenceInCalendarDays(dueDate, new Date());
 }
@@ -196,46 +217,55 @@ export function parseAddressComponents(rawAddress?: string): { address: string; 
   }
   const clean = rawAddress.trim();
 
+  // Helper to ensure address has ONLY street number, street name, and unit
+  const cleanStreetOnly = (street: string, city?: string): string => {
+    let s = street.trim().replace(/,\s*$/, '');
+    if (city && city.trim()) {
+      const cityRegex = new RegExp(`[,\\s]+${city.trim()}\\b.*$`, 'i');
+      s = s.replace(cityRegex, '');
+    }
+    s = s.replace(/[,\\s]+(?:CA|California)?\s*[0-9]{5}(?:-[0-9]{4})?\s*$/i, '');
+    s = s.replace(/[,\\s]+(?:CA|California)\s*$/i, '');
+    return s.trim().replace(/,\s*$/, '');
+  };
+
   // Try parsing: "123 Main St, City, State Zip" or "123 Main St, City, Zip"
   const commaParts = clean.split(',').map(p => p.trim()).filter(Boolean);
 
   if (commaParts.length >= 3) {
-    const street = commaParts[0];
     const city = commaParts[1];
     const lastPart = commaParts.slice(2).join(' ');
     const zipMatch = lastPart.match(/\b\d{5}(?:-\d{4})?\b/);
     const zipCode = zipMatch ? zipMatch[0] : '';
+    const street = cleanStreetOnly(commaParts[0], city);
     return {
       address: street,
       city: city,
       zipCode: zipCode
     };
   } else if (commaParts.length === 2) {
-    const street = commaParts[0];
     const secondPart = commaParts[1];
     const zipMatch = secondPart.match(/\b\d{5}(?:-\d{4})?\b/);
     const zipCode = zipMatch ? zipMatch[0] : '';
     const city = secondPart.replace(/\b[A-Z]{2}\b/g, '').replace(/\b\d{5}(?:-\d{4})?\b/g, '').trim();
+    const street = cleanStreetOnly(commaParts[0], city);
     return {
       address: street,
       city: city || secondPart,
       zipCode: zipCode
     };
   } else {
-    const zipMatch = clean.match(/\b\d{5}(?:-\d{4})?\b$/);
-    if (zipMatch) {
-      const zipCode = zipMatch[0];
-      const rest = clean.substring(0, clean.length - zipCode.length).trim();
-      return {
-        address: rest,
-        city: '',
-        zipCode: zipCode
-      };
+    // Single line without commas e.g. "23301 Ridge Route Unit#24 Laguna Hills CA 92653"
+    const zipMatch = clean.match(/\b(9[0-6]\d{3})(?:-\d{4})?\b/);
+    const zipCode = zipMatch ? zipMatch[1] : '';
+    let rest = clean;
+    if (zipCode) {
+      rest = rest.replace(new RegExp(`[,\\s]*(?:CA|California)?\\s*${zipCode}(?:-\\d{4})?\\s*$`, 'i'), '').trim();
     }
     return {
-      address: clean,
+      address: rest,
       city: '',
-      zipCode: ''
+      zipCode: zipCode
     };
   }
 }
