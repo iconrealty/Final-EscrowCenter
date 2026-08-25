@@ -20,18 +20,19 @@ export async function extractPdfPagesText(file: File): Promise<{
   pagesText: string[];
   lines: string[];
 }> {
-  const pdfjsLib = await import('pdfjs-dist');
+  // Use legacy build for maximum Safari / iOS / WebKit compatibility
+  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
   
   if (!pdfWorkerConfigured && typeof window !== 'undefined') {
     try {
-      const pdfjsWorker = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
+      const pdfjsWorker = (await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url')).default;
       if (pdfjsLib.GlobalWorkerOptions) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
       }
     } catch {
       // Fallback
       if (pdfjsLib.GlobalWorkerOptions) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version || '4.10.38'}/build/pdf.worker.min.mjs`;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version || '4.10.38'}/legacy/build/pdf.worker.min.mjs`;
       }
     }
     pdfWorkerConfigured = true;

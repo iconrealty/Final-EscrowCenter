@@ -8,6 +8,7 @@ import { PartnerDropdown } from '../common/PartnerDropdown';
 import { PreferredPartner } from '../../types/partners';
 import { parseMlsText } from '../../utils/mlsParser';
 import { extractPdfPagesText } from '../../utils/clientRpaParser';
+import { parseFullEscrowRPA } from '../../services/geminiService';
 import { getCityFromZip } from '../../utils/californiaZipDb';
 import { calculateNetFromGross, calculateCommissionBreakdown, getFormulaLabel } from '../../utils/commissionUtils';
 
@@ -153,12 +154,47 @@ export function AddEditModal({
 
     try {
       if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-        const { fullText } = await extractPdfPagesText(file);
+        let fullText = '';
+        try {
+          const res = await extractPdfPagesText(file);
+          fullText = res.fullText;
+        } catch (clientPdfErr: any) {
+          console.warn('Client-side PDF extraction encountered error:', clientPdfErr);
+        }
+
         if (fullText && fullText.trim().length > 20) {
           const parsed = parseMlsText(fullText);
           applyExtractedMlsData(parsed, file.name);
         } else {
-          throw new Error('PDF appears empty or contains only non-selectable images.');
+          // If client-side text was empty or failed (e.g. scanned image PDF), attempt server scanner fallback
+          try {
+            const reader = new FileReader();
+            const base64Promise = new Promise<string>((resolve, reject) => {
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+            });
+            reader.readAsDataURL(file);
+            const dataUrl = await base64Promise;
+            const doc = await parseFullEscrowRPA(dataUrl, file.type || 'application/pdf', file.name, formData.representation);
+            if (doc && (doc.address || doc.price || doc.agentName || doc.listingAgentName || doc.apn)) {
+              applyExtractedMlsData({
+                address: doc.address,
+                city: doc.city,
+                zipCode: doc.zipCode,
+                apn: doc.apn,
+                price: doc.price,
+                commissionPercent: doc.commissionPercent,
+                agentName: doc.agentName || doc.listingAgentName || doc.buyerAgentName,
+                agentPhone: doc.agentPhone || doc.listingAgentPhone || doc.buyerAgentPhone,
+                agentEmail: doc.agentEmail || doc.listingAgentEmail || doc.buyerAgentEmail,
+                cooperatingBrokerage: doc.cooperatingBrokerage || doc.listingBrokerage || doc.buyerBrokerage,
+              }, file.name);
+              return;
+            }
+          } catch (serverErr) {
+            console.warn('Server fallback scan error:', serverErr);
+          }
+          throw new Error('PDF appears empty or contains non-selectable images.');
         }
       } else {
         // Plain text or CSV file
