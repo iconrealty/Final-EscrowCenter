@@ -35,6 +35,7 @@ export function AddEditModal({
   const [formData, setFormData] = useState(() => {
     return {
       escrowNumber: '',
+      mlsId: '',
       apn: '',
       escrowCompany: '',
       address: '',
@@ -148,6 +149,7 @@ export function AddEditModal({
       return {
         ...prev,
         escrowNumber: data.escrowNumber || prev.escrowNumber,
+        mlsId: data.mlsId || prev.mlsId,
         address: data.address || prev.address,
         city: data.city || prev.city,
         zipCode: data.zipCode || prev.zipCode,
@@ -329,6 +331,7 @@ export function AddEditModal({
 
       setFormData({
         escrowNumber: escrow.escrowNumber || '',
+        mlsId: escrow.mlsId || '',
         apn: escrow.apn || '',
         escrowCompany: escrow.escrowCompany || '',
         address: initAddress,
@@ -666,6 +669,11 @@ export function AddEditModal({
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Escrow #</label>
                   <input type="text" value={formData.escrowNumber} onChange={e => setFormData({...formData, escrowNumber: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">MLS ID / Listing #</label>
+                  <input type="text" placeholder="e.g. DW26038810" value={formData.mlsId} onChange={e => setFormData({...formData, mlsId: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
                 </div>
 
                 <div>

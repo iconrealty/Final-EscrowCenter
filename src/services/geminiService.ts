@@ -1,5 +1,6 @@
 export interface ParsedEscrowDoc {
   escrowNumber?: string;
+  mlsId?: string;
   apn?: string;
   address?: string;
   city?: string;

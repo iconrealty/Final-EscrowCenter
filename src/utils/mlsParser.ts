@@ -1,11 +1,12 @@
-import { parseAddressComponents } from '../types';
-import { getCityFromZip } from './californiaZipDb';
+import { parseAddressComponents } from '../types.ts';
+import { getCityFromZip } from './californiaZipDb.ts';
 
 export interface ParsedMlsData {
   address?: string;
   city?: string;
   zipCode?: string;
   apn?: string;
+  mlsId?: string;
   price?: number;
   commissionPercent?: number;
   agentName?: string;
@@ -122,7 +123,7 @@ export function parseMlsText(rawText: string): ParsedMlsData {
   const flatText = text.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
 
   // ==========================================
-  // 1. APN / PARCEL #
+  // 1. APN / PARCEL # & MLS ID / LISTING #
   // ==========================================
   // CRMLS Matrix: "PARCEL #: 89223024" or "APN: 123-456-78"
   const parcelMatch = text.match(/(?:PARCEL\s*#|PARCEL\s*ID|PARCEL\s*NUMBER|APN\s*#|APN)[\s:#=-]*([0-9A-Za-z\-_/]{4,28})/i) ||
@@ -134,12 +135,22 @@ export function parseMlsText(rawText: string): ParsedMlsData {
     }
   }
 
+  // MLS ID / Listing # match (e.g., "MLS#: DW26038810", "MLS ID: OC24012345", "Listing ID: PW23123456")
+  const mlsMatch = text.match(/(?:MLS\s*(?:#|ID|NUMBER|NO\.?)|LISTING\s*(?:#|ID|NUMBER|NO\.?))[\s:#=-]*([A-Za-z0-9\-_]{4,20})/i) ||
+    flatText.match(/(?:MLS\s*(?:#|ID|NUMBER|NO\.?)|LISTING\s*(?:#|ID|NUMBER|NO\.?))[\s:#=-]*([A-Za-z0-9\-_]{4,20})/i) ||
+    text.match(/\b([A-Z]{2}\d{7,10})\b/);
+  if (mlsMatch && mlsMatch[1]) {
+    const candidate = mlsMatch[1].trim();
+    if (!/^(page|form|paragraph|true|false|none|pending)$/i.test(candidate)) {
+      result.mlsId = candidate;
+    }
+  }
+
   // ==========================================
   // 2. LIST PRICE / PRICE
   // ==========================================
   const priceMatches = [
-    /(?:LIST\s*PRICE|LP\b|SALE\s*PRICE|PURCHASE\s*PRICE|CONTRACT\s*PRICE)[\s:#$]*([\d,]{5,}(?:\.\d{2})?)/i,
-    /\bLIST\s*PRICE[\s:#$]*([\d,]+)/i,
+    /(?:LIST\s*PRICE|LP\b|SALE\s*PRICE|PURCHASE\s*PRICE|CONTRACT\s*PRICE)[^\d]*([\d,]+(?:\.\d{2})?)/i,
     /\$\s*([\d,]{5,}(?:\.\d{2})?)/,
   ];
   for (const rx of priceMatches) {
@@ -156,15 +167,27 @@ export function parseMlsText(rawText: string): ParsedMlsData {
   // ==========================================
   // 3. PROPERTY ADDRESS, CITY, ZIP
   // ==========================================
-  // Match standard address with city, state, zip
-  const fullAddressMatch = text.match(/(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*CA\s*([0-9]{5})/i) ||
-    flatText.match(/(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*CA\s*([0-9]{5})/i) ||
-    text.match(/([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?)\s+([0-9]{5})/i);
+  // Match standard address with city, state, zip:
+  // e.g. "14322 Newport Ave #204, Tustin, CA 92780" or "123 Main St, Santa Ana, CA 92703"
+  for (const line of lines) {
+    const lineAddressMatch = line.match(/(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*(?:CA|California)\s*([0-9]{5})/i) ||
+      line.match(/([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?)\s+([0-9]{5})/i);
+    if (lineAddressMatch) {
+      result.address = lineAddressMatch[1].trim();
+      result.city = lineAddressMatch[2].trim();
+      result.zipCode = lineAddressMatch[3].trim();
+      break;
+    }
+  }
 
-  if (fullAddressMatch) {
-    result.address = fullAddressMatch[1].trim();
-    result.city = fullAddressMatch[2].trim();
-    result.zipCode = fullAddressMatch[3].trim();
+  if (!result.address) {
+    const fullAddressMatch = text.match(/(?:^|\n|\r)(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*(?:CA|California)\s*([0-9]{5})/i) ||
+      flatText.match(/(?:^|\s)(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*(?:CA|California)\s*([0-9]{5})/i);
+    if (fullAddressMatch) {
+      result.address = fullAddressMatch[1].trim();
+      result.city = fullAddressMatch[2].trim();
+      result.zipCode = fullAddressMatch[3].trim();
+    }
   }
 
   // Fallback line search

@@ -1,121 +1,7 @@
-// Safari & Legacy WebKit Polyfills
-// Ensures compatibility across Safari (macOS & iOS), WebViews, and legacy JS engines
+// Polyfills for browser compatibility across Safari, WebKit, iOS, Firefox, and Chrome
 
-// 1. Iterator global & Prototype (Required for pdfjs-dist 4+/5+/6+ & Safari/WebKit)
-try {
-  const getIteratorProto = () => {
-    try {
-      if (typeof Symbol !== 'undefined' && Symbol.iterator) {
-        return Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]() || {})) || {};
-      }
-    } catch {}
-    return {};
-  };
-
-  const iterProto = getIteratorProto();
-
-  if (typeof (globalThis as any).Iterator === 'undefined') {
-    function Iterator() {}
-    Iterator.prototype = iterProto;
-    (Iterator as any).from = function (iterable: any) {
-      if (iterable && typeof iterable[Symbol.iterator] === 'function') {
-        return iterable[Symbol.iterator]();
-      }
-      if (iterable && typeof iterable.next === 'function') {
-        return iterable;
-      }
-      return [][Symbol.iterator]();
-    };
-
-    (globalThis as any).Iterator = Iterator;
-    if (typeof window !== 'undefined') {
-      (window as any).Iterator = Iterator;
-    }
-    if (typeof self !== 'undefined') {
-      (self as any).Iterator = Iterator;
-    }
-    if (typeof global !== 'undefined') {
-      (global as any).Iterator = Iterator;
-    }
-  } else if (!(globalThis as any).Iterator.prototype) {
-    (globalThis as any).Iterator.prototype = iterProto;
-  }
-
-  // Ensure Iterator.prototype.join or other helper checks don't fail
-  if ((globalThis as any).Iterator && (globalThis as any).Iterator.prototype) {
-    if (typeof (globalThis as any).Iterator.prototype.join !== 'function') {
-      (globalThis as any).Iterator.prototype.join = function (separator = ',') {
-        const parts: any[] = [];
-        for (const item of this) {
-          parts.push(item);
-        }
-        return parts.join(separator);
-      };
-    }
-  }
-} catch (e) {
-  console.warn('Iterator polyfill warning:', e);
-}
-
-// 2. Promise.withResolvers (Required for pdfjs-dist & Safari < 17.4)
-if (typeof Promise !== 'undefined' && typeof (Promise as any).withResolvers === 'undefined') {
-  (Promise as any).withResolvers = function <T>() {
-    let resolve!: (value: T | PromiseLike<T>) => void;
-    let reject!: (reason?: any) => void;
-    const promise = new Promise<T>((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
-    return { promise, resolve, reject };
-  };
-}
-
-// 3. Object.groupBy & Map.groupBy
-if (typeof (Object as any).groupBy === 'undefined') {
-  (Object as any).groupBy = function <T, K extends PropertyKey>(
-    items: Iterable<T>,
-    callbackFn: (item: T, index: number) => K
-  ): Record<K, T[]> {
-    const result = Object.create(null) as Record<K, T[]>;
-    let index = 0;
-    for (const item of items) {
-      const key = callbackFn(item, index++);
-      if (!result[key]) {
-        result[key] = [];
-      }
-      result[key].push(item);
-    }
-    return result;
-  };
-}
-
-if (typeof (Map as any).groupBy === 'undefined') {
-  (Map as any).groupBy = function <T, K>(
-    items: Iterable<T>,
-    callbackFn: (item: T, index: number) => K
-  ): Map<K, T[]> {
-    const result = new Map<K, T[]>();
-    let index = 0;
-    for (const item of items) {
-      const key = callbackFn(item, index++);
-      if (!result.has(key)) {
-        result.set(key, []);
-      }
-      result.get(key)!.push(item);
-    }
-    return result;
-  };
-}
-
-// 4. Object.hasOwn
-if (typeof Object.hasOwn === 'undefined') {
-  Object.hasOwn = function (obj: object, prop: PropertyKey): boolean {
-    return Object.prototype.hasOwnProperty.call(obj, prop);
-  };
-}
-
-// 5. Array.prototype.at
-if (typeof Array.prototype.at === 'undefined') {
+// 1. Array.prototype.at
+if (!Array.prototype.at) {
   Array.prototype.at = function (n: number) {
     n = Math.trunc(n) || 0;
     if (n < 0) n += this.length;
@@ -124,46 +10,18 @@ if (typeof Array.prototype.at === 'undefined') {
   };
 }
 
-// 6. String.prototype.at
-if (typeof String.prototype.at === 'undefined') {
+// 2. String.prototype.at
+if (!String.prototype.at) {
   String.prototype.at = function (n: number) {
     n = Math.trunc(n) || 0;
     if (n < 0) n += this.length;
     if (n < 0 || n >= this.length) return undefined;
-    return this.charAt(n);
+    return this[n];
   };
 }
 
-// 7. Array.prototype.toSorted
-if (typeof (Array.prototype as any).toSorted === 'undefined') {
-  (Array.prototype as any).toSorted = function (compareFn?: (a: any, b: any) => number) {
-    const copy = [...this];
-    return copy.sort(compareFn);
-  };
-}
-
-// 8. Array.prototype.toReversed
-if (typeof (Array.prototype as any).toReversed === 'undefined') {
-  (Array.prototype as any).toReversed = function () {
-    return [...this].reverse();
-  };
-}
-
-// 9. Array.prototype.toSpliced
-if (typeof (Array.prototype as any).toSpliced === 'undefined') {
-  (Array.prototype as any).toSpliced = function (start: number, deleteCount?: number, ...items: any[]) {
-    const copy = [...this];
-    if (deleteCount === undefined) {
-      copy.splice(start);
-    } else {
-      copy.splice(start, deleteCount, ...items);
-    }
-    return copy;
-  };
-}
-
-// 10. Array.prototype.findLast
-if (typeof (Array.prototype as any).findLast === 'undefined') {
+// 3. Array.prototype.findLast
+if (!(Array.prototype as any).findLast) {
   (Array.prototype as any).findLast = function <T>(
     predicate: (value: T, index: number, array: T[]) => boolean,
     thisArg?: any
@@ -177,8 +35,8 @@ if (typeof (Array.prototype as any).findLast === 'undefined') {
   };
 }
 
-// 11. Array.prototype.findLastIndex
-if (typeof (Array.prototype as any).findLastIndex === 'undefined') {
+// 4. Array.prototype.findLastIndex
+if (!(Array.prototype as any).findLastIndex) {
   (Array.prototype as any).findLastIndex = function <T>(
     predicate: (value: T, index: number, array: T[]) => boolean,
     thisArg?: any
@@ -192,15 +50,80 @@ if (typeof (Array.prototype as any).findLastIndex === 'undefined') {
   };
 }
 
-// 12. structuredClone fallback
-if (typeof globalThis !== 'undefined' && typeof globalThis.structuredClone === 'undefined') {
-  (globalThis as any).structuredClone = function <T>(obj: T): T {
-    if (obj === undefined) return undefined as any;
-    return JSON.parse(JSON.stringify(obj));
+// 5. Object.hasOwn
+if (!Object.hasOwn) {
+  Object.hasOwn = function (object: any, property: PropertyKey): boolean {
+    if (object == null) {
+      throw new TypeError('Cannot convert undefined or null to object');
+    }
+    return Object.prototype.hasOwnProperty.call(Object(object), property);
   };
 }
 
-// 13. URL.canParse (Safari < 17)
+// 6. structuredClone fallback
+if (typeof globalThis.structuredClone !== 'function') {
+  globalThis.structuredClone = function <T>(obj: T): T {
+    if (obj === undefined) return undefined as any;
+    try {
+      return JSON.parse(JSON.stringify(obj));
+    } catch {
+      return obj;
+    }
+  };
+}
+
+// 7. Promise.withResolvers (Safari < 17.4)
+if (typeof (Promise as any).withResolvers !== 'function') {
+  (Promise as any).withResolvers = function <T>() {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    let reject!: (reason?: any) => void;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
+// 8. Object.groupBy
+if (typeof (Object as any).groupBy !== 'function') {
+  (Object as any).groupBy = function <T, K extends PropertyKey>(
+    items: Iterable<T>,
+    callbackfn: (item: T, index: number) => K
+  ): Partial<Record<K, T[]>> {
+    const result: Partial<Record<K, T[]>> = {};
+    let index = 0;
+    for (const item of items) {
+      const key = callbackfn(item, index++);
+      if (!result[key]) {
+        result[key] = [];
+      }
+      result[key]!.push(item);
+    }
+    return result;
+  };
+}
+
+// 9. Map.groupBy
+if (typeof (Map as any).groupBy !== 'function') {
+  (Map as any).groupBy = function <T, K>(
+    items: Iterable<T>,
+    callbackfn: (item: T, index: number) => K
+  ): Map<K, T[]> {
+    const map = new Map<K, T[]>();
+    let index = 0;
+    for (const item of items) {
+      const key = callbackfn(item, index++);
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(item);
+    }
+    return map;
+  };
+}
+
+// 10. URL.canParse (Safari < 17)
 if (typeof (URL as any).canParse === 'undefined') {
   (URL as any).canParse = function (url: string, base?: string): boolean {
     try {
@@ -210,6 +133,11 @@ if (typeof (URL as any).canParse === 'undefined') {
       return false;
     }
   };
+}
+
+// 11. Iterator Prototype helper
+if (typeof (globalThis as any).Iterator === 'undefined') {
+  (globalThis as any).Iterator = class Iterator {};
 }
 
 export {};

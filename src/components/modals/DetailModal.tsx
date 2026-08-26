@@ -68,6 +68,11 @@ export function DetailModal({
             </h2>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <StatusBadge status={escrow.status} />
+              {escrow.mlsId && (
+                <span className="text-[10px] sm:text-xs text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                  MLS: <strong className="text-black font-semibold">{escrow.mlsId}</strong>
+                </span>
+              )}
               {escrow.apn && (
                 <span className="text-[10px] sm:text-xs text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
                   APN: <strong className="text-black font-semibold">{escrow.apn}</strong>

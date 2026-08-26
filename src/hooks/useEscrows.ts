@@ -336,6 +336,7 @@ export function useEscrows() {
       return {
         id: generateSafeId(),
         escrowNumber: data.escrowNumber || '',
+        mlsId: data.mlsId || '',
         apn: data.apn || '',
         escrowCompany: data.escrowCompany || '',
         address: data.address || 'Unknown Address',
@@ -355,6 +356,10 @@ export function useEscrows() {
         escrowOfficer: data.escrowOfficer || '',
         escrowPhone: data.escrowPhone || '',
         escrowEmail: data.escrowEmail || '',
+        titleCompany: data.titleCompany || '',
+        titleOfficer: data.titleOfficer || '',
+        titlePhone: data.titlePhone || '',
+        titleEmail: data.titleEmail || '',
         agentName: data.agentName || '',
         agentPhone: data.agentPhone || '',
         agentEmail: data.agentEmail || '',

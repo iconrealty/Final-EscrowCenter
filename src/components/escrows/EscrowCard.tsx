@@ -101,6 +101,11 @@ export function EscrowCard({
               Escrow #{escrow.escrowNumber}
             </span>
           )}
+          {escrow.mlsId && (
+            <span className={`font-mono text-[11px] sm:text-xs font-bold ${headerStyle.escrowNumBadge} border px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md shrink-0 shadow-2xs`} title={`MLS #${escrow.mlsId}`}>
+              MLS #{escrow.mlsId}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap shrink-0">
           <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">

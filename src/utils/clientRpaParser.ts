@@ -370,6 +370,15 @@ export function parseCaliforniaRpaText(
     result.escrowNumber = escrowNumMatch[1].trim();
   }
 
+  const mlsMatch = fullText.match(/(?:MLS\s*(?:#|ID|NUMBER|NO\.?)|LISTING\s*(?:#|ID|NUMBER|NO\.?))[\s:#=-]*([A-Za-z0-9\-_]{4,20})/i) ||
+    fullText.match(/\b([A-Z]{2}\d{7,10})\b/);
+  if (mlsMatch && mlsMatch[1]) {
+    const candidate = mlsMatch[1].trim();
+    if (!/^(page|form|paragraph|true|false|none|pending)$/i.test(candidate)) {
+      result.mlsId = candidate;
+    }
+  }
+
   // Buyer Agent / Listing Agent details
   const buyerAgentMatch = brokerPage.match(/(?:buyer'?s\s*agent|buyer'?s\s*brokerage)[\s:]+([A-Za-z0-9\s.,&]+)/i);
   if (buyerAgentMatch && buyerAgentMatch[1]) {
