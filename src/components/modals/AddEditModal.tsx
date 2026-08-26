@@ -757,7 +757,7 @@ export function AddEditModal({
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">Gross Commission (%)</label>
                     {Boolean(formData.price && formData.commissionPercent && Number(formData.price) > 0) && (
-                      <span className="text-[10px] font-bold text-slate-500 font-mono">
+                      <span className="text-sm font-black text-black font-mono tracking-tight">
                         Gross: ${Math.round((Number(formData.price) * Number(formData.commissionPercent)) / 100).toLocaleString()}
                       </span>
                     )}
