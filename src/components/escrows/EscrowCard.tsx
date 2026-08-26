@@ -172,7 +172,7 @@ export function EscrowCard({
           </div>
         </div>
 
-        {/* Pricing, Acceptance Date, Code (COE), Commission Grid */}
+        {/* Pricing, Acceptance Date, COE, Commission Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 bg-slate-50 p-3 rounded-xl border border-[#e5e5ea]">
           <div>
             <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5">Price</div>
@@ -185,7 +185,7 @@ export function EscrowCard({
             </div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5" title="Close of Escrow / Code">Code (COE)</div>
+            <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5" title="Close of Escrow (COE)">COE</div>
             <div className="font-mono text-xs sm:text-sm font-bold text-[#1d1d1f] truncate">
               {formatDateDisplay(escrow.coeDate)}
             </div>
