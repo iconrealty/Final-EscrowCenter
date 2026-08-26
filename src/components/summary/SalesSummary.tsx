@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Escrow } from '../../types';
+import { getEscrowYear } from '../../utils/csvUtils';
 import { TrendingUp, Calendar, DollarSign, ChevronDown, Building, Award, CheckCircle2, ChevronRight, BarChart3, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
@@ -34,21 +35,9 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   });
   const [commissionSelectedMonth, setCommissionSelectedMonth] = useState<string>('all');
 
-  // Helper function to extract exact year from escrow (prioritizing COE date, then acceptance date)
-  const getEscrowYear = (e: Escrow): string => {
-    const dateStr = (e.coeDate || e.acceptanceDate || '').trim();
-    if (!dateStr) return '';
-    if (/^\d{4}/.test(dateStr)) return dateStr.substring(0, 4);
-    const match = dateStr.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
-    if (match) return match[1];
-    const parsed = new Date(dateStr);
-    if (!isNaN(parsed.getTime())) return parsed.getFullYear().toString();
-    return '';
-  };
-
-  // Helper function to extract exact YYYY-MM from escrow COE date (or acceptance date fallback)
+  // Helper function to extract exact YYYY-MM from escrow (acceptance date, then COE date)
   const getEscrowMonth = (e: Escrow): string => {
-    const dateStr = (e.coeDate || e.acceptanceDate || '').trim();
+    const dateStr = (e.acceptanceDate || e.coeDate || '').trim();
     if (!dateStr) return '';
     if (/^\d{4}-\d{2}/.test(dateStr)) return dateStr.substring(0, 7);
     const match = dateStr.match(/^(\d{1,2})\/\d{1,2}\/(\d{4})/);
@@ -59,9 +48,8 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     }
     const parsed = new Date(dateStr);
     if (!isNaN(parsed.getTime())) {
-      const y = parsed.getFullYear();
       const m = String(parsed.getMonth() + 1).padStart(2, '0');
-      return `${y}-${m}`;
+      return `${parsed.getFullYear()}-${m}`;
     }
     return '';
   };

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { X, Search, Edit3, Trash2, Calendar, Download, Building, Check } from 'lucide-react';
 import { Escrow } from '../../types';
-import { downloadEscrowsCsv } from '../../utils/csvUtils';
+import { downloadEscrowsCsv, getEscrowYear } from '../../utils/csvUtils';
 
 interface EscrowTableModalProps {
   isOpen: boolean;
@@ -26,18 +26,6 @@ export function EscrowTableModal({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [lastSavedId, setLastSavedId] = useState<string | null>(null);
   const [cellText, setCellText] = useState<Record<string, string>>({});
-
-  // Helper function to extract exact year from escrow (COE date or acceptance date)
-  const getEscrowYear = (e: Escrow): string => {
-    const dateStr = (e.coeDate || e.acceptanceDate || '').trim();
-    if (!dateStr) return '';
-    if (/^\d{4}/.test(dateStr)) return dateStr.substring(0, 4);
-    const match = dateStr.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
-    if (match) return match[1];
-    const parsed = new Date(dateStr);
-    if (!isNaN(parsed.getTime())) return parsed.getFullYear().toString();
-    return '';
-  };
 
   // Get available years list from all escrows
   const availableYears = useMemo(() => {

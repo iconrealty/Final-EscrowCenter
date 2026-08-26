@@ -26,6 +26,7 @@ import { EscrowTableModal } from './components/modals/EscrowTableModal';
 import { useEscrows } from './hooks/useEscrows';
 import { useToast } from './context/ToastContext';
 import { Escrow } from './types';
+import { getEscrowYear } from './utils/csvUtils';
 import { differenceInCalendarDays, parseISO, getISOWeek, getISOWeekYear } from 'date-fns';
 import { Home, LayoutDashboard, Calendar, Gift } from 'lucide-react';
 
@@ -56,6 +57,17 @@ function App() {
   const [isConfirmClearAllOpen, setIsConfirmClearAllOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
+  const availableYears = useMemo(() => {
+    const yearsSet = new Set<string>();
+    const currentYearStr = new Date().getFullYear().toString();
+    yearsSet.add(currentYearStr);
+    escrows.forEach((e) => {
+      const yr = getEscrowYear(e);
+      if (yr && /^\d{4}$/.test(yr)) yearsSet.add(yr);
+    });
+    return Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
+  }, [escrows]);
+
   const filteredEscrows = useMemo(() => {
     const list = escrows.filter(e => {
       if (filter === 'All') {
@@ -65,7 +77,8 @@ function App() {
       }
       
       if (selectedYear !== 'All') {
-        if (!e.coeDate || !e.coeDate.startsWith(selectedYear)) return false;
+        const escrowYear = getEscrowYear(e);
+        if (escrowYear !== selectedYear) return false;
       }
 
       if (search) {
@@ -161,6 +174,7 @@ function App() {
                 filter={filter} setFilter={setFilter}
                 search={search} setSearch={setSearch}
                 selectedYear={selectedYear} setSelectedYear={setSelectedYear}
+                availableYears={availableYears}
               />
               
               {filteredEscrows.length > 0 ? (

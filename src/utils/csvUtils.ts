@@ -51,10 +51,17 @@ export const CSV_HEADERS = [
   'Last Updated'
 ];
 
-function parseDateToIso(dateStr: string): string {
+export function parseDateToIso(dateStr: string): string {
   if (!dateStr || !dateStr.trim()) return '';
   let trimmed = dateStr.trim();
-  // Strip time components like " 00:00:00" or " 12:00:00 AM" if present
+  
+  // Ignore placeholder/empty date tokens
+  const lower = trimmed.toLowerCase();
+  if (lower === 'none' || lower === '--' || lower === 'n/a' || lower === 'tbd' || lower === 'null' || lower === 'undefined') {
+    return '';
+  }
+
+  // Strip time components like " 00:00:00" or " 12:00:00 AM" or "T00:00:00.000Z"
   if (trimmed.includes(' ')) {
     trimmed = trimmed.split(' ')[0];
   }
@@ -70,6 +77,7 @@ function parseDateToIso(dateStr: string): string {
     const day = parts[2].padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
+
   // If MM/DD/YYYY or MM-DD-YYYY
   if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(trimmed)) {
     const parts = trimmed.split(/[-/]/);
@@ -78,13 +86,52 @@ function parseDateToIso(dateStr: string): string {
     const year = parts[2];
     return `${year}-${month}-${day}`;
   }
-  // Try standard JS parsing
+
+  // If MM/DD/YY or MM-DD-YY (2-digit year)
+  if (/^\d{1,2}[-/]\d{1,2}[-/]\d{2}$/.test(trimmed)) {
+    const parts = trimmed.split(/[-/]/);
+    const month = parts[0].padStart(2, '0');
+    const day = parts[1].padStart(2, '0');
+    let rawYr = parseInt(parts[2], 10);
+    const year = rawYr >= 70 ? `19${parts[2]}` : `20${parts[2].padStart(2, '0')}`;
+    return `${year}-${month}-${day}`;
+  }
+
+  // If YY-MM-DD or YY/MM/DD (2-digit year first)
+  if (/^\d{2}[-/]\d{1,2}[-/]\d{1,2}$/.test(trimmed)) {
+    const parts = trimmed.split(/[-/]/);
+    let rawYr = parseInt(parts[0], 10);
+    const year = rawYr >= 70 ? `19${parts[0]}` : `20${parts[0].padStart(2, '0')}`;
+    const month = parts[1].padStart(2, '0');
+    const day = parts[2].padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Try standard JS parsing as fallback
   try {
     const d = new Date(dateStr.trim());
     if (!isNaN(d.getTime())) {
-      return d.toISOString().split('T')[0];
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
     }
   } catch (e) {}
+  return '';
+}
+
+/**
+ * Extracts the 4-digit year for an escrow record.
+ * Uses Acceptance Date first, then Close of Escrow (COE) Date.
+ */
+export function getEscrowYear(escrow: Partial<Escrow>): string {
+  const dateStr = (escrow.acceptanceDate || escrow.coeDate || '').trim();
+  if (!dateStr) return '';
+  if (/^\d{4}/.test(dateStr)) return dateStr.substring(0, 4);
+  const match = dateStr.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
+  if (match) return match[1];
+  const parsed = new Date(dateStr);
+  if (!isNaN(parsed.getTime())) return parsed.getFullYear().toString();
   return '';
 }
 
@@ -553,6 +600,16 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
     // MLS ID
     const mlsId = getVal(['mls id', 'mls #', 'mls number', 'mlsno', 'mls_id', 'listing id', 'listing #', 'listing number', 'mls']);
 
+    // Dates parsing (Crucial: User requires Acceptance Date or Close of Escrow Date)
+    const parsedAcceptanceDate = (rawAcceptance && parseDateToIso(rawAcceptance)) || '';
+    const parsedContingencyStartDate = (rawContingencyStart && parseDateToIso(rawContingencyStart)) || parsedAcceptanceDate || '';
+    const parsedCoeDate = (rawCoe && parseDateToIso(rawCoe)) || '';
+
+    // Requirement: If there is neither an Acceptance Date NOR a Close of Escrow Date, do not import this line to prevent garbage imports.
+    if (!parsedAcceptanceDate && !parsedCoeDate) {
+      continue;
+    }
+
     // Map fields
     const escrow: Partial<Escrow> = {
       escrowNumber: getVal(['escrow #', 'escrow number', 'escrow no', 'escrowno', 'escrow_no', 'escrow_number', 'id', 'deal id', 'sisu id', 'file #', 'file number', 'transaction id']),
@@ -590,9 +647,9 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       price,
       commissionPercent,
       netCommission,
-      acceptanceDate: (rawAcceptance && parseDateToIso(rawAcceptance)) || '',
-      contingencyStartDate: (rawContingencyStart && parseDateToIso(rawContingencyStart)) || (rawAcceptance && parseDateToIso(rawAcceptance)) || '',
-      coeDate: (rawCoe && parseDateToIso(rawCoe)) || '',
+      acceptanceDate: parsedAcceptanceDate,
+      contingencyStartDate: parsedContingencyStartDate,
+      coeDate: parsedCoeDate,
       status: parsedStatus,
       representation,
       leadSource,
@@ -716,6 +773,11 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
   const coeDate = rawCoe && rawCoe.toLowerCase() !== 'none' && rawCoe.toLowerCase() !== '--'
     ? parseDateToIso(rawCoe) 
     : '';
+
+  // Requirement: Do not parse text blocks that lack both acceptance and closing dates
+  if (!acceptanceDate && !coeDate) {
+    return null;
+  }
 
   // Price
   const rawPrice = getVal(['transaction amount', 'sale price', 'price', 'amount', 'purchase price']);

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Escrow } from '../../types';
+import { getEscrowYear } from '../../utils/csvUtils';
 import { Calendar, Users, BarChart2, ChevronDown } from 'lucide-react';
 
 interface YearlyRepresentationSummaryProps {
@@ -9,17 +10,6 @@ interface YearlyRepresentationSummaryProps {
 export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSummaryProps) {
   const currentYearStr = new Date().getFullYear().toString();
   const [viewMode, setViewMode] = useState<'rep' | 'source'>('rep');
-
-  const getEscrowYear = (e: Escrow): string => {
-    const dateStr = (e.coeDate || e.acceptanceDate || '').trim();
-    if (!dateStr) return '';
-    if (/^\d{4}/.test(dateStr)) return dateStr.substring(0, 4);
-    const match = dateStr.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
-    if (match) return match[1];
-    const parsed = new Date(dateStr);
-    if (!isNaN(parsed.getTime())) return parsed.getFullYear().toString();
-    return '';
-  };
 
   // Extract all unique years present in escrows, ensuring the current year is included
   const availableYears = useMemo(() => {

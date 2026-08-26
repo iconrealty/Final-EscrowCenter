@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Escrow, ALL_TASKS } from '../../types';
+import { getEscrowYear } from '../../utils/csvUtils';
 import { Trash2, Calendar, User, CheckCircle2, ChevronRight, ChevronDown, Users } from 'lucide-react';
 import { format, parseISO, differenceInCalendarDays } from 'date-fns';
 import { StatusBadge } from '../shared/StatusBadge';
@@ -22,30 +23,6 @@ export function ChecklistTable({
   onFilterChange 
 }: ChecklistTableProps) {
   const [selectedYear, setSelectedYear] = useState<string>('all');
-
-  const getEscrowYear = (escrow: Escrow): string => {
-    if (escrow.coeDate) {
-      const trimmed = escrow.coeDate.trim();
-      if (/^\d{4}/.test(trimmed)) {
-        return trimmed.substring(0, 4);
-      }
-      if (/\d{1,2}\/\d{1,2}\/(\d{4})/.test(trimmed)) {
-        const match = trimmed.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
-        if (match) return match[1];
-      }
-      const d = new Date(trimmed);
-      if (!isNaN(d.getTime())) {
-        return d.getFullYear().toString();
-      }
-    }
-    if (escrow.lastUpdated) {
-      const d = new Date(escrow.lastUpdated);
-      if (!isNaN(d.getTime())) {
-        return d.getFullYear().toString();
-      }
-    }
-    return '';
-  };
 
   const availableYears = useMemo(() => {
     const yearsSet = new Set<string>();

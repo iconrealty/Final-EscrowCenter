@@ -5,18 +5,22 @@ import { motion, AnimatePresence } from 'motion/react';
 export function FilterBar({ 
   filter, setFilter, 
   search, setSearch, 
-  selectedYear, setSelectedYear
+  selectedYear, setSelectedYear,
+  availableYears
 }: { 
   filter: string, setFilter: (f: string) => void,
   search: string, setSearch: (s: string) => void,
-  selectedYear: string, setSelectedYear: (y: string) => void
+  selectedYear: string, setSelectedYear: (y: string) => void,
+  availableYears?: string[]
 }) {
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
 
   const currentYear = new Date().getFullYear();
-  // Generate options from 2022 to current year + 1 (e.g. 2027, 2026, 2025, 2024, 2023, 2022)
-  const years = ['All', ...Array.from({ length: 6 }, (_, i) => (currentYear + 1 - i).toString())];
+  // Generate options including any years in database + standard recent range
+  const years = availableYears && availableYears.length > 0 
+    ? (availableYears.includes('All') ? availableYears : ['All', ...availableYears])
+    : ['All', ...Array.from({ length: 8 }, (_, i) => (currentYear + 1 - i).toString())];
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">

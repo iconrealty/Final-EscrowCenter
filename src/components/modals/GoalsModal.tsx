@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Escrow, AgentGoals } from '../../types';
 import { useGoals, getStoredGoalsLocal, saveStoredGoalsLocal } from '../../hooks/useGoals';
+import { getEscrowYear } from '../../utils/csvUtils';
 
 // Backwards compatibility re-exports
 export type { AgentGoals };
@@ -44,27 +45,8 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
     setIsEditing(false);
   };
 
-  // Helper to determine escrow year
-  const getEscrowYear = (escrow: Escrow): string => {
-    if (escrow.coeDate) {
-      const trimmed = escrow.coeDate.trim();
-      if (/^\d{4}/.test(trimmed)) return trimmed.substring(0, 4);
-      if (/\d{1,2}\/\d{1,2}\/(\d{4})/.test(trimmed)) {
-        const match = trimmed.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
-        if (match) return match[1];
-      }
-      const d = new Date(trimmed);
-      if (!isNaN(d.getTime())) return d.getFullYear().toString();
-    }
-    if (escrow.lastUpdated) {
-      const d = new Date(escrow.lastUpdated);
-      if (!isNaN(d.getTime())) return d.getFullYear().toString();
-    }
-    return currentYear;
-  };
-
   // Calculations for selected year
-  const closedEscrows = escrows.filter(e => e.status === 'Closed' && getEscrowYear(e) === selectedYear);
+  const closedEscrows = escrows.filter(e => e.status === 'Closed' && (getEscrowYear(e) || currentYear) === selectedYear);
   const openEscrows = escrows.filter(e => e.status === 'Open');
 
   const closedCommission = closedEscrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);

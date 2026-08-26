@@ -1,6 +1,7 @@
 import React from 'react';
 import { Escrow } from '../../types';
 import { useGoals } from '../../hooks/useGoals';
+import { getEscrowYear } from '../../utils/csvUtils';
 
 interface StatsBarProps {
   escrows: Escrow[];
@@ -11,30 +12,6 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
   const actualYear = new Date().getFullYear().toString();
   const { getGoals } = useGoals();
   const storedGoals = getGoals(actualYear);
-
-  const getEscrowYear = (escrow: Escrow): string => {
-    if (escrow.coeDate) {
-      const trimmed = escrow.coeDate.trim();
-      if (/^\d{4}/.test(trimmed)) {
-        return trimmed.substring(0, 4);
-      }
-      if (/\d{1,2}\/\d{1,2}\/(\d{4})/.test(trimmed)) {
-        const match = trimmed.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
-        if (match) return match[1];
-      }
-      const d = new Date(trimmed);
-      if (!isNaN(d.getTime())) {
-        return d.getFullYear().toString();
-      }
-    }
-    if (escrow.lastUpdated) {
-      const d = new Date(escrow.lastUpdated);
-      if (!isNaN(d.getTime())) {
-        return d.getFullYear().toString();
-      }
-    }
-    return actualYear;
-  };
 
   const openEscrows = escrows.filter(e => e.status === 'Open');
   
