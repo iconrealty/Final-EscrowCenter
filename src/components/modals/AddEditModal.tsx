@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Escrow, EscrowDocument, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
-import { X, FileText, CheckCircle2, Calculator, Sparkles, RefreshCw, Info } from 'lucide-react';
+import { X, FileText, CheckCircle2, Calculator, Sparkles, RefreshCw, Info, Paperclip } from 'lucide-react';
 import { addMonths, addDays, parseISO, format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
+import { storage } from '../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { usePreferredPartners } from '../../hooks/usePreferredPartners';
 import { PartnerDropdown } from '../common/PartnerDropdown';
 import { PreferredPartner } from '../../types/partners';
@@ -29,7 +31,7 @@ export function AddEditModal({
   const [scanSuccess, setScanSuccess] = useState('');
   const [scanError, setScanError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const [pendingDoc, setPendingDoc] = useState<EscrowDocument | null>(null);
+  const [pendingDocs, setPendingDocs] = useState<EscrowDocument[]>([]);
   const [l9Enabled, setL9Enabled] = useState(() => Boolean(escrow?.contingencyDays?.['L9'] && Number(escrow?.contingencyDays?.['L9']) > 0));
 
   const [formData, setFormData] = useState(() => {
@@ -191,6 +193,45 @@ export function AddEditModal({
     setScanError('');
   };
 
+  const attachFileToDocuments = async (fileToAttach: File) => {
+    const docId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+    let downloadURL = '';
+
+    if (user) {
+      try {
+        const folderId = escrow?.id || `new_${Date.now()}`;
+        const storageRef = ref(storage, `users/${user.uid}/escrows/${folderId}/documents/${docId}_${fileToAttach.name}`);
+        const snap = await uploadBytes(storageRef, fileToAttach);
+        downloadURL = await getDownloadURL(snap.ref);
+      } catch (storageErr) {
+        console.warn('Storage upload notice for dropped MLS doc:', storageErr);
+      }
+    }
+
+    if (!downloadURL) {
+      try {
+        downloadURL = URL.createObjectURL(fileToAttach);
+      } catch {
+        downloadURL = '#';
+      }
+    }
+
+    const newDoc: EscrowDocument = {
+      id: docId,
+      name: fileToAttach.name,
+      url: downloadURL,
+      uploadedAt: new Date().toISOString(),
+      size: fileToAttach.size,
+      type: fileToAttach.type || (fileToAttach.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'text/plain'),
+    };
+
+    setPendingDocs(prev => {
+      const exists = prev.some(d => d.name === newDoc.name && d.size === newDoc.size);
+      if (exists) return prev;
+      return [...prev, newDoc];
+    });
+  };
+
   const handleProcessFile = async (file: File) => {
     if (!file) return;
     lastFileRef.current = file;
@@ -199,6 +240,9 @@ export function AddEditModal({
     setScanSuccess('');
 
     try {
+      // Attach dropped MLS file to pending escrow documents
+      await attachFileToDocuments(file);
+
       if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
         let extractedData: any = null;
 
@@ -263,7 +307,7 @@ export function AddEditModal({
           return;
         }
 
-        throw new Error('This PDF does not appear to contain readable listing text. You can enter details manually below.');
+        setScanSuccess(`"${file.name}" attached to Documents! You can verify details below.`);
       } else {
         // Plain text or CSV file
         const text = await file.text();
@@ -375,10 +419,13 @@ export function AddEditModal({
         contingencyDays: stringifiedDays
       });
       setL9Enabled(Boolean(escrow.contingencyDays?.['L9'] && Number(escrow.contingencyDays?.['L9']) > 0));
+      setPendingDocs([]);
     } else {
       setL9Enabled(false);
+      setPendingDocs([]);
       setFormData({
         escrowNumber: '',
+        mlsId: '',
         apn: '',
         escrowCompany: '',
         address: '',
@@ -447,9 +494,13 @@ export function AddEditModal({
       contingencyDays: parsedDays
     };
 
-    if (pendingDoc) {
-      const existingDocs = escrow?.documents || [];
-      cleanedData.documents = [pendingDoc, ...existingDocs];
+    const existingDocs = escrow?.documents || [];
+    const allDocs = [...pendingDocs, ...existingDocs];
+    const uniqueDocs = allDocs.filter((doc, idx, self) => 
+      idx === self.findIndex(d => d.id === doc.id || (d.name === doc.name && d.size === doc.size))
+    );
+    if (uniqueDocs.length > 0) {
+      cleanedData.documents = uniqueDocs;
     }
 
     onSave(cleanedData);
@@ -622,6 +673,28 @@ export function AddEditModal({
                 </span>
               </div>
             </div>
+
+            {pendingDocs.length > 0 && (
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {pendingDocs.map(doc => (
+                  <div key={doc.id} className="inline-flex items-center gap-1.5 bg-white border border-blue-200 text-blue-900 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-2xs">
+                    <Paperclip size={13} className="text-[#1B3A5C] shrink-0" />
+                    <span className="truncate max-w-[220px]" title={doc.name}>{doc.name}</span>
+                    <span className="text-[10px] text-slate-500 font-mono font-normal">
+                      {doc.size ? `${Math.round(doc.size / 1024)} KB` : 'Attached'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPendingDocs(prev => prev.filter(d => d.id !== doc.id))}
+                      className="ml-1 text-slate-400 hover:text-red-600 p-0.5 rounded cursor-pointer transition-colors"
+                      title="Remove attached document"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {scanSuccess && (
               <div className="mt-2.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2 flex items-center gap-2">
