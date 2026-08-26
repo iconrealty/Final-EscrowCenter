@@ -122,10 +122,13 @@ export function parseDateToIso(dateStr: string): string {
 
 /**
  * Extracts the 4-digit year for an escrow record.
- * Uses Acceptance Date first, then Close of Escrow (COE) Date.
+ * For Closed transactions, Close of Escrow (COE) Date is the primary closing year.
+ * For Open/Pending transactions, Acceptance Date or Target COE is used.
  */
 export function getEscrowYear(escrow: Partial<Escrow>): string {
-  const dateStr = (escrow.acceptanceDate || escrow.coeDate || '').trim();
+  const dateStr = (escrow.status === 'Closed'
+    ? (escrow.coeDate || escrow.acceptanceDate || '')
+    : (escrow.acceptanceDate || escrow.coeDate || '')).trim();
   if (!dateStr) return '';
   if (/^\d{4}/.test(dateStr)) return dateStr.substring(0, 4);
   const match = dateStr.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);
@@ -566,19 +569,11 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
     const rawPrice = getVal(['sale price', 'price', 'purchase price', 'amount', 'transaction amount']);
     const price = Number(String(rawPrice || '').replace(/[^0-9.]/g, '')) || 0;
 
-    // Net Commission & Gross Commission
-    const rawNetComm = getVal(['net commission', 'net gci', 'net income', 'agent net', 'net', 'gross agent(s) paid income']);
-    const rawGrossComm = getVal(['gross commission', 'gci', 'gross gci', 'gross commission amount', 'total commission']);
+    // Net Commission (Strictly match Agent Net, avoiding Gross Income columns)
+    const rawNetComm = getVal(['net commission', 'net income', 'agent net income', 'agent net', 'net gci', 'net agent paid income', 'net proceeds', 'net closed commission', 'agent net pay', 'net']);
     let netCommission = 0;
     if (rawNetComm) {
       netCommission = Number(String(rawNetComm).replace(/[^0-9.]/g, '')) || 0;
-    } else if (rawGrossComm) {
-      netCommission = Number(String(rawGrossComm).replace(/[^0-9.]/g, '')) || 0;
-    } else {
-      const genericComm = getVal(['commission']);
-      if (genericComm) {
-        netCommission = Number(String(genericComm).replace(/[^0-9.]/g, '')) || 0;
-      }
     }
 
     // Commission Percent
@@ -783,9 +778,9 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
   const rawPrice = getVal(['transaction amount', 'sale price', 'price', 'amount', 'purchase price']);
   const price = Number(String(rawPrice || '').replace(/[^0-9.]/g, '')) || 0;
 
-  // GCI / Net Commission
-  const rawGCI = getVal(['gci', 'net commission', 'commission', 'gross agent(s) paid income']);
-  const netCommission = Number(String(rawGCI || '').replace(/[^0-9.]/g, '')) || 0;
+  // Net Commission
+  const rawNet = getVal(['net commission', 'net income', 'agent net income', 'agent net', 'net gci', 'net proceeds', 'net closed commission']);
+  const netCommission = Number(String(rawNet || '').replace(/[^0-9.]/g, '')) || 0;
 
   const rawCommPercent = getVal(['commission percent', 'commission %', 'commission_percent']);
   let commissionPercent: number | undefined = undefined;
