@@ -18,13 +18,13 @@ function formatDateForCognito(dateStr?: string): string {
 export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string | null, email?: string | null } | null): string {
   const baseUrl = 'https://www.cognitoforms.com/IconRealtyPartners/NewEscrow';
   
-  const client1FirstName = escrow.clientFirstName || '';
-  const client1LastName = escrow.clientLastName || '';
-  const client2FirstName = escrow.client2FirstName || '';
-  const client2LastName = escrow.client2LastName || '';
+  const client1FirstName = (escrow.clientFirstName || '').trim();
+  const client1LastName = (escrow.clientLastName || '').trim();
+  const client2FirstName = (escrow.client2FirstName || '').trim();
+  const client2LastName = (escrow.client2LastName || '').trim();
   
-  const agentFirstName = escrow.agentName ? escrow.agentName.split(' ')[0] : '';
-  const agentLastName = escrow.agentName ? escrow.agentName.split(' ').slice(1).join(' ') : '';
+  const agentFirstName = escrow.agentName ? escrow.agentName.trim().split(' ')[0] : '';
+  const agentLastName = escrow.agentName ? escrow.agentName.trim().split(' ').slice(1).join(' ') : '';
 
   let currentUserName = (user?.displayName || "").trim();
   let currentUserEmail = (user?.email || "").trim();
@@ -42,7 +42,8 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
   const formattedUnderContract = formatDateForCognito(escrow.acceptanceDate);
   const formattedForecastedClose = formatDateForCognito(escrow.coeDate);
 
-  // Build concise JSON entry payload matching standard Cognito Forms internal field names
+  // Build clean, concise JSON entry payload matching canonical Cognito Forms field names
+  // Keeping this compact prevents HTTP 404 / 414 URL length errors in Chrome and Safari
   const entryData: Record<string, any> = {};
 
   if (currentUserFirstName || currentUserLastName) {
@@ -58,47 +59,22 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
 
   if (client1FirstName || client1LastName) {
     entryData["ClientName"] = { "First": client1FirstName, "Last": client1LastName };
-    entryData["ClientsName"] = { "First": client1FirstName, "Last": client1LastName };
   }
   if (escrow.clientEmail && escrow.clientEmail.trim()) {
-    const cleanEmail = escrow.clientEmail.trim();
-    entryData["ClientEmail"] = cleanEmail;
-    entryData["ClientsEmail"] = cleanEmail;
-    entryData["ClientEmailAddress"] = cleanEmail;
-    entryData["ClientsEmailAddress"] = cleanEmail;
+    entryData["ClientEmail"] = escrow.clientEmail.trim();
   }
   if (escrow.clientPhone && escrow.clientPhone.trim()) {
-    const cleanPhone = escrow.clientPhone.trim();
-    entryData["ClientPhone"] = cleanPhone;
-    entryData["ClientsPhone"] = cleanPhone;
-    entryData["ClientPhoneNumber"] = cleanPhone;
-    entryData["ClientsPhoneNumber"] = cleanPhone;
-    entryData["ClientContactNumber"] = cleanPhone;
-    entryData["ClientsContactNumber"] = cleanPhone;
+    entryData["ClientPhone"] = escrow.clientPhone.trim();
   }
 
   if (client2FirstName || client2LastName) {
     entryData["Client2Name"] = { "First": client2FirstName, "Last": client2LastName };
-    entryData["Clients2Name"] = { "First": client2FirstName, "Last": client2LastName };
-    entryData["Client2sName"] = { "First": client2FirstName, "Last": client2LastName };
   }
   if (escrow.client2Email && escrow.client2Email.trim()) {
-    const clean2Email = escrow.client2Email.trim();
-    entryData["Client2Email"] = clean2Email;
-    entryData["Clients2Email"] = clean2Email;
-    entryData["Client2sEmail"] = clean2Email;
-    entryData["Client2EmailAddress"] = clean2Email;
-    entryData["Client2sEmailAddress"] = clean2Email;
+    entryData["Client2Email"] = escrow.client2Email.trim();
   }
   if (escrow.client2Phone && escrow.client2Phone.trim()) {
-    const clean2Phone = escrow.client2Phone.trim();
-    entryData["Client2Phone"] = clean2Phone;
-    entryData["Clients2Phone"] = clean2Phone;
-    entryData["Client2sPhone"] = clean2Phone;
-    entryData["Client2PhoneNumber"] = clean2Phone;
-    entryData["Clients2PhoneNumber"] = clean2Phone;
-    entryData["Client2sPhoneNumber"] = clean2Phone;
-    entryData["Client2ContactNumber"] = clean2Phone;
+    entryData["Client2Phone"] = escrow.client2Phone.trim();
   }
 
   // Parse or retrieve address components
@@ -116,75 +92,42 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     }
   }
 
+  // Normalize Unit#24 to Unit 24 to keep address formatting clean
+  streetAddress = streetAddress.replace(/Unit#/i, 'Unit ').replace(/#(\d+)/, 'Unit $1');
+
   if (streetAddress || propertyCity || propertyZip) {
     const addressObj: Record<string, string> = {};
     if (streetAddress) addressObj["Line1"] = streetAddress;
     if (propertyCity) addressObj["City"] = propertyCity;
     if (propertyZip) addressObj["PostalCode"] = propertyZip;
-    
     entryData["PropertyAddress"] = addressObj;
-
-    // Additional aliases/flat fields if the form uses distinct text inputs
-    if (streetAddress) {
-      entryData["Address"] = streetAddress;
-      entryData["StreetAddress"] = streetAddress;
-      entryData["PropertyStreet"] = streetAddress;
-    }
-    if (propertyCity) {
-      entryData["City"] = propertyCity;
-      entryData["PropertyCity"] = propertyCity;
-    }
-    if (propertyZip) {
-      entryData["Zip"] = propertyZip;
-      entryData["ZipCode"] = propertyZip;
-      entryData["PostalCode"] = propertyZip;
-      entryData["PropertyZip"] = propertyZip;
-    }
   }
 
   if (escrow.apn && escrow.apn.trim()) {
-    const cleanApn = escrow.apn.trim();
-    entryData["APN"] = cleanApn;
-    entryData["APNNumber"] = cleanApn;
-    entryData["ParcelNumber"] = cleanApn;
-    entryData["ParcelID"] = cleanApn;
+    entryData["APN"] = escrow.apn.trim();
   }
 
-  if (escrow.price) {
-    entryData["TransactionAmount"] = escrow.price;
+  if (escrow.price && !isNaN(Number(escrow.price))) {
+    entryData["TransactionAmount"] = Number(escrow.price);
   }
   if (escrow.commissionPercent !== undefined && escrow.commissionPercent !== null && !isNaN(Number(escrow.commissionPercent))) {
     // Cognito Forms percentage fields expect a decimal fraction (e.g., 0.025 for 2.5%, 0.03 for 3%)
     const commNum = Number(escrow.commissionPercent);
-    entryData["YourCommission"] = commNum / 100;
+    entryData["YourCommission"] = commNum > 1 ? commNum / 100 : commNum;
   }
 
   if (agentFirstName || agentLastName) {
     entryData["OtherAgentsName"] = { "First": agentFirstName, "Last": agentLastName };
-    entryData["OtherAgentName"] = { "First": agentFirstName, "Last": agentLastName };
   }
   if (escrow.agentPhone && escrow.agentPhone.trim()) {
-    const cleanAgPhone = escrow.agentPhone.trim();
-    entryData["OtherAgentsPhoneNumber"] = cleanAgPhone;
-    entryData["OtherAgentPhoneNumber"] = cleanAgPhone;
-    entryData["OtherAgentsPhone"] = cleanAgPhone;
-    entryData["OtherAgentPhone"] = cleanAgPhone;
+    entryData["OtherAgentsPhone"] = escrow.agentPhone.trim();
   }
   if (escrow.agentEmail && escrow.agentEmail.trim()) {
-    const cleanAgEmail = escrow.agentEmail.trim();
-    entryData["OtherAgentsEmail"] = cleanAgEmail;
-    entryData["OtherAgentEmail"] = cleanAgEmail;
+    entryData["OtherAgentsEmail"] = escrow.agentEmail.trim();
   }
   if (escrow.cooperatingBrokerage && escrow.cooperatingBrokerage.trim()) {
-    const cleanBrokerage = escrow.cooperatingBrokerage.trim();
-    entryData["OtherAgentsBrokerage"] = cleanBrokerage;
-    entryData["OtherAgentBrokerage"] = cleanBrokerage;
+    entryData["OtherAgentsBrokerage"] = escrow.cooperatingBrokerage.trim();
   }
-
-  // Pre-fill answers requested by user
-  entryData["HowManyOffersDidYouSubmitIncludingThisOneForThisClientBeforeYouReceivedAnAcceptance"] = 1;
-  entryData["IsThereAnOutsideReferral"] = "No";
-  entryData["WillYourClientBeInTownDuringTheEntireEscrowIfNotYouNeedToSetUpApptForThemToSignWithEscrowOutOfTheCountry"] = "Yes";
 
   if (formattedUnderContract) {
     entryData["UnderContractDate"] = formattedUnderContract;
@@ -194,36 +137,23 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
   }
 
   if (escrow.lenderName && escrow.lenderName.trim()) {
-    const cleanLender = escrow.lenderName.trim();
-    entryData["LenderUsed"] = cleanLender;
-    entryData["LenderName"] = cleanLender;
+    entryData["LenderUsed"] = escrow.lenderName.trim();
   }
   if (escrow.lenderPhone && escrow.lenderPhone.trim()) {
-    const cleanLendPhone = escrow.lenderPhone.trim();
-    entryData["LenderPhoneNumber"] = cleanLendPhone;
-    entryData["LenderPhone"] = cleanLendPhone;
-    entryData["LenderContactNumber"] = cleanLendPhone;
+    entryData["LenderPhone"] = escrow.lenderPhone.trim();
   }
   if (escrow.lenderEmail && escrow.lenderEmail.trim()) {
-    const cleanLendEmail = escrow.lenderEmail.trim();
-    entryData["LenderEmail"] = cleanLendEmail;
-    entryData["LenderEmailAddress"] = cleanLendEmail;
+    entryData["LenderEmail"] = escrow.lenderEmail.trim();
   }
 
   if (escrow.escrowCompany && escrow.escrowCompany.trim()) {
-    const cleanEscComp = escrow.escrowCompany.trim();
-    entryData["EscrowCompany"] = cleanEscComp;
+    entryData["EscrowCompany"] = escrow.escrowCompany.trim();
   }
   if (escrow.escrowPhone && escrow.escrowPhone.trim()) {
-    const cleanEscPhone = escrow.escrowPhone.trim();
-    entryData["EscrowContactNumber"] = cleanEscPhone;
-    entryData["EscrowPhoneNumber"] = cleanEscPhone;
-    entryData["EscrowPhone"] = cleanEscPhone;
+    entryData["EscrowPhone"] = escrow.escrowPhone.trim();
   }
   if (escrow.escrowEmail && escrow.escrowEmail.trim()) {
-    const cleanEscEmail = escrow.escrowEmail.trim();
-    entryData["EscrowEmail"] = cleanEscEmail;
-    entryData["EscrowEmailAddress"] = cleanEscEmail;
+    entryData["EscrowEmail"] = escrow.escrowEmail.trim();
   }
 
   const jsonString = JSON.stringify(entryData);
@@ -231,3 +161,4 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
 
   return `${baseUrl}?entry=${encodedJson}`;
 }
+
