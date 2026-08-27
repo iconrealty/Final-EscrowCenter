@@ -27,6 +27,9 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewType>('year');
 
+  // Filter out cancelled escrows from Production page views and calculations
+  const activeEscrows = escrows.filter(e => e.status !== 'Cancelled');
+
   const nextPeriod = () => {
     if (viewMode === 'month') {
       setCurrentDate(addMonths(currentDate, 1));
@@ -48,7 +51,7 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
   };
 
   const getEscrowsForMonth = (year: number, monthIndex: number) => {
-    return escrows.filter(e => {
+    return activeEscrows.filter(e => {
       if (!e.coeDate) return false;
       const date = parseISO(e.coeDate);
       return date.getFullYear() === year && date.getMonth() === monthIndex;
@@ -70,21 +73,21 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
   const monthsInQuarter = [qIndex * 3, qIndex * 3 + 1, qIndex * 3 + 2];
 
   // Escrow counts per period
-  const quarterEscrows = escrows.filter(e => {
+  const quarterEscrows = activeEscrows.filter(e => {
     if (!e.coeDate) return false;
     const date = parseISO(e.coeDate);
     return date.getFullYear() === currentYear && monthsInQuarter.includes(date.getMonth());
   });
   const quarterClosedCount = quarterEscrows.filter(e => e.status === 'Closed').length;
 
-  const currentMonthEscrows = escrows.filter(e => {
+  const currentMonthEscrows = activeEscrows.filter(e => {
     if (!e.coeDate) return false;
     const date = parseISO(e.coeDate);
     return date.getFullYear() === currentDate.getFullYear() && date.getMonth() === currentDate.getMonth();
   });
   const monthClosedCount = currentMonthEscrows.filter(e => e.status === 'Closed').length;
 
-  const yearEscrows = escrows.filter(e => {
+  const yearEscrows = activeEscrows.filter(e => {
     if (!e.coeDate) return false;
     const date = parseISO(e.coeDate);
     return date.getFullYear() === currentYear;
@@ -201,7 +204,7 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
                 const isCurrentMonth = isSameMonth(day, monthStart);
                 const isToday = isSameDay(day, new Date());
                 
-                const dayEscrows = escrows.filter(e => {
+                const dayEscrows = activeEscrows.filter(e => {
                   if (!e.coeDate) return false;
                   return isSameDay(parseISO(e.coeDate), day);
                 });

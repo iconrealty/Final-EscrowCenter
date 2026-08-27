@@ -5,7 +5,7 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
   const icons = [
     { id: 'active', icon: Home, label: 'Home' },
     { id: 'summary', icon: LayoutDashboard, label: 'Summary' },
-    { id: 'calendar', icon: Calendar, label: 'Calendar' },
+    { id: 'calendar', icon: Calendar, label: 'Production' },
     { id: 'anniversaries', icon: Gift, label: 'Anniversaries' },
   ];
 

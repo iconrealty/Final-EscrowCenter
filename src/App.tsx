@@ -400,7 +400,7 @@ function App() {
         {[
           { id: 'active', icon: Home, label: 'Home' },
           { id: 'summary', icon: LayoutDashboard, label: 'Summary' },
-          { id: 'calendar', icon: Calendar, label: 'Calendar' },
+          { id: 'calendar', icon: Calendar, label: 'Production' },
           { id: 'anniversaries', icon: Gift, label: 'Anniv.' },
         ].map((item) => {
           const isActive = activeTab === item.id;

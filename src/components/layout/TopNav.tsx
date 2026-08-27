@@ -99,7 +99,7 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
             onClick={() => setActiveTab('calendar')}
             className={`text-xs sm:text-sm font-medium transition-colors shrink-0 cursor-pointer ${activeTab === 'calendar' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
           >
-            Calendar
+            Production
           </button>
           <button 
             onClick={() => setActiveTab('anniversaries')}
@@ -115,7 +115,7 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
             onClick={() => setShowMobileNav(!showMobileNav)}
             className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-[#1B3A5C] px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-200/80 cursor-pointer"
           >
-            <span>{activeTab === 'active' ? 'Home' : activeTab === 'summary' ? 'Summary' : activeTab === 'calendar' ? 'Calendar' : 'Anniversaries'}</span>
+            <span>{activeTab === 'active' ? 'Home' : activeTab === 'summary' ? 'Summary' : activeTab === 'calendar' ? 'Production' : 'Anniversaries'}</span>
             <ChevronDown size={14} className={`transition-transform duration-200 ${showMobileNav ? 'rotate-180' : ''}`} />
           </button>
 
@@ -153,7 +153,7 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
                   }}
                   className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${activeTab === 'calendar' ? 'bg-[#1B3A5C]/10 text-[#1B3A5C]' : 'text-slate-700 hover:bg-slate-50'}`}
                 >
-                  <span>Calendar</span>
+                  <span>Production</span>
                   {activeTab === 'calendar' && <span className="w-1.5 h-1.5 rounded-full bg-[#1B3A5C]" />}
                 </button>
                 <button
