@@ -86,20 +86,35 @@ export function AddEditModal({
 
   // Address auto-fill helper: when pasting full address like "123 Main St, Santa Ana, CA 92701"
   const handleAddressInputChange = (rawVal: string) => {
-    const parsed = parseAddressComponents(rawVal);
-    
-    // Check if zip was in the address string and can resolve city
-    let derivedCity = parsed.city;
-    if (!derivedCity && parsed.zipCode) {
-      const cityLookup = getCityFromZip(parsed.zipCode);
-      if (cityLookup) derivedCity = cityLookup;
+    // Check if this looks like a pasted multi-component address (has comma, or California zip code with CA)
+    const hasComma = rawVal.includes(',');
+    const hasFullPastedFormat = hasComma || /\b(?:CA|California)\s+\d{5}\b/i.test(rawVal);
+
+    if (hasFullPastedFormat) {
+      const parsed = parseAddressComponents(rawVal);
+      
+      // Check if zip was in the address string and can resolve city
+      let derivedCity = parsed.city;
+      if (!derivedCity && parsed.zipCode) {
+        const cityLookup = getCityFromZip(parsed.zipCode);
+        if (cityLookup) derivedCity = cityLookup;
+      }
+
+      if (parsed.city || parsed.zipCode) {
+        setFormData(prev => ({
+          ...prev,
+          address: parsed.address || rawVal,
+          city: derivedCity ? derivedCity : prev.city,
+          zipCode: parsed.zipCode ? parsed.zipCode : prev.zipCode,
+        }));
+        return;
+      }
     }
 
+    // Normal typing: keep rawVal exactly as typed so spaces, numbers, and words are fully preserved
     setFormData(prev => ({
       ...prev,
-      address: parsed.address || rawVal,
-      city: derivedCity ? derivedCity : prev.city,
-      zipCode: parsed.zipCode ? parsed.zipCode : prev.zipCode,
+      address: rawVal,
     }));
   };
 
@@ -600,20 +615,13 @@ export function AddEditModal({
           {/* MLS Quick-Importer & Auto-Fill Banner */}
           <div className="mb-5 bg-gradient-to-br from-slate-50 to-blue-50/40 border border-blue-200/60 rounded-2xl p-4 sm:p-5 shadow-2xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-blue-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#1B3A5C] flex items-center justify-center text-white shrink-0">
-                  <FileText size={16} />
-                </div>
-                <h4 className="text-sm font-bold text-slate-900 leading-tight">MLS Quick-Fill</h4>
-              </div>
-
-              {/* Representation Selector */}
-              <div className="flex items-center gap-1.5 bg-white border border-slate-300/80 p-1 rounded-xl shadow-xs self-start sm:self-auto">
-                <span className="text-[11px] font-bold text-slate-600 px-2">Representing:</span>
+              {/* Representation Selector - Placed on the Left for High Visibility */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-300 p-1 rounded-xl shadow-xs self-start sm:self-auto">
+                <span className="text-xs font-bold text-slate-800 px-2">Representing:</span>
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, representation: 'Buyer' }))}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     formData.representation === 'Buyer'
                       ? 'bg-[#1B3A5C] text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-100'
@@ -624,7 +632,7 @@ export function AddEditModal({
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, representation: 'Seller' }))}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     formData.representation === 'Seller'
                       ? 'bg-emerald-600 text-white shadow-xs'
                       : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
@@ -635,7 +643,7 @@ export function AddEditModal({
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, representation: 'Dual' }))}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     formData.representation === 'Dual'
                       ? 'bg-[#11253C] text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-100'
@@ -643,6 +651,14 @@ export function AddEditModal({
                 >
                   Dual
                 </button>
+              </div>
+
+              {/* MLS Quick-Fill Label on the Right */}
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-[#1B3A5C] flex items-center justify-center text-white shrink-0">
+                  <FileText size={14} />
+                </div>
+                <h4 className="text-xs font-bold text-slate-800 leading-tight">MLS Quick-Fill</h4>
               </div>
             </div>
 
@@ -755,10 +771,7 @@ export function AddEditModal({
                 </div>
 
                 <div className="md:col-span-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-slate-700">Property Address (Street) *</label>
-                    <span className="text-[10px] text-slate-500">Pasting full address auto-fills City & Zip</span>
-                  </div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Property Address (Street) *</label>
                   <input 
                     required 
                     type="text" 
@@ -779,10 +792,7 @@ export function AddEditModal({
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-slate-700">Zip Code</label>
-                    <span className="text-[10px] text-slate-500">Auto-finds CA City</span>
-                  </div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Zip Code</label>
                   <input 
                     type="text" 
                     value={formData.zipCode} 
