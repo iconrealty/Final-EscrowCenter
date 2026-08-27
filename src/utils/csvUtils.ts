@@ -126,9 +126,7 @@ export function parseDateToIso(dateStr: string): string {
  * For Open/Pending transactions, Acceptance Date or Target COE is used.
  */
 export function getEscrowYear(escrow: Partial<Escrow>): string {
-  const dateStr = (escrow.status === 'Closed'
-    ? (escrow.coeDate || escrow.acceptanceDate || '')
-    : (escrow.acceptanceDate || escrow.coeDate || '')).trim();
+  const dateStr = (escrow.coeDate || escrow.acceptanceDate || '').trim();
   if (!dateStr) return '';
   if (/^\d{4}/.test(dateStr)) return dateStr.substring(0, 4);
   const match = dateStr.match(/\d{1,2}\/\d{1,2}\/(\d{4})/);

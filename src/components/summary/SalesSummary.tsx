@@ -35,15 +35,16 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   });
   const [commissionSelectedMonth, setCommissionSelectedMonth] = useState<string>('all');
 
-  // Helper function to extract exact YYYY-MM from escrow (acceptance date, then COE date)
+  // Helper function to extract exact YYYY-MM from escrow (Close of Escrow / COE date first, then Acceptance date)
   const getEscrowMonth = (e: Escrow): string => {
-    const dateStr = (e.acceptanceDate || e.coeDate || '').trim();
+    const dateStr = (e.coeDate || e.acceptanceDate || '').trim();
     if (!dateStr) return '';
     if (/^\d{4}-\d{2}/.test(dateStr)) return dateStr.substring(0, 7);
-    const match = dateStr.match(/^(\d{1,2})\/\d{1,2}\/(\d{4})/);
+    if (/^\d{4}\/\d{2}/.test(dateStr)) return dateStr.substring(0, 7).replace('/', '-');
+    const match = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
     if (match) {
       const month = match[1].padStart(2, '0');
-      const year = match[2];
+      const year = match[3];
       return `${year}-${month}`;
     }
     const parsed = new Date(dateStr);
@@ -66,19 +67,34 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   }, [escrows]);
 
   // Extract all unique months (YYYY-MM) from all non-cancelled escrows (both Open and Closed)
+  // plus all months of the current year (until December of the active year)
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
     
-    // Always ensure the current month is an option
+    // Always include all 12 months for the current active year
     const now = new Date();
-    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    monthsSet.add(currentYM);
+    const currentYear = now.getFullYear();
+    for (let m = 1; m <= 12; m++) {
+      monthsSet.add(`${currentYear}-${String(m).padStart(2, '0')}`);
+    }
 
     escrows.forEach((escrow) => {
       if (escrow.status === 'Cancelled') return;
       const ym = getEscrowMonth(escrow);
       if (ym && /^\d{4}-\d{2}$/.test(ym)) {
         monthsSet.add(ym);
+      }
+      if (escrow.coeDate) {
+        const coeYM = getEscrowMonth({ ...escrow, acceptanceDate: '' });
+        if (coeYM && /^\d{4}-\d{2}$/.test(coeYM)) {
+          monthsSet.add(coeYM);
+        }
+      }
+      if (escrow.acceptanceDate) {
+        const accYM = getEscrowMonth({ ...escrow, coeDate: '' });
+        if (accYM && /^\d{4}-\d{2}$/.test(accYM)) {
+          monthsSet.add(accYM);
+        }
       }
     });
 
@@ -94,7 +110,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   const availableYears = useMemo(() => {
     const yearsSet = new Set<string>();
     
-    // Always ensure the actual current year is an option
+    // Always ensure the active current year is an option
     const now = new Date();
     const currentYear = now.getFullYear().toString();
     yearsSet.add(currentYear);
