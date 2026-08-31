@@ -5,7 +5,7 @@ import { calculateNetFromGross } from './commissionUtils';
 
 let pdfWorkerConfigured = false;
 
-// Ensure Promise.withResolvers is polyfilled for older Safari / iOS
+// Polyfill Promise.withResolvers for Safari / WebKit environments
 if (typeof (Promise as any).withResolvers !== 'function') {
   (Promise as any).withResolvers = function <T>() {
     let resolve!: (value: T | PromiseLike<T>) => void;
@@ -16,6 +16,14 @@ if (typeof (Promise as any).withResolvers !== 'function') {
     });
     return { promise, resolve, reject };
   };
+}
+
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
+
+// Configure PDF.js worker with local same-origin URL bundled by Vite
+if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 }
 
 async function readFileAsArrayBuffer(file: File | Blob): Promise<ArrayBuffer> {
@@ -52,27 +60,6 @@ export async function extractPdfPagesText(file: File): Promise<{
   const arrayBuffer = await readFileAsArrayBuffer(file);
 
   try {
-    // 1. Ensure worker module is loaded in-memory first for instant main-thread execution
-    if (!pdfWorkerConfigured) {
-      try {
-        const workerModule = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
-        if (typeof globalThis !== 'undefined') (globalThis as any).pdfjsWorker = workerModule;
-        if (typeof window !== 'undefined') (window as any).pdfjsWorker = workerModule;
-        if (typeof self !== 'undefined') (self as any).pdfjsWorker = workerModule;
-      } catch (workerErr) {
-        console.warn('Worker module in-memory registration notice:', workerErr);
-      }
-      pdfWorkerConfigured = true;
-    }
-
-    // 2. Load PDF.js legacy build
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    
-    // Set official worker fallback url (DO NOT set empty string)
-    if (pdfjsLib.GlobalWorkerOptions) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
-    }
-
     const loadingTask = pdfjsLib.getDocument({
       data: new Uint8Array(arrayBuffer),
       useSystemFonts: true,
