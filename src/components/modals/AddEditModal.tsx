@@ -317,17 +317,21 @@ export function AddEditModal({
           console.warn('Server fallback scan notice:', serverErr);
         }
 
-        if (extractedData && (extractedData.address || extractedData.price || extractedData.apn)) {
+        if (extractedData && (extractedData.address || extractedData.price || extractedData.apn || extractedData.mlsId || extractedData.agentName)) {
           applyExtractedDocumentData(extractedData, file.name);
           return;
         }
 
-        setScanSuccess(`"${file.name}" attached to Documents! You can verify details below.`);
+        setScanError(`"${file.name}" was attached to documents, but no standard MLS/RPA text fields could be recognized.`);
       } else {
         // Plain text or CSV file
         const text = await file.text();
         const parsed = parseMlsText(text);
-        applyExtractedDocumentData(parsed, file.name);
+        if (parsed && (parsed.address || parsed.price || parsed.apn || parsed.mlsId || parsed.agentName)) {
+          applyExtractedDocumentData(parsed, file.name);
+        } else {
+          setScanError(`"${file.name}" was attached, but no MLS fields could be recognized in the text.`);
+        }
       }
     } catch (err: any) {
       setScanError(err.message || 'Failed to read document.');

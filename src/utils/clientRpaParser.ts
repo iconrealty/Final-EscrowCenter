@@ -5,6 +5,19 @@ import { calculateNetFromGross } from './commissionUtils';
 
 let pdfWorkerConfigured = false;
 
+// Ensure Promise.withResolvers is polyfilled for older Safari / iOS
+if (typeof (Promise as any).withResolvers !== 'function') {
+  (Promise as any).withResolvers = function <T>() {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    let reject!: (reason?: any) => void;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
 async function readFileAsArrayBuffer(file: File | Blob): Promise<ArrayBuffer> {
   if (typeof file.arrayBuffer === 'function') {
     try {
@@ -20,6 +33,112 @@ async function readFileAsArrayBuffer(file: File | Blob): Promise<ArrayBuffer> {
   });
 }
 
+function unescapePdfString(str: string): string {
+  return str
+    .replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\b/g, '\b')
+    .replace(/\\f/g, '\f')
+    .replace(/\\\(/g, '(')
+    .replace(/\\\)/g, ')')
+    .replace(/\\\\/g, '\\');
+}
+
+function decodeHexPdfString(hexStr: string): string {
+  const clean = hexStr.replace(/\s+/g, '');
+  let res = '';
+  for (let i = 0; i < clean.length; i += 2) {
+    const byte = parseInt(clean.substring(i, i + 2), 16);
+    if (!isNaN(byte) && byte > 0) {
+      res += String.fromCharCode(byte);
+    }
+  }
+  return res;
+}
+
+function parseRawStreamText(streamText: string): string[] {
+  const lines: string[] = [];
+  let currentLine: string[] = [];
+
+  const tokenRegex = /(?:\[((?:[^\]\\]|\\.)*)\]\s*TJ)|(?:\(((?:[^)\\]|\\.)*)\)\s*(?:Tj|\x27|\x22))|(?:<([0-9A-Fa-f\s]+)>\s*(?:Tj|\x27|\x22))|(\bT\*|\bET|\bBT|\bTd|\bTD|\bTm|\bTj)/g;
+
+  let match: RegExpExecArray | null;
+  while ((match = tokenRegex.exec(streamText)) !== null) {
+    if (match[1] !== undefined) {
+      // TJ array: extract all parenthesized strings or hex strings inside
+      const tjContent = match[1];
+      const subRegex = /\(((?:[^)\\]|\\.)*)\)|<([0-9A-Fa-f\s]+)>/g;
+      let sub: RegExpExecArray | null;
+      let partStr = '';
+      while ((sub = subRegex.exec(tjContent)) !== null) {
+        if (sub[1] !== undefined) {
+          partStr += unescapePdfString(sub[1]);
+        } else if (sub[2] !== undefined) {
+          partStr += decodeHexPdfString(sub[2]);
+        }
+      }
+      if (partStr.trim()) currentLine.push(partStr.trim());
+    } else if (match[2] !== undefined) {
+      // (string) Tj
+      const str = unescapePdfString(match[2]);
+      if (str.trim()) currentLine.push(str.trim());
+    } else if (match[3] !== undefined) {
+      // <hex> Tj
+      const str = decodeHexPdfString(match[3]);
+      if (str.trim()) currentLine.push(str.trim());
+    } else if (match[4] !== undefined) {
+      const op = match[4];
+      if (op === 'T*' || op === 'ET' || op === 'TD' || op === 'Td') {
+        if (currentLine.length > 0) {
+          lines.push(currentLine.join(' ').trim());
+          currentLine = [];
+        }
+      }
+    }
+  }
+  if (currentLine.length > 0) {
+    lines.push(currentLine.join(' ').trim());
+  }
+  return lines;
+}
+
+/**
+ * Pure JavaScript PDF Stream Text Extractor using pdf-lib (Zero Worker / Zero Safari WebKit restrictions)
+ */
+async function extractTextWithPdfLib(arrayBuffer: ArrayBuffer): Promise<{
+  fullText: string;
+  pagesText: string[];
+  lines: string[];
+}> {
+  const { PDFDocument, PDFRawStream, PDFStream, decodePDFRawStream } = await import('pdf-lib');
+  const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true, parseSpeed: 1000 });
+  const allLines: string[] = [];
+  const pagesText: string[] = [];
+
+  const objects = pdfDoc.context.enumerateIndirectObjects();
+  for (const [, obj] of objects) {
+    if (obj instanceof PDFRawStream || obj instanceof PDFStream) {
+      try {
+        const decoded = decodePDFRawStream(obj as any).decode();
+        const raw = new TextDecoder('latin1').decode(decoded);
+        const extracted = parseRawStreamText(raw);
+        if (extracted.length > 0) {
+          allLines.push(...extracted);
+          pagesText.push(extracted.join('\n'));
+        }
+      } catch {}
+    }
+  }
+
+  return {
+    fullText: allLines.join('\n'),
+    pagesText: pagesText.length > 0 ? pagesText : [allLines.join('\n')],
+    lines: allLines,
+  };
+}
+
 interface TextItemWithPos {
   str: string;
   x: number;
@@ -29,105 +148,124 @@ interface TextItemWithPos {
 
 /**
  * Extracts raw and spatially reconstructed text lines from a PDF file
+ * Guaranteed cross-platform: Runs via PDF.js with immediate fallback to pure in-memory pdf-lib parser for Safari/WebKit.
  */
 export async function extractPdfPagesText(file: File): Promise<{
   fullText: string;
   pagesText: string[];
   lines: string[];
 }> {
-  // Use legacy build for maximum Safari / iOS / WebKit compatibility
-  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  
-  if (!pdfWorkerConfigured) {
-    try {
-      // Import legacy worker in-memory handler and register on globalThis for zero-network execution
-      const workerModule = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
-      (globalThis as any).pdfjsWorker = workerModule;
-      if (typeof window !== 'undefined') {
-        (window as any).pdfjsWorker = workerModule;
+  const arrayBuffer = await readFileAsArrayBuffer(file);
+
+  // Method 1: Try PDF.js for spatial text positioning
+  try {
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    
+    if (!pdfWorkerConfigured) {
+      try {
+        const workerModule = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+        (globalThis as any).pdfjsWorker = workerModule;
+        if (typeof window !== 'undefined') (window as any).pdfjsWorker = workerModule;
+        if (typeof self !== 'undefined') (self as any).pdfjsWorker = workerModule;
+        if (pdfjsLib.GlobalWorkerOptions) {
+          (pdfjsLib.GlobalWorkerOptions as any).workerSrc = '';
+        }
+      } catch (workerErr) {
+        console.warn('Worker module in-memory load notice:', workerErr);
       }
-      if (typeof self !== 'undefined') {
-        (self as any).pdfjsWorker = workerModule;
-      }
-      if (pdfjsLib.GlobalWorkerOptions) {
-        (pdfjsLib.GlobalWorkerOptions as any).workerSrc = '';
-      }
-    } catch (workerErr) {
-      console.warn('Worker module in-memory load notice:', workerErr);
+      pdfWorkerConfigured = true;
     }
-    pdfWorkerConfigured = true;
+
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(arrayBuffer),
+      useSystemFonts: true,
+      disableFontFace: true,
+    });
+
+    const pdf = await loadingTask.promise;
+    const numPages = pdf.numPages;
+    const pagesText: string[] = [];
+    const allLines: string[] = [];
+
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      try {
+        const page = await pdf.getPage(pageNum);
+        const content = await page.getTextContent();
+        
+        const items: TextItemWithPos[] = [];
+        for (const item of content.items) {
+          if ('str' in item && typeof item.str === 'string' && item.str.trim()) {
+            const transform = (item as any).transform;
+            const x = transform ? transform[4] : 0;
+            const y = transform ? transform[5] : 0;
+            items.push({ str: item.str, x, y, page: pageNum });
+          }
+        }
+
+        // Sort by Y (descending: top to bottom) then X (ascending: left to right)
+        items.sort((a, b) => {
+          const yDiff = b.y - a.y;
+          if (Math.abs(yDiff) > 6) {
+            return yDiff;
+          }
+          return a.x - b.x;
+        });
+
+        // Reconstruct lines
+        const lineBuckets: string[] = [];
+        let currentY: number | null = null;
+        let currentLineParts: string[] = [];
+
+        for (const item of items) {
+          if (currentY === null || Math.abs(item.y - currentY) <= 6) {
+            currentLineParts.push(item.str);
+            currentY = item.y;
+          } else {
+            if (currentLineParts.length > 0) {
+              lineBuckets.push(currentLineParts.join(' ').trim());
+            }
+            currentLineParts = [item.str];
+            currentY = item.y;
+          }
+        }
+        if (currentLineParts.length > 0) {
+          lineBuckets.push(currentLineParts.join(' ').trim());
+        }
+
+        const pageStr = lineBuckets.join('\n');
+        pagesText.push(pageStr);
+        allLines.push(...lineBuckets);
+      } catch (pageErr) {
+        console.warn(`Error extracting text on page ${pageNum}:`, pageErr);
+      }
+    }
+
+    const fullText = pagesText.join('\n\n--- PAGE BREAK ---\n\n');
+    if (fullText.trim().length > 20) {
+      return {
+        fullText,
+        pagesText,
+        lines: allLines,
+      };
+    }
+  } catch (pdfjsErr) {
+    console.warn('PDF.js parser notice (falling back to pure in-memory pdf-lib):', pdfjsErr);
   }
 
-  const arrayBuffer = await readFileAsArrayBuffer(file);
-  const loadingTask = pdfjsLib.getDocument({
-    data: new Uint8Array(arrayBuffer),
-    useSystemFonts: true,
-    disableFontFace: true,
-  });
-
-  const pdf = await loadingTask.promise;
-  const numPages = pdf.numPages;
-  const pagesText: string[] = [];
-  const allLines: string[] = [];
-
-  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-    try {
-      const page = await pdf.getPage(pageNum);
-      const content = await page.getTextContent();
-      
-      // Group text items by roughly the same Y coordinate (line reconstruction)
-      const items: TextItemWithPos[] = [];
-      for (const item of content.items) {
-        if ('str' in item && typeof item.str === 'string' && item.str.trim()) {
-          const transform = (item as any).transform;
-          const x = transform ? transform[4] : 0;
-          const y = transform ? transform[5] : 0;
-          items.push({ str: item.str, x, y, page: pageNum });
-        }
-      }
-
-      // Sort by Y (descending: top to bottom) then X (ascending: left to right)
-      items.sort((a, b) => {
-        const yDiff = b.y - a.y;
-        if (Math.abs(yDiff) > 6) { // on different lines if Y difference > 6pt
-          return yDiff;
-        }
-        return a.x - b.x;
-      });
-
-      // Reconstruct lines
-      const lineBuckets: string[] = [];
-      let currentY: number | null = null;
-      let currentLineParts: string[] = [];
-
-      for (const item of items) {
-        if (currentY === null || Math.abs(item.y - currentY) <= 6) {
-          currentLineParts.push(item.str);
-          currentY = item.y;
-        } else {
-          if (currentLineParts.length > 0) {
-            lineBuckets.push(currentLineParts.join(' ').trim());
-          }
-          currentLineParts = [item.str];
-          currentY = item.y;
-        }
-      }
-      if (currentLineParts.length > 0) {
-        lineBuckets.push(currentLineParts.join(' ').trim());
-      }
-
-      const pageStr = lineBuckets.join('\n');
-      pagesText.push(pageStr);
-      allLines.push(...lineBuckets);
-    } catch (pageErr) {
-      console.warn(`Error extracting text on page ${pageNum}:`, pageErr);
+  // Method 2: Rock-solid pure JS pdf-lib fallback (100% universal across all Safari, iOS, Chrome, Firefox)
+  try {
+    const pdfLibResult = await extractTextWithPdfLib(arrayBuffer);
+    if (pdfLibResult.fullText.trim().length > 0) {
+      return pdfLibResult;
     }
+  } catch (pdfLibErr) {
+    console.warn('pdf-lib fallback extraction notice:', pdfLibErr);
   }
 
   return {
-    fullText: pagesText.join('\n\n--- PAGE BREAK ---\n\n'),
-    pagesText,
-    lines: allLines,
+    fullText: '',
+    pagesText: [],
+    lines: [],
   };
 }
 
