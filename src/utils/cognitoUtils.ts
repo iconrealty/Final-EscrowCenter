@@ -57,23 +57,29 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     entryData["TransactionType"] = escrow.representation;
   }
 
+  // Client 1
   if (client1FirstName || client1LastName) {
     entryData["ClientName"] = { "First": client1FirstName, "Last": client1LastName };
   }
   if (escrow.clientEmail && escrow.clientEmail.trim()) {
-    entryData["ClientEmail"] = escrow.clientEmail.trim();
+    // Cognito field name is 'ClientsEmail'
+    entryData["ClientsEmail"] = escrow.clientEmail.trim();
   }
   if (escrow.clientPhone && escrow.clientPhone.trim()) {
-    entryData["ClientPhone"] = escrow.clientPhone.trim();
+    // Cognito field name is 'ClientsPhone'
+    entryData["ClientsPhone"] = escrow.clientPhone.trim();
   }
 
+  // Client 2
   if (client2FirstName || client2LastName) {
     entryData["Client2Name"] = { "First": client2FirstName, "Last": client2LastName };
   }
   if (escrow.client2Email && escrow.client2Email.trim()) {
+    // Cognito field name is 'Client2Email'
     entryData["Client2Email"] = escrow.client2Email.trim();
   }
   if (escrow.client2Phone && escrow.client2Phone.trim()) {
+    // Cognito field name is 'Client2Phone'
     entryData["Client2Phone"] = escrow.client2Phone.trim();
   }
 
@@ -99,16 +105,13 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     const addressObj: Record<string, string> = {};
     if (streetAddress) addressObj["Line1"] = streetAddress;
     if (propertyCity) addressObj["City"] = propertyCity;
+    addressObj["State"] = "CA";
     if (propertyZip) addressObj["PostalCode"] = propertyZip;
     entryData["PropertyAddress"] = addressObj;
   }
 
-  if (escrow.apn && escrow.apn.trim()) {
-    entryData["APN"] = escrow.apn.trim();
-  }
-
   if (escrow.price && !isNaN(Number(escrow.price))) {
-    entryData["TransactionAmount"] = Number(escrow.price);
+    entryData["TransactionAmount"] = Math.round(Number(escrow.price));
   }
   if (escrow.commissionPercent !== undefined && escrow.commissionPercent !== null && !isNaN(Number(escrow.commissionPercent))) {
     // Cognito Forms percentage fields expect a decimal fraction (e.g., 0.025 for 2.5%, 0.03 for 3%)
@@ -116,19 +119,24 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     entryData["YourCommission"] = commNum > 1 ? commNum / 100 : commNum;
   }
 
+  // Other Agent
   if (agentFirstName || agentLastName) {
     entryData["OtherAgentsName"] = { "First": agentFirstName, "Last": agentLastName };
   }
   if (escrow.agentPhone && escrow.agentPhone.trim()) {
-    entryData["OtherAgentsPhone"] = escrow.agentPhone.trim();
+    // Cognito field name is 'OtherAgentsPhoneNumber'
+    entryData["OtherAgentsPhoneNumber"] = escrow.agentPhone.trim();
   }
   if (escrow.agentEmail && escrow.agentEmail.trim()) {
+    // Cognito field name is 'OtherAgentsEmail'
     entryData["OtherAgentsEmail"] = escrow.agentEmail.trim();
   }
   if (escrow.cooperatingBrokerage && escrow.cooperatingBrokerage.trim()) {
+    // Cognito field name is 'OtherAgentsBrokerage'
     entryData["OtherAgentsBrokerage"] = escrow.cooperatingBrokerage.trim();
   }
 
+  // Contract Dates
   if (formattedUnderContract) {
     entryData["UnderContractDate"] = formattedUnderContract;
   }
@@ -136,23 +144,31 @@ export function generateCognitoUrl(escrow: Escrow, user?: { displayName?: string
     entryData["ForecastedCloseDate"] = formattedForecastedClose;
   }
 
+  // Lender
   if (escrow.lenderName && escrow.lenderName.trim()) {
+    // Cognito field name is 'LenderUsed'
     entryData["LenderUsed"] = escrow.lenderName.trim();
   }
   if (escrow.lenderPhone && escrow.lenderPhone.trim()) {
-    entryData["LenderPhone"] = escrow.lenderPhone.trim();
+    // Cognito field name is 'LenderPhoneNumber'
+    entryData["LenderPhoneNumber"] = escrow.lenderPhone.trim();
   }
   if (escrow.lenderEmail && escrow.lenderEmail.trim()) {
+    // Cognito field name is 'LenderEmail'
     entryData["LenderEmail"] = escrow.lenderEmail.trim();
   }
 
+  // Escrow Company
   if (escrow.escrowCompany && escrow.escrowCompany.trim()) {
+    // Cognito field name is 'EscrowCompany'
     entryData["EscrowCompany"] = escrow.escrowCompany.trim();
   }
   if (escrow.escrowPhone && escrow.escrowPhone.trim()) {
-    entryData["EscrowPhone"] = escrow.escrowPhone.trim();
+    // Cognito field name is 'EscrowContactNumber'
+    entryData["EscrowContactNumber"] = escrow.escrowPhone.trim();
   }
   if (escrow.escrowEmail && escrow.escrowEmail.trim()) {
+    // Cognito field name is 'EscrowEmail'
     entryData["EscrowEmail"] = escrow.escrowEmail.trim();
   }
 
