@@ -170,8 +170,9 @@ export function parseMlsText(rawText: string): ParsedMlsData {
   // Match standard address with city, state, zip:
   // e.g. "14322 Newport Ave #204, Tustin, CA 92780" or "123 Main St, Santa Ana, CA 92703"
   for (const line of lines) {
-    const lineAddressMatch = line.match(/(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*(?:CA|California)\s*([0-9]{5})/i) ||
-      line.match(/([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?)\s+([0-9]{5})/i);
+    const cleanedLine = line.replace(/^(?:Property\s*Address|Address|Property\s*Location)\s*[:#=-]\s*/i, '');
+    const lineAddressMatch = cleanedLine.match(/(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*(?:CA|California)\s*([0-9]{5})/i) ||
+      cleanedLine.match(/([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?)\s+([0-9]{5})/i);
     if (lineAddressMatch) {
       result.address = lineAddressMatch[1].trim();
       result.city = lineAddressMatch[2].trim();
@@ -181,8 +182,8 @@ export function parseMlsText(rawText: string): ParsedMlsData {
   }
 
   if (!result.address) {
-    const fullAddressMatch = text.match(/(?:^|\n|\r)(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*(?:CA|California)\s*([0-9]{5})/i) ||
-      flatText.match(/(?:^|\s)(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*(?:CA|California)\s*([0-9]{5})/i);
+    const fullAddressMatch = text.match(/(?:^|\n|\r)(?:(?:Property\s*Address|Address)\s*[:#=-]\s*)?(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*(?:CA|California)\s*([0-9]{5})/i) ||
+      flatText.match(/(?:^|\s)(?:(?:Property\s*Address|Address)\s*[:#=-]\s*)?(?:Cross\s*Property\s*|360\s*Property\s*View\s*|Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*(?:CA|California)\s*([0-9]{5})/i);
     if (fullAddressMatch) {
       result.address = fullAddressMatch[1].trim();
       result.city = fullAddressMatch[2].trim();
@@ -192,8 +193,9 @@ export function parseMlsText(rawText: string): ParsedMlsData {
 
   // Fallback line search
   if (!result.address) {
-    for (const line of lines.slice(0, 15)) {
-      if (/^[0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+/i.test(line) && !/^(cross|property|listing|status|bed|sqft|parcel|price|rec|status)/i.test(line)) {
+    for (const rawLine of lines.slice(0, 15)) {
+      const line = rawLine.replace(/^(?:Property\s*Address|Address|Property\s*Location)\s*[:#=-]\s*/i, '').trim();
+      if (/^[0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+/i.test(line) && !/^(cross|property\s*view|listing|status|bed|sqft|parcel|price|rec|status)/i.test(line)) {
         const parsed = parseAddressComponents(line);
         if (parsed.address) {
           result.address = parsed.address;

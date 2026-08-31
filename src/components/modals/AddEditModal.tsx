@@ -291,7 +291,7 @@ export function AddEditModal({
         }
 
         const hasValidClientData = extractedData && (
-          extractedData.address || extractedData.price || extractedData.apn || extractedData.agentName || extractedData.listingAgentName
+          extractedData.address || extractedData.price || extractedData.apn || extractedData.mlsId || extractedData.agentName || extractedData.listingAgentName || extractedData.clientFirstName || extractedData.clientLastName
         );
 
         if (hasValidClientData) {
