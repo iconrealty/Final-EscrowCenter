@@ -162,20 +162,7 @@ export function MorningBriefingWidget({
   }, [escrows, currentYear, now]);
 
   if (upcomingBriefingItems.length === 0) {
-    return (
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs mb-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-extrabold text-sm text-[#1B3A5C] uppercase tracking-wider">
-              Anniversaries & Birthdays
-            </h2>
-          </div>
-          <p className="text-xs text-slate-600 mt-1 font-medium">
-            You&apos;re all caught up! No home closing anniversaries or client birthdays due today.
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
