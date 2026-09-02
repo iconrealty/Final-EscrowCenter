@@ -1,4 +1,6 @@
 import { Escrow, ALL_TASKS, parseAddressComponents } from '../types.ts';
+import { calculateNetFromGross } from './commissionUtils.ts';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 
 export const CSV_HEADERS = [
   'Escrow #',
@@ -28,6 +30,7 @@ export const CSV_HEADERS = [
   'Co-Agent Email',
   'Co-Agent Phone',
   'Cooperating Brokerage',
+  'Lender Company',
   'Lender Name',
   'Lender Email',
   'Lender Phone',
@@ -42,14 +45,129 @@ export const CSV_HEADERS = [
   'Acceptance Date',
   'Contingency Start Date',
   'Close of Escrow',
+  'COE Days',
   'Sale Price',
   'Commission Percent',
+  'Gross Commission',
   'Net Commission',
   'Contingency Days',
   'Completed Tasks',
   'Notes',
   'Last Updated'
 ];
+
+/**
+ * Parses a string representation of contingency days into a Record<string, number>.
+ * Handles formats like:
+ * - "L1: 14d, L2: 10d, L3: 7d, L4: 7d, L5: 7d, L6: 7d, L7: 7d, L8: 7d, L9: 7d"
+ * - "L1: 14, L2: 10, L3: 7..."
+ * - "Loan: 14, Appraisal: 10, Investigation: 7, Insurance: 7..."
+ */
+export function parseContingencyDays(raw: string): Record<string, number> | undefined {
+  if (!raw || !raw.trim()) return undefined;
+  const result: Record<string, number> = {};
+
+  const regex = /(L[1-9]|Loan|Appraisal|Investigation|Insurance|Seller\s*Docs|Title(?:\s*Report)?|HOA|Common\s*Int(?:\s*\/\s*HOA)?|Leased(?:\s*Items)?|COP)[:=\-\s]+(\d+)\s*d?/gi;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(raw)) !== null) {
+    const rawKey = match[1].toLowerCase().replace(/\s+/g, '');
+    const val = parseInt(match[2], 10);
+    if (isNaN(val)) continue;
+
+    let standardKey = '';
+    if (rawKey.startsWith('l1') || rawKey.includes('loan')) standardKey = 'L1';
+    else if (rawKey.startsWith('l2') || rawKey.includes('appraisal')) standardKey = 'L2';
+    else if (rawKey.startsWith('l3') || rawKey.includes('investigation')) standardKey = 'L3';
+    else if (rawKey.startsWith('l4') || rawKey.includes('insurance')) standardKey = 'L4';
+    else if (rawKey.startsWith('l5') || rawKey.includes('seller') || rawKey.includes('docs')) standardKey = 'L5';
+    else if (rawKey.startsWith('l6') || rawKey.includes('title')) standardKey = 'L6';
+    else if (rawKey.startsWith('l7') || rawKey.includes('hoa') || rawKey.includes('common')) standardKey = 'L7';
+    else if (rawKey.startsWith('l8') || rawKey.includes('leased') || rawKey.includes('solar')) standardKey = 'L8';
+    else if (rawKey.startsWith('l9') || rawKey.includes('cop')) standardKey = 'L9';
+
+    if (standardKey) {
+      result[standardKey] = val;
+    }
+  }
+
+  // Also handle simple comma or semicolon separated pairs
+  if (Object.keys(result).length === 0) {
+    const segments = raw.split(/[,;|\n]/);
+    for (const seg of segments) {
+      const parts = seg.split(/[:=]/);
+      if (parts.length === 2) {
+        const k = parts[0].trim().toUpperCase();
+        const v = parseInt(parts[1].replace(/[^0-9]/g, ''), 10);
+        if (/^L[1-9]$/.test(k) && !isNaN(v)) {
+          result[k] = v;
+        }
+      }
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+/**
+ * Parses completed tasks string into Record<string, boolean>.
+ * Handles labels, keys, or aliases separated by semicolon, comma, or newline.
+ */
+export function parseCompletedTasks(raw: string): Record<string, boolean> | undefined {
+  if (!raw || !raw.trim()) return undefined;
+  const result: Record<string, boolean> = {};
+
+  const tokens = raw.split(/[;,|\n]+/).map((t) => t.trim()).filter(Boolean);
+
+  for (const token of tokens) {
+    const lower = token.toLowerCase();
+    const cleanAlpha = lower.replace(/[^a-z0-9]/g, '');
+
+    // Check direct match with ALL_TASKS keys or labels
+    let matchedKey: string | null = null;
+    for (const task of ALL_TASKS) {
+      if (
+        task.key.toLowerCase() === lower ||
+        task.label.toLowerCase() === lower ||
+        task.label.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanAlpha
+      ) {
+        matchedKey = task.key;
+        break;
+      }
+    }
+
+    // Synonym matching if not directly matched
+    if (!matchedKey) {
+      if (cleanAlpha === 'brbc' || lower.includes('buyer broker')) matchedKey = 'BRBC';
+      else if (cleanAlpha === 'emd' || lower.includes('earnest') || lower.includes('deposit') || lower.includes('initial deposit')) matchedKey = 'EMD';
+      else if (cleanAlpha === 'insp' || lower.includes('inspect')) matchedKey = 'INSP';
+      else if (cleanAlpha === 'rr' || lower.includes('repair request') || lower.includes('request for repair')) matchedKey = 'RR';
+      else if (cleanAlpha === 'avid' || lower.includes('agent visual')) matchedKey = 'AVID';
+      else if (cleanAlpha === 'sdr' || lower.includes('seller disclosure') || lower.includes('disclosure')) matchedKey = 'SDR';
+      else if (cleanAlpha === 'apr' || (lower.includes('appraisal') && !lower.includes('l2'))) matchedKey = 'APR';
+      else if (cleanAlpha === 'insurance' || (lower.includes('hazard') && !lower.includes('l4'))) matchedKey = 'Insurance';
+      else if (cleanAlpha === 'lfa' || lower.includes('final approval') || lower.includes('loan approval')) matchedKey = 'LFA';
+      else if (cleanAlpha === 'sld' || lower.includes('signed') || lower.includes('signing') || lower.includes('docs signed')) matchedKey = 'SLD';
+      else if (cleanAlpha === 'vp' || lower.includes('walkthrough') || lower.includes('verification of prop')) matchedKey = 'VP';
+      else if (cleanAlpha === 'fwd' || lower.includes('wire') || lower.includes('final wire')) matchedKey = 'FWD';
+      else if (cleanAlpha === 'rec' || lower.includes('record') || lower.includes('closed') || lower.includes('recording')) matchedKey = 'REC';
+      else if (cleanAlpha === 'l1' || lower.includes('loan cont')) matchedKey = 'L1';
+      else if (cleanAlpha === 'l2' || lower.includes('appraisal cont')) matchedKey = 'L2';
+      else if (cleanAlpha === 'l3' || lower.includes('investigation cont')) matchedKey = 'L3';
+      else if (cleanAlpha === 'l4' || lower.includes('insurance cont')) matchedKey = 'L4';
+      else if (cleanAlpha === 'l5' || lower.includes('seller doc')) matchedKey = 'L5';
+      else if (cleanAlpha === 'l6' || lower.includes('title report') || lower.includes('prelim')) matchedKey = 'L6';
+      else if (cleanAlpha === 'l7' || lower.includes('hoa cont') || lower.includes('common int')) matchedKey = 'L7';
+      else if (cleanAlpha === 'l8' || lower.includes('leased item') || lower.includes('solar cont')) matchedKey = 'L8';
+      else if (cleanAlpha === 'l9' || lower.includes('cop') || lower.includes('buyer property')) matchedKey = 'L9';
+    }
+
+    if (matchedKey) {
+      result[matchedKey] = true;
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
 
 export function parseDateToIso(dateStr: string): string {
   if (!dateStr || !dateStr.trim()) return '';
@@ -153,12 +271,12 @@ export function generateCsvTemplate(): string {
       '"Curley"', // Client Last Name
       '"(714) 555-0101"', // Client Phone
       '"pcurley@example.com"', // Client Email
-      '""', // Client Birthday
-      '""', // Client 2 First Name
-      '""', // Client 2 Last Name
-      '""', // Client 2 Phone
-      '""', // Client 2 Email
-      '""', // Client 2 Birthday
+      '"04/15/1985"', // Client Birthday
+      '"Sarah"', // Client 2 First Name
+      '"Curley"', // Client 2 Last Name
+      '"(714) 555-0102"', // Client 2 Phone
+      '"scurley@example.com"', // Client 2 Email
+      '"08/20/1987"', // Client 2 Birthday
       '"Paul Muner"', // Agent Name
       '"paul@example.com"', // Agent Email
       '"(949) 555-0199"', // Agent Phone
@@ -166,7 +284,8 @@ export function generateCsvTemplate(): string {
       '""', // Co-Agent Email
       '""', // Co-Agent Phone
       '"Icon Realty Partners"', // Cooperating Brokerage
-      '"CMG Financial"', // Lender Name
+      '"CMG Financial"', // Lender Company
+      '"Mark Davis"', // Lender Name
       '"lender@cmg.com"', // Lender Email
       '"(949) 555-0188"', // Lender Phone
       '"Escrow Logix, Inc."', // Escrow Company
@@ -180,13 +299,15 @@ export function generateCsvTemplate(): string {
       '"05/05/2026"', // Acceptance Date
       '"05/05/2026"', // Contingency Start Date
       '"06/05/2026"', // Close of Escrow
+      '"30"', // COE Days
       '"$840,000.00"', // Sale Price
-      '"3.0"', // Commission Percent
-      '"$25,200.00"', // Net Commission
-      '"L1: 14, L2: 10, L3: 7, L4: 7, L5: 7, L6: 7, L7: 7, L8: 7"', // Contingency Days
-      '"Deposit, Disclosures, Inspection"', // Completed Tasks
-      '"Notes for Escrow Logix"', // Notes
-      '"2026-05-05T12:00:00.000Z"' // Last Updated
+      '"2.5"', // Commission Percent
+      '"$21,000.00"', // Gross Commission
+      '"$6,000.00"', // Net Commission
+      '"L1: 14, L2: 10, L3: 7, L4: 7, L5: 7, L6: 7, L7: 7, L8: 7, L9: 7"', // Contingency Days
+      '"BRBC; EMD; Inspection; RR; AVID; Seller Disclosures Received & Reviewed; Appraisal; Insurance; Loan Final Approval; Escrow / Loan Docs Signed; VP; Final Wire Deposit; Record / Close"', // Completed Tasks
+      '"Standard purchase transaction via Zillow lead."', // Notes
+      '"2026-06-05T12:00:00.000Z"' // Last Updated
     ]
   ];
   return CSV_HEADERS.join(',') + '\n' + exampleRows.map(row => row.join(',')).join('\n') + '\n';
@@ -238,6 +359,24 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       completedTasksStr = completedList.join('; ');
     }
 
+    // Calculate COE Days if not explicitly stored
+    const calcCoeDays = () => {
+      if (e.coeDays !== undefined && e.coeDays !== null && !isNaN(Number(e.coeDays))) {
+        return String(e.coeDays);
+      }
+      if (e.acceptanceDate && e.coeDate) {
+        try {
+          const diff = differenceInCalendarDays(parseISO(e.coeDate), parseISO(e.acceptanceDate));
+          if (diff > 0) return String(diff);
+        } catch (_) {}
+      }
+      return '';
+    };
+
+    // Calculate Gross Commission if price and commission percent exist
+    const hasCommPercent = e.commissionPercent !== undefined && e.commissionPercent !== null && !isNaN(Number(e.commissionPercent));
+    const grossComm = (e.price && hasCommPercent) ? (e.price * Number(e.commissionPercent) / 100) : 0;
+
     // Format the values to escape commas and quotes
     const escapeCsv = (val: any) => {
       if (val === undefined || val === null) return '""';
@@ -250,7 +389,7 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       escapeCsv(e.mlsId || ''),
       escapeCsv(e.apn || ''),
       escapeCsv(e.status || 'Open'),
-      escapeCsv(e.representation || ''),
+      escapeCsv(e.representation || 'Buyer'),
       escapeCsv(e.leadSource || 'Zillow'),
       escapeCsv(e.address || ''),
       escapeCsv(e.city || ''),
@@ -273,6 +412,7 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       escapeCsv(''), // Co-Agent Email
       escapeCsv(''), // Co-Agent Phone
       escapeCsv(e.cooperatingBrokerage || ''),
+      escapeCsv(e.lenderCompany || ''),
       escapeCsv(e.lenderName || ''),
       escapeCsv(e.lenderEmail || ''),
       escapeCsv(e.lenderPhone || ''),
@@ -287,8 +427,10 @@ export function downloadEscrowsCsv(escrows: Escrow[]) {
       escapeCsv(e.acceptanceDate || ''),
       escapeCsv(e.contingencyStartDate || ''),
       escapeCsv(e.coeDate || ''),
+      escapeCsv(calcCoeDays()),
       escapeCsv(e.price ? `$${e.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'),
-      escapeCsv(e.commissionPercent !== undefined ? e.commissionPercent : ''),
+      escapeCsv(e.commissionPercent !== undefined && e.commissionPercent !== null ? e.commissionPercent : ''),
+      escapeCsv(grossComm ? `$${grossComm.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'),
       escapeCsv(e.netCommission ? `$${e.netCommission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'),
       escapeCsv(contingencyDaysStr),
       escapeCsv(completedTasksStr),
@@ -556,22 +698,32 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
 
     // Lead Source mapping
     const rawSource = getVal(['lead source', 'source', 'lead_source', 'lead type']);
-    let leadSource: 'Zillow' | 'Self' | 'Team Lead' | 'Opcity' | 'Other' = 'Zillow';
+    let leadSource: 'Zillow' | 'Self' | 'Team Lead' | 'Opcity' | 'Other' | string = 'Zillow';
     if (rawSource.toLowerCase().includes('zillow')) leadSource = 'Zillow';
     else if (rawSource.toLowerCase().includes('self') || rawSource.toLowerCase().includes('soi') || rawSource.toLowerCase().includes('referral') || rawSource.toLowerCase().includes('past client')) leadSource = 'Self';
     else if (rawSource.toLowerCase().includes('team')) leadSource = 'Team Lead';
     else if (rawSource.toLowerCase().includes('opcity')) leadSource = 'Opcity';
-    else if (rawSource) leadSource = 'Other';
+    else if (rawSource.trim()) leadSource = rawSource.trim();
 
     // Price
     const rawPrice = getVal(['sale price', 'price', 'purchase price', 'amount', 'transaction amount']);
     const price = Number(String(rawPrice || '').replace(/[^0-9.]/g, '')) || 0;
+
+    // Gross Commission
+    const rawGrossComm = getVal(['gross commission', 'gross income', 'gross gci', 'gci', 'gross', 'gross commission amount', 'total commission']);
+    let grossCommission = 0;
+    if (rawGrossComm) {
+      grossCommission = Number(String(rawGrossComm).replace(/[^0-9.]/g, '')) || 0;
+    }
 
     // Net Commission (Strictly match Agent Net, avoiding Gross Income columns)
     const rawNetComm = getVal(['net commission', 'net income', 'agent net income', 'agent net', 'net gci', 'net agent paid income', 'net proceeds', 'net closed commission', 'agent net pay', 'net']);
     let netCommission = 0;
     if (rawNetComm) {
       netCommission = Number(String(rawNetComm).replace(/[^0-9.]/g, '')) || 0;
+    } else if (grossCommission > 0) {
+      // Derive Net Commission from Gross Commission and Lead Source using business formula
+      netCommission = calculateNetFromGross(grossCommission, leadSource);
     }
 
     // Commission Percent
@@ -582,6 +734,8 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       if (!isNaN(num) && num > 0) {
         commissionPercent = num <= 0.2 ? num * 100 : num;
       }
+    } else if (price > 0 && grossCommission > 0) {
+      commissionPercent = Math.round((grossCommission / price) * 1000) / 10;
     } else if (price > 0 && netCommission > 0) {
       // Calculate derived commission percentage if not provided directly
       const derived = Math.round((netCommission / price) * 1000) / 10;
@@ -602,6 +756,32 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
     if (!parsedAcceptanceDate && !parsedCoeDate) {
       continue;
     }
+
+    // COE Days
+    const rawCoeDays = getVal(['coe days', 'coe_days', 'days of escrow', 'escrow days', 'escrow length', 'length of escrow', 'term']);
+    let parsedCoeDays: number | undefined = undefined;
+    if (rawCoeDays) {
+      const num = parseInt(String(rawCoeDays).replace(/[^0-9]/g, ''), 10);
+      if (!isNaN(num) && num > 0) parsedCoeDays = num;
+    }
+    if (parsedCoeDays === undefined && parsedAcceptanceDate && parsedCoeDate) {
+      try {
+        const diff = differenceInCalendarDays(parseISO(parsedCoeDate), parseISO(parsedAcceptanceDate));
+        if (diff > 0) parsedCoeDays = diff;
+      } catch (_) {}
+    }
+
+    // Contingency Days
+    const rawContingencyDays = getVal(['contingency days', 'contingencies', 'contingency_days', 'contingency schedule', 'contingency timelines']);
+    const parsedContingencyDays = rawContingencyDays ? parseContingencyDays(rawContingencyDays) : undefined;
+
+    // Completed Tasks
+    const rawTasks = getVal(['completed tasks', 'tasks', 'completed milestones', 'milestones', 'tasks completed', 'completed_tasks', 'checklist']);
+    const parsedTasks = rawTasks ? parseCompletedTasks(rawTasks) : undefined;
+
+    // Last Updated
+    const rawLastUpdated = getVal(['last updated', 'updated at', 'modified at', 'last_updated']);
+    const lastUpdated = rawLastUpdated ? parseDateToIso(rawLastUpdated) || rawLastUpdated : undefined;
 
     // Map fields
     const escrow: Partial<Escrow> = {
@@ -626,7 +806,7 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       agentEmail: getVal(['agent email', 'agent_email']),
       agentPhone: getVal(['agent phone', 'agent_phone']),
       cooperatingBrokerage,
-      lenderCompany: getVal(['lender company', 'mortgage company', 'lender institution', 'bank', 'bank name', 'lender / bank name']),
+      lenderCompany: getVal(['lender company', 'mortgage company', 'lender institution', 'bank', 'bank name', 'lender / bank name', 'lending company']),
       lenderName: getVal(['lender name', 'loan officer', 'loan officer name', 'lender', 'mortgage']),
       lenderPhone: getVal(['lender phone', 'lender phone number', 'mortgage phone', 'loan officer phone']),
       lenderEmail: getVal(['lender email', 'mortgage email', 'loan officer email']),
@@ -644,6 +824,10 @@ export function parseCsv(csvText: string): Partial<Escrow>[] {
       acceptanceDate: parsedAcceptanceDate,
       contingencyStartDate: parsedContingencyStartDate,
       coeDate: parsedCoeDate,
+      coeDays: parsedCoeDays,
+      contingencyDays: parsedContingencyDays,
+      tasks: parsedTasks,
+      lastUpdated: lastUpdated || new Date().toISOString(),
       status: parsedStatus,
       representation,
       leadSource,
@@ -844,6 +1028,14 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     }
   }
 
+  let coeDays: number | undefined = undefined;
+  if (acceptanceDate && coeDate) {
+    try {
+      const diff = differenceInCalendarDays(parseISO(coeDate), parseISO(acceptanceDate));
+      if (diff > 0) coeDays = diff;
+    } catch (_) {}
+  }
+
   return {
     escrowNumber: getVal(['id', 'escrow #', 'escrow number', 'escrow no']),
     mlsId: getVal(['mls id', 'mls #', 'mls number', 'listing id', 'listing #', 'mls']) || undefined,
@@ -865,7 +1057,7 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     agentEmail: getVal(['agent email', 'agent_email']),
     agentPhone: getVal(['agent phone', 'agent_phone']),
     cooperatingBrokerage: getVal(['cooperating brokerage', 'other agent brokerage', 'other brokerage', 'agent brokerage', 'co-brokerage']),
-    lenderCompany: getVal(['mortgage company', 'lender company', 'mortgage institution', 'bank', 'bank name']),
+    lenderCompany: getVal(['mortgage company', 'lender company', 'mortgage institution', 'bank', 'bank name', 'lender / bank name']),
     lenderName: getVal(['loan officer', 'loan officer name', 'lender name', 'lender', 'mortgage']),
     lenderPhone: getVal(['lender phone', 'lender_phone', 'mortgage phone', 'loan officer phone']),
     lenderEmail: getVal(['lender email', 'lender_email', 'mortgage email', 'loan officer email']),
@@ -882,6 +1074,7 @@ export function parseSisuText(text: string): Partial<Escrow> | null {
     netCommission,
     acceptanceDate,
     coeDate,
+    coeDays,
     status: parsedStatus,
     representation,
     leadSource,

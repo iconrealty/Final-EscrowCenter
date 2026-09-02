@@ -364,6 +364,7 @@ export function useEscrows() {
         agentPhone: data.agentPhone || '',
         agentEmail: data.agentEmail || '',
         cooperatingBrokerage: data.cooperatingBrokerage || '',
+        lenderCompany: data.lenderCompany || '',
         lenderName: data.lenderName || '',
         lenderPhone: data.lenderPhone || '',
         lenderEmail: data.lenderEmail || '',
@@ -373,15 +374,20 @@ export function useEscrows() {
         acceptanceDate: data.acceptanceDate || '',
         contingencyStartDate: data.contingencyStartDate || data.acceptanceDate || '',
         coeDate: data.coeDate || '',
+        coeDays: data.coeDays,
         notes: data.notes || '',
         status: data.status || 'Open',
         representation: data.representation || 'Buyer',
         leadSource: data.leadSource || 'Zillow',
-        contingencyDays: data.contingencyDays || {
-          'L1': 14, 'L2': 10, 'L3': 7, 'L4': 7, 'L5': 7, 'L6': 7, 'L7': 7, 'L8': 7, 'L9': 7
+        contingencyDays: {
+          'L1': 14, 'L2': 10, 'L3': 7, 'L4': 7, 'L5': 7, 'L6': 7, 'L7': 7, 'L8': 7, 'L9': 7,
+          ...(data.contingencyDays || {})
         },
-        tasks: data.tasks || ALL_TASKS.reduce((acc, task) => ({ ...acc, [task.key]: false }), {}),
-        lastUpdated: new Date().toISOString(),
+        tasks: {
+          ...ALL_TASKS.reduce((acc, task) => ({ ...acc, [task.key]: false }), {}),
+          ...(data.tasks || {})
+        },
+        lastUpdated: data.lastUpdated || new Date().toISOString(),
       };
     });
 
