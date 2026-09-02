@@ -102,49 +102,67 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
       {/* Long Goals Bar Below the Cards */}
       <button
         onClick={onOpenGoals}
-        className="w-full bg-white hover:bg-slate-100/80 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-start gap-2.5 sm:gap-5 cursor-pointer group transition-all text-left"
+        className="w-full bg-white hover:bg-slate-100/80 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-4 py-3 cursor-pointer group transition-all text-left"
         title="Click to view Goals & Performance Tracker"
       >
-        <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
-          <span className="text-xs font-black uppercase tracking-[1px] text-[#1B3A5C]">
-            {actualYear}
-          </span>
-          <span className="text-[10px] text-slate-400 font-bold sm:hidden">Click to view</span>
-        </div>
-
-        <div className="h-4 w-px bg-slate-200 hidden sm:block shrink-0" />
-
-        <div className="flex items-center justify-between sm:justify-start gap-4 sm:gap-7 w-full sm:w-auto flex-wrap">
-          {/* Units First */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs sm:text-[13px] font-black text-black uppercase tracking-wider">UNITS:</span>
-            <span className={`text-xs sm:text-[13px] font-black px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all ${
-              isUnitsOnTrack 
-                ? 'bg-[#15803d] text-white border border-[#166534]' 
-                : 'bg-[#b91c1c] text-white border border-[#991b1b]'
-            }`}>
-              {unitsStatusText}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-2.5 sm:gap-5 w-full">
+          {/* Year header */}
+          <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
+            <span className="text-xs font-black uppercase tracking-[1px] text-[#1B3A5C]">
+              {actualYear}
             </span>
-            <span className="text-xs sm:text-[13px] font-bold text-slate-800">
-              ({closedYtd}/{goalTargetUnits})
-            </span>
+            <span className="text-[10px] text-slate-400 font-bold sm:hidden">Click to view</span>
           </div>
 
-          <div className="h-5 w-px bg-slate-300 hidden sm:block" />
+          <div className="h-4 w-px bg-slate-200 hidden sm:block shrink-0" />
 
-          {/* Income Second */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs sm:text-[13px] font-black text-black uppercase tracking-wider">INCOME:</span>
-            <span className={`text-xs sm:text-[13px] font-black px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all ${
-              isIncomeOnTrack 
-                ? 'bg-[#15803d] text-white border border-[#166534]' 
-                : 'bg-[#b91c1c] text-white border border-[#991b1b]'
-            }`}>
-              {incomeStatusText}
-            </span>
-            <span className="text-xs sm:text-[13px] font-bold text-slate-800">
-              ({formatCurrency(closedCommission)} / {formatCurrency(goalTargetIncome)})
-            </span>
+          {/* Goals Pills & Info - Side-by-side on mobile, horizontal row on desktop */}
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:gap-7 w-full sm:w-auto">
+            {/* Units Column / Group */}
+            <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 text-center sm:text-left">
+              <span className="text-xs sm:text-[13px] font-black text-black uppercase tracking-wider hidden sm:inline">
+                UNITS:
+              </span>
+              <span className={`text-xs sm:text-[13px] font-black px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all w-full sm:w-auto text-center ${
+                isUnitsOnTrack 
+                  ? 'bg-[#15803d] text-white border border-[#166534]' 
+                  : 'bg-[#b91c1c] text-white border border-[#991b1b]'
+              }`}>
+                {unitsStatusText}
+              </span>
+              <div className="flex items-center justify-center gap-1">
+                <span className="text-[11px] font-black text-black uppercase tracking-wider sm:hidden">
+                  UNITS
+                </span>
+                <span className="text-[11px] sm:text-[13px] font-bold text-slate-800">
+                  ({closedYtd}/{goalTargetUnits})
+                </span>
+              </div>
+            </div>
+
+            <div className="h-5 w-px bg-slate-300 hidden sm:block shrink-0" />
+
+            {/* Income Column / Group */}
+            <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 text-center sm:text-left">
+              <span className="text-xs sm:text-[13px] font-black text-black uppercase tracking-wider hidden sm:inline">
+                INCOME:
+              </span>
+              <span className={`text-xs sm:text-[13px] font-black px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all w-full sm:w-auto text-center ${
+                isIncomeOnTrack 
+                  ? 'bg-[#15803d] text-white border border-[#166534]' 
+                  : 'bg-[#b91c1c] text-white border border-[#991b1b]'
+              }`}>
+                {incomeStatusText}
+              </span>
+              <div className="flex items-center justify-center gap-1 max-w-full">
+                <span className="text-[11px] font-black text-black uppercase tracking-wider sm:hidden">
+                  INCOME
+                </span>
+                <span className="text-[11px] sm:text-[13px] font-bold text-slate-800 truncate">
+                  ({formatCurrency(closedCommission)} / {formatCurrency(goalTargetIncome)})
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </button>
