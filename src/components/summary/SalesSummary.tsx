@@ -601,11 +601,11 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
               <div className="flex flex-wrap items-center gap-6">
                 {/* Already Received */}
                 <div>
-                  <span className="text-[10px] sm:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider block">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-black uppercase tracking-[0.8px] block">
                     Already Received
                   </span>
-                  <div className="mt-0.5">
-                    <span className="text-xl sm:text-2xl font-bold font-mono text-[#1B3A5C] tracking-tight">
+                  <div className="mt-1">
+                    <span className="text-lg sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none">
                       {formatCurrency(monthlyStats.closedCommission)}
                     </span>
                   </div>
@@ -615,11 +615,11 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
 
                 {/* Expected to Receive */}
                 <div>
-                  <span className="text-[10px] sm:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider block">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-black uppercase tracking-[0.8px] block">
                     Expected to Receive ({formatMonthName(selectedMonth)})
                   </span>
-                  <div className="mt-0.5">
-                    <span className="text-xl sm:text-2xl font-bold font-mono text-[#059669] tracking-tight">
+                  <div className="mt-1">
+                    <span className="text-lg sm:text-2xl xl:text-[25px] font-black text-[#059669] tracking-tight leading-none">
                       {formatCurrency(monthlyStats.expectedCommission)}
                     </span>
                   </div>

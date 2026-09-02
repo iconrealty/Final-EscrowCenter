@@ -159,7 +159,9 @@ function App() {
           escrows={escrows}
         />
         
-        <StatsBar escrows={escrows} onOpenGoals={() => setIsGoalsOpen(true)} />
+        {activeTab === 'active' && (
+          <StatsBar escrows={escrows} onOpenGoals={() => setIsGoalsOpen(true)} />
+        )}
 
         <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
           {activeTab === 'active' && (
