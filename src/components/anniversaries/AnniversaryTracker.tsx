@@ -308,16 +308,16 @@ export function AnniversaryTracker({ escrows, onSelectEscrow, onUpdateEscrow }: 
         {/* Mini stat pills */}
         <div className="flex items-center gap-3 shrink-0">
           <div className="bg-amber-50 border border-amber-200/80 rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
-            <p className="text-2xl sm:text-3xl font-black text-amber-600">{stats.birthdaysCount}</p>
-            <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mt-0.5">Birthdays</p>
+            <p className="text-2xl sm:text-3xl font-black text-amber-600 tracking-tight leading-none">{stats.birthdaysCount}</p>
+            <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mt-1">Birthdays</p>
           </div>
           <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
-            <p className="text-2xl sm:text-3xl font-black text-slate-800">{stats.thisMonthCount}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{MONTH_NAMES[currentMonth]}</p>
+            <p className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight leading-none">{stats.thisMonthCount}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">{MONTH_NAMES[currentMonth]}</p>
           </div>
           <div className="bg-[#059669]/10 border border-transparent rounded-xl px-4 sm:px-5 py-3 text-center min-w-[100px]">
-            <p className="text-2xl sm:text-3xl font-black text-[#059669]">{stats.respondedCount}</p>
-            <p className="text-[10px] font-bold text-[#059669] uppercase tracking-wider mt-0.5">Responded</p>
+            <p className="text-2xl sm:text-3xl font-black text-[#059669] tracking-tight leading-none">{stats.respondedCount}</p>
+            <p className="text-[10px] font-bold text-[#059669] uppercase tracking-wider mt-1">Responded</p>
           </div>
         </div>
       </div>

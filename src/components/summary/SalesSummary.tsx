@@ -529,7 +529,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Total Projected</span>
-                <div className="mt-1 text-base sm:text-lg font-black text-[#1B3A5C] font-mono">
+                <div className="mt-1 text-base sm:text-lg font-black text-[#1B3A5C] tracking-tight leading-none">
                   {formatCurrency(monthlyStats.totalProjectedCommission)}
                 </div>
                 <div className="mt-1 text-[10px] text-slate-500 font-medium">
@@ -539,7 +539,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
 
               <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Pending / Open Volume</span>
-                <div className="mt-1 text-base sm:text-lg font-black text-emerald-900 font-mono">
+                <div className="mt-1 text-base sm:text-lg font-black text-emerald-900 tracking-tight leading-none">
                   {formatCurrency(monthlyStats.expectedVolume)}
                 </div>
                 <div className="mt-1 text-[10px] text-emerald-700 font-medium">
@@ -549,7 +549,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
 
               <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Closed Volume</span>
-                <div className="mt-1 text-base sm:text-lg font-black text-[#0f172a] font-mono">
+                <div className="mt-1 text-base sm:text-lg font-black text-[#0f172a] tracking-tight leading-none">
                   {formatCurrency(monthlyStats.closedVolume)}
                 </div>
                 <div className="mt-1 text-[10px] text-slate-500 font-medium">
@@ -562,7 +562,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
             <div className="bg-slate-50/80 border border-slate-200/70 rounded-xl p-3 flex flex-col gap-2">
               <div className="flex items-center justify-between text-xs font-bold">
                 <span className="text-[#1d1d1f]">Monthly Revenue Collection</span>
-                <span className="text-[#1B3A5C] font-mono">{monthlyCollectionPercent}% Collected</span>
+                <span className="text-[#1B3A5C] font-black tracking-tight">{monthlyCollectionPercent}% Collected</span>
               </div>
               <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                 <div
@@ -613,27 +613,27 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
 
             {/* 4 Primary Metric Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Total Volume</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#1d1d1f] font-mono mt-0.5 truncate">
+              <div className="bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-3 flex flex-col justify-center">
+                <span className="text-[9px] font-bold text-black uppercase tracking-[0.8px]">Total Volume</span>
+                <span className="text-sm sm:text-base font-black text-[#0f172a] tracking-tight leading-none mt-1 truncate">
                   {formatCurrency(totalStats.volume)}
                 </span>
               </div>
-              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Closed Deals</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#1d1d1f] font-mono mt-0.5 truncate">
+              <div className="bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-3 flex flex-col justify-center">
+                <span className="text-[9px] font-bold text-black uppercase tracking-[0.8px]">Closed Deals</span>
+                <span className="text-sm sm:text-base font-black text-[#0f172a] tracking-tight leading-none mt-1 truncate">
                   {totalStats.count}
                 </span>
               </div>
-              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Net Commissions</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#059669] font-mono mt-0.5 truncate">
+              <div className="bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-3 flex flex-col justify-center">
+                <span className="text-[9px] font-bold text-black uppercase tracking-[0.8px]">Net Commissions</span>
+                <span className="text-sm sm:text-base font-black text-[#059669] tracking-tight leading-none mt-1 truncate">
                   {formatCurrency(totalStats.commission)}
                 </span>
               </div>
-              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Gross Commissions</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#1B3A5C] font-mono mt-0.5 truncate">
+              <div className="bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-3 flex flex-col justify-center">
+                <span className="text-[9px] font-bold text-black uppercase tracking-[0.8px]">Gross Commissions</span>
+                <span className="text-sm sm:text-base font-black text-[#1B3A5C] tracking-tight leading-none mt-1 truncate">
                   {formatCurrency(totalStats.grossCommission)}
                 </span>
               </div>
@@ -643,19 +643,19 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Avg Sale Price</span>
-                <span className="text-sm font-bold text-[#1d1d1f] font-mono mt-1">
+                <span className="text-sm sm:text-base font-black text-[#0f172a] tracking-tight leading-none mt-1.5">
                   {formatCurrency(totalStats.count > 0 ? totalStats.volume / totalStats.count : 0)}
                 </span>
               </div>
               <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Avg Net Commission</span>
-                <span className="text-sm font-bold text-[#059669] font-mono mt-1">
+                <span className="text-sm sm:text-base font-black text-[#059669] tracking-tight leading-none mt-1.5">
                   {formatCurrency(totalStats.count > 0 ? totalStats.commission / totalStats.count : 0)}
                 </span>
               </div>
               <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Effective Comm Rate</span>
-                <span className="text-sm font-bold text-[#1B3A5C] font-mono mt-1">
+                <span className="text-sm sm:text-base font-black text-[#1B3A5C] tracking-tight leading-none mt-1.5">
                   {totalStats.volume > 0 ? ((totalStats.grossCommission / totalStats.volume) * 100).toFixed(2) + '%' : '0%'}
                 </span>
               </div>
@@ -681,11 +681,11 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                   Net Commission Revenue
                 </span>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <span className="text-sm sm:text-base font-extrabold text-[#059669] font-mono">
+                  <span className="text-sm sm:text-base font-black text-[#059669] tracking-tight leading-none">
                     Net: {formatCurrency(commissionStats.net)}
                   </span>
                   <span className="text-slate-300 font-normal text-xs">•</span>
-                  <span className="text-xs sm:text-sm font-bold text-[#1B3A5C] font-mono">
+                  <span className="text-xs sm:text-sm font-black text-[#1B3A5C] tracking-tight leading-none">
                     Gross: {formatCurrency(commissionStats.gross)}
                   </span>
                 </div>
@@ -766,11 +766,11 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                   <div key={group.key} className="border border-slate-200/70 rounded-xl p-2.5 bg-slate-50/50 flex items-center justify-between">
                     <div>
                       <span className="text-xs font-bold text-[#1d1d1f] block truncate">{group.label}</span>
-                      <span className="text-[10px] text-[#86868b]">{group.count} {group.count === 1 ? 'sale' : 'sales'}</span>
+                      <span className="text-[10px] text-[#86868b] font-bold">{group.count} {group.count === 1 ? 'sale' : 'sales'}</span>
                     </div>
-                    <div className="text-right font-mono">
-                      <div className="text-xs font-extrabold text-[#059669]">Net: {formatCurrency(group.amount)}</div>
-                      <div className="text-[10px] font-bold text-[#1B3A5C]">Gross: {formatCurrency(group.grossAmount)}</div>
+                    <div className="text-right">
+                      <div className="text-xs font-black text-[#059669] tracking-tight leading-none">Net: {formatCurrency(group.amount)}</div>
+                      <div className="text-[10px] font-black text-[#1B3A5C] tracking-tight leading-none mt-0.5">Gross: {formatCurrency(group.grossAmount)}</div>
                     </div>
                   </div>
                 ))
@@ -796,7 +796,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
             <div className="flex items-center justify-between shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-3 px-4">
               <div>
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Lead Source Distribution</span>
-                <span className="text-xs font-bold text-[#1B3A5C] font-mono mt-0.5 block">
+                <span className="text-xs font-black text-[#1B3A5C] tracking-tight leading-none mt-0.5 block">
                   {leadSourceStats.totalCount} Total Escrow{leadSourceStats.totalCount === 1 ? '' : 's'}
                 </span>
               </div>
@@ -827,11 +827,23 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                 leadSourceStats.sources.filter(s => s.count > 0).map((source) => (
                   <div key={source.key} className="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider truncate">{source.label}</span>
-                      <span className="text-[10px] font-mono font-bold text-[#86868b]">{Math.round(source.percent)}%</span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="inline-flex items-center justify-center min-w-[20px] px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-800 text-[10px] font-black tracking-tight leading-none shrink-0">
+                          {source.count}
+                        </span>
+                        <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider truncate">{source.label}</span>
+                      </div>
+                      <span className="text-[10px] font-black text-[#86868b] tracking-tight shrink-0">{Math.round(source.percent)}%</span>
                     </div>
-                    <div className="text-xs font-extrabold text-[#1d1d1f] font-mono mt-1">
-                      {source.count} <span className="text-[9px] text-[#86868b] font-normal">deals</span> • {formatCurrency(source.commission)}
+                    <div className="text-[11px] mt-1.5 flex flex-col gap-0.5">
+                      <div className="flex items-center justify-between text-slate-700">
+                        <span className="text-[9px] text-[#86868b] uppercase font-bold">Vol:</span>
+                        <span className="font-black text-[#0f172a] tracking-tight leading-none">{formatCurrency(source.volume)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#059669]">
+                        <span className="text-[9px] text-[#86868b] uppercase font-bold">Comm:</span>
+                        <span className="font-black text-[#059669] tracking-tight leading-none">{formatCurrency(source.commission)}</span>
+                      </div>
                     </div>
                   </div>
                 ))

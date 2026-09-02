@@ -253,13 +253,13 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-white border border-slate-200/80 rounded-xl p-3">
                   <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Target Net Income</div>
-                  <div className="text-lg font-medium text-[#1B3A5C] mt-0.5">
+                  <div className="text-lg sm:text-xl font-black text-[#1B3A5C] tracking-tight leading-none mt-1">
                     {formatCurrency(goals.targetCommission)}
                   </div>
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-xl p-3">
                   <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Units to Close Goal</div>
-                  <div className="text-lg font-medium text-[#1B3A5C] mt-0.5">
+                  <div className="text-lg sm:text-xl font-black text-[#1B3A5C] tracking-tight leading-none mt-1">
                     {goals.targetDeals} {goals.targetDeals === 1 ? 'unit' : 'units'}
                   </div>
                 </div>
@@ -274,11 +274,11 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Net Income Closed ({selectedYear})
                 </span>
-                <div className="flex items-baseline gap-2 mt-0.5">
-                  <span className="text-2xl sm:text-3xl font-semibold text-emerald-700">
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-2xl sm:text-3xl font-black text-emerald-700 tracking-tight leading-none">
                     {formatCurrency(closedCommission)}
                   </span>
-                  <span className="text-xs font-medium text-slate-500">
+                  <span className="text-xs font-bold text-slate-500">
                     of {formatCurrency(goals.targetCommission)} goal
                   </span>
                 </div>
@@ -287,22 +287,22 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
               {/* Pace & Status Text Labels */}
               <div className="sm:text-right flex flex-col sm:items-end">
                 {paceStatus === 'achieved' && (
-                  <span className="text-xs sm:text-sm font-semibold text-emerald-600">
+                  <span className="text-xs sm:text-sm font-black text-emerald-600 tracking-tight">
                     Goal Achieved!
                   </span>
                 )}
                 {paceStatus === 'on_track' && (
-                  <span className="text-xs sm:text-sm font-semibold text-emerald-600">
+                  <span className="text-xs sm:text-sm font-black text-emerald-600 tracking-tight">
                     On Track ({commPercent}%)
                   </span>
                 )}
                 {paceStatus === 'on_track_pipeline' && (
-                  <span className="text-xs sm:text-sm font-semibold text-blue-600">
+                  <span className="text-xs sm:text-sm font-black text-blue-600 tracking-tight">
                     On Track with Pipeline ({projectedCommPercent}%)
                   </span>
                 )}
                 {paceStatus === 'off_track' && (
-                  <span className="text-xs sm:text-sm font-semibold text-rose-600">
+                  <span className="text-xs sm:text-sm font-black text-rose-600 tracking-tight">
                     Off Track ({commPercent}% vs {yearElapsedPercent}% pace)
                   </span>
                 )}
@@ -339,7 +339,7 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
               <div className="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between">
                 <div>
                   <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Closed Income Earned</div>
-                  <div className="text-sm font-semibold text-slate-900 mt-0.5">
+                  <div className="text-sm sm:text-base font-black text-slate-900 tracking-tight leading-none mt-1">
                     {formatCurrency(closedCommission)}
                   </div>
                 </div>
@@ -348,7 +348,7 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
               <div className="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between">
                 <div>
                   <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">In Escrow (Pending)</div>
-                  <div className="text-sm font-semibold text-slate-900 mt-0.5">
+                  <div className="text-sm sm:text-base font-black text-slate-900 tracking-tight leading-none mt-1">
                     {formatCurrency(pendingCommission)}
                   </div>
                 </div>
@@ -363,11 +363,11 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Units Closed ({selectedYear})
                 </span>
-                <div className="flex items-baseline gap-2 mt-0.5">
-                  <span className="text-2xl sm:text-3xl font-semibold text-[#1B3A5C]">
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-2xl sm:text-3xl font-black text-[#1B3A5C] tracking-tight leading-none">
                     {closedDeals}
                   </span>
-                  <span className="text-xs font-medium text-slate-500">
+                  <span className="text-xs font-bold text-slate-500">
                     of {goals.targetDeals} {goals.targetDeals === 1 ? 'unit' : 'units'} goal
                   </span>
                 </div>
@@ -376,22 +376,22 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
               {/* Pace & Status Text Labels for Units */}
               <div className="sm:text-right flex flex-col sm:items-end">
                 {unitsPaceStatus === 'achieved' && (
-                  <span className="text-xs sm:text-sm font-semibold text-emerald-600">
+                  <span className="text-xs sm:text-sm font-black text-emerald-600 tracking-tight">
                     Goal Achieved!
                   </span>
                 )}
                 {unitsPaceStatus === 'on_track' && (
-                  <span className="text-xs sm:text-sm font-semibold text-emerald-600">
+                  <span className="text-xs sm:text-sm font-black text-emerald-600 tracking-tight">
                     On Track ({dealsPercent}%)
                   </span>
                 )}
                 {unitsPaceStatus === 'on_track_pipeline' && (
-                  <span className="text-xs sm:text-sm font-semibold text-blue-600">
+                  <span className="text-xs sm:text-sm font-black text-blue-600 tracking-tight">
                     On Track with Pipeline ({projectedDealsPercent}%)
                   </span>
                 )}
                 {unitsPaceStatus === 'off_track' && (
-                  <span className="text-xs sm:text-sm font-semibold text-rose-600">
+                  <span className="text-xs sm:text-sm font-black text-rose-600 tracking-tight">
                     Off Track ({dealsPercent}% vs {yearElapsedPercent}% pace)
                   </span>
                 )}
@@ -417,7 +417,7 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
                 )}
               </div>
 
-              <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
                 <span>0 units</span>
                 <span>{goals.targetDeals} {goals.targetDeals === 1 ? 'unit' : 'units'}</span>
               </div>
@@ -433,13 +433,13 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
               <div className="bg-white border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
                 <div>
                   <div className="text-[10px] font-bold text-slate-500 uppercase">Units Needed / Month</div>
-                  <div className="text-base font-semibold text-emerald-800 mt-1">
+                  <div className="text-base sm:text-lg font-black text-emerald-800 tracking-tight leading-none mt-1">
                     {monthlyUnitsNeeded > 0
                       ? `${(Math.round(monthlyUnitsNeeded * 10) / 10).toFixed(1)} / mo`
                       : 'Goal Met!'}
                   </div>
                 </div>
-                <div className="text-[10px] font-medium text-[#1B3A5C] mt-2">
+                <div className="text-[10px] font-bold text-[#1B3A5C] mt-2">
                   {remainingUnitsNeeded > 0
                     ? `${remainingUnitsNeeded} ${remainingUnitsNeeded === 1 ? 'unit' : 'units'} left (${monthsRemaining} ${monthsRemaining === 1 ? 'month' : 'months'} remaining)`
                     : 'Target closed units reached'}
@@ -450,13 +450,13 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
               <div className="bg-white border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
                 <div>
                   <div className="text-[10px] font-bold text-slate-500 uppercase">Net Income Needed / Month</div>
-                  <div className="text-base font-semibold text-blue-700 mt-1">
+                  <div className="text-base sm:text-lg font-black text-blue-700 tracking-tight leading-none mt-1">
                     {monthlyIncomeNeeded > 0
                       ? `${formatCurrency(monthlyIncomeNeeded)} / mo`
                       : 'Goal Met!'}
                   </div>
                 </div>
-                <div className="text-[10px] font-medium text-[#1B3A5C] mt-2">
+                <div className="text-[10px] font-bold text-[#1B3A5C] mt-2">
                   {remainingCommissionNeeded > 0
                     ? `${formatCurrency(remainingCommissionNeeded)} left (${monthsRemaining} ${monthsRemaining === 1 ? 'month' : 'months'} remaining)`
                     : 'Target net income reached'}
@@ -467,13 +467,13 @@ export function GoalsModal({ escrows, onClose }: GoalsModalProps) {
               <div className="bg-white border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
                 <div>
                   <div className="text-[10px] font-bold text-slate-500 uppercase">Avg. Price Point / Unit</div>
-                  <div className="text-base font-semibold text-indigo-700 mt-1">
+                  <div className="text-base sm:text-lg font-black text-indigo-700 tracking-tight leading-none mt-1">
                     {targetAvgPricePoint > 0 
                       ? formatCurrency(targetAvgPricePoint) 
                       : (closedAvgPricePoint > 0 ? formatCurrency(closedAvgPricePoint) : '$0')}
                   </div>
                 </div>
-                <div className="text-[10px] font-medium text-[#1B3A5C] mt-2">
+                <div className="text-[10px] font-bold text-[#1B3A5C] mt-2">
                   {targetNetCommPerUnit > 0
                     ? `${formatCurrency(targetNetCommPerUnit)} avg net comm / unit (${goals.targetDeals} ${goals.targetDeals === 1 ? 'unit' : 'units'})`
                     : (closedAvgPricePoint > 0 ? `Based on ${closedDeals} closed ${closedDeals === 1 ? 'unit' : 'units'}` : 'Set annual goals to calculate')}

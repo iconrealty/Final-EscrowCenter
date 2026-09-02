@@ -116,16 +116,16 @@ export function CalendarView({ escrows, onSelectEscrow }: { escrows: Escrow[], o
             )}
 
             {viewMode === 'month' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1B3A5C] text-white text-xs sm:text-sm font-bold shadow-2xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1B3A5C] text-white text-xs sm:text-sm font-black tracking-tight shadow-2xs">
                 <span>{monthClosedCount} Closed</span>
-                <span className="opacity-80 font-normal text-xs">({currentMonthEscrows.length} total)</span>
+                <span className="opacity-80 font-bold text-xs">({currentMonthEscrows.length} total)</span>
               </span>
             )}
 
             {viewMode === 'year' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1B3A5C] text-white text-xs sm:text-sm font-bold shadow-2xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1B3A5C] text-white text-xs sm:text-sm font-black tracking-tight shadow-2xs">
                 <span>{yearClosedCount} Closed</span>
-                <span className="opacity-80 font-normal text-xs">({yearEscrows.length} total)</span>
+                <span className="opacity-80 font-bold text-xs">({yearEscrows.length} total)</span>
               </span>
             )}
           </div>

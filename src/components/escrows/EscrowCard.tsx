@@ -151,7 +151,7 @@ export function EscrowCard({
               </>
             ) : (
               <>
-                <span className="text-[20px] sm:text-[24px] font-black font-mono tracking-tight leading-none">
+                <span className="text-[20px] sm:text-[24px] font-black tracking-tight leading-none">
                   {daysToCoe}
                 </span>
                 <span className="text-[7.5px] sm:text-[8px] font-extrabold uppercase tracking-wider opacity-80 mt-0.5 leading-tight">
@@ -176,23 +176,23 @@ export function EscrowCard({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 bg-slate-50 p-3 rounded-xl border border-[#e5e5ea]">
           <div>
             <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5">Price</div>
-            <div className="font-mono text-xs sm:text-sm font-bold text-[#16a34a]">{formatCurrency(escrow.price)}</div>
+            <div className="text-xs sm:text-sm font-black text-[#16a34a] tracking-tight leading-none">{formatCurrency(escrow.price)}</div>
           </div>
           <div>
             <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5" title="Acceptance Date">Accepted</div>
-            <div className="font-mono text-xs sm:text-sm font-bold text-[#1d1d1f] truncate">
+            <div className="text-xs sm:text-sm font-bold text-[#1d1d1f] tracking-tight truncate">
               {formatDateDisplay(escrow.acceptanceDate)}
             </div>
           </div>
           <div>
             <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5" title="Close of Escrow (COE)">COE</div>
-            <div className="font-mono text-xs sm:text-sm font-bold text-[#1d1d1f] truncate">
+            <div className="text-xs sm:text-sm font-bold text-[#1d1d1f] tracking-tight truncate">
               {formatDateDisplay(escrow.coeDate)}
             </div>
           </div>
           <div>
             <div className="text-[9px] uppercase tracking-wider text-[#55697a] font-bold mb-0.5">Net Commission</div>
-            <div className="font-mono text-xs sm:text-sm font-bold text-[#1B3A5C]">{formatCurrency(escrow.netCommission)}</div>
+            <div className="text-xs sm:text-sm font-black text-[#1B3A5C] tracking-tight leading-none">{formatCurrency(escrow.netCommission)}</div>
           </div>
         </div>
 
