@@ -44,12 +44,12 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
   // Income Status
   const isIncomeAchieved = closedCommission >= goalTargetIncome && goalTargetIncome > 0;
   const isIncomeOnTrack = isIncomeAchieved || closedCommission >= expectedIncomePace || projectedTotalCommission >= expectedIncomePace;
-  const incomeStatusText = isIncomeOnTrack ? 'On Track' : 'Off Track';
+  const incomeStatusText = isIncomeOnTrack ? 'ON TRACK' : 'OFF TRACK';
 
   // Units Status
   const isUnitsAchieved = closedYtd >= goalTargetUnits && goalTargetUnits > 0;
   const isUnitsOnTrack = isUnitsAchieved || closedYtd >= expectedUnitsPace || projectedTotalUnits >= expectedUnitsPace;
-  const unitsStatusText = isUnitsOnTrack ? 'On Track' : 'Off Track';
+  const unitsStatusText = isUnitsOnTrack ? 'ON TRACK' : 'OFF TRACK';
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
@@ -114,31 +114,35 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
 
         <div className="h-4 w-px bg-slate-200 hidden sm:block shrink-0" />
 
-        <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-6 w-full sm:w-auto flex-wrap">
+        <div className="flex items-center justify-between sm:justify-start gap-4 sm:gap-7 w-full sm:w-auto flex-wrap">
           {/* Units First */}
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Units:</span>
-            <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-md shadow-2xs ${
-              isUnitsOnTrack ? 'bg-emerald-800 text-white' : 'bg-rose-800 text-white'
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs sm:text-[13px] font-black text-black uppercase tracking-wider">UNITS:</span>
+            <span className={`text-xs sm:text-[13px] font-black px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all ${
+              isUnitsOnTrack 
+                ? 'bg-[#15803d] text-white border border-[#166534]' 
+                : 'bg-[#b91c1c] text-white border border-[#991b1b]'
             }`}>
               {unitsStatusText}
             </span>
-            <span className="text-[11px] font-mono font-bold text-slate-700">
+            <span className="text-xs sm:text-[13px] font-bold text-slate-800">
               ({closedYtd}/{goalTargetUnits})
             </span>
           </div>
 
-          <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+          <div className="h-5 w-px bg-slate-300 hidden sm:block" />
 
           {/* Income Second */}
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Income:</span>
-            <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-md shadow-2xs ${
-              isIncomeOnTrack ? 'bg-emerald-800 text-white' : 'bg-rose-800 text-white'
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs sm:text-[13px] font-black text-black uppercase tracking-wider">INCOME:</span>
+            <span className={`text-xs sm:text-[13px] font-black px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all ${
+              isIncomeOnTrack 
+                ? 'bg-[#15803d] text-white border border-[#166534]' 
+                : 'bg-[#b91c1c] text-white border border-[#991b1b]'
             }`}>
               {incomeStatusText}
             </span>
-            <span className="text-[11px] font-mono font-bold text-slate-700">
+            <span className="text-xs sm:text-[13px] font-bold text-slate-800">
               ({formatCurrency(closedCommission)} / {formatCurrency(goalTargetIncome)})
             </span>
           </div>
