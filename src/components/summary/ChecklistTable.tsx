@@ -109,7 +109,7 @@ export function ChecklistTable({
           const ym = getEscrowMonth(escrow);
           if (ym !== effectiveMonth) return false;
         }
-      } else if (currentMode === 'total' || currentMode === 'source') {
+      } else if (currentMode === 'total') {
         if (effectiveYear && effectiveYear !== 'all') {
           const yr = getEscrowYear(escrow);
           if (yr !== effectiveYear) return false;
@@ -153,7 +153,7 @@ export function ChecklistTable({
     if (currentMode === 'monthly') {
       return effectiveMonth === 'all' ? 'All Months' : formatMonthName(effectiveMonth);
     }
-    if (currentMode === 'total' || currentMode === 'source') {
+    if (currentMode === 'total') {
       return effectiveYear === 'all' ? 'All Time' : `${effectiveYear}`;
     }
     if (currentMode === 'commission') {

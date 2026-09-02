@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Escrow } from '../../types';
 import { getEscrowYear } from '../../utils/csvUtils';
-import { TrendingUp, Calendar, DollarSign, ChevronDown, Building, Award, CheckCircle2, ChevronRight, BarChart3, Clock, PieChart, Layers } from 'lucide-react';
+import { Calendar, DollarSign, ChevronDown, Building, Award, CheckCircle2, ChevronRight, BarChart3, Clock, Layers } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 export interface SummaryFilterContext {
-  mode: 'monthly' | 'total' | 'commission' | 'source';
+  mode: 'monthly' | 'total' | 'commission';
   selectedYear: string;
   selectedMonth: string;
   commissionYear?: string;
@@ -35,7 +35,7 @@ const MONTH_OPTIONS = [
 ];
 
 export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterChange }: SalesSummaryProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'total' | 'monthly' | 'commission' | 'source'>(
+  const [activeSubTab, setActiveSubTab] = useState<'total' | 'monthly' | 'commission'>(
     filterContext?.mode || 'monthly'
   );
   const [commissionGroup, setCommissionGroup] = useState<'monthly' | 'yearly'>('monthly');
@@ -334,62 +334,6 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
       .sort((a, b) => b.key.localeCompare(a.key));
   }, [filteredCommissionEscrows, commissionGroup, commissionSelectedMonth]);
 
-  // Lead Source analytics
-  const leadSourceStats = useMemo(() => {
-    const nonCancelled = escrows.filter(e => {
-      if (e.status === 'Cancelled') return false;
-      if (selectedYear !== 'all') {
-        const yr = getEscrowYear(e);
-        if (yr !== selectedYear) return false;
-      }
-      return true;
-    });
-
-    const sourceMap: { [key: string]: { label: string; count: number; volume: number; commission: number } } = {
-      'sphere': { label: 'Sphere of Influence', count: 0, volume: 0, commission: 0 },
-      'zillow': { label: 'Zillow / Online', count: 0, volume: 0, commission: 0 },
-      'open_house': { label: 'Open House', count: 0, volume: 0, commission: 0 },
-      'referral': { label: 'Referral / Agent', count: 0, volume: 0, commission: 0 },
-      'cold_call': { label: 'Outreach / Cold', count: 0, volume: 0, commission: 0 },
-      'other': { label: 'Other', count: 0, volume: 0, commission: 0 }
-    };
-
-    nonCancelled.forEach(escrow => {
-      const src = (escrow.leadSource || 'other').toLowerCase();
-      let matchedKey = 'other';
-      if (src.includes('sphere') || src.includes('friend') || src.includes('family') || src.includes('past')) {
-        matchedKey = 'sphere';
-      } else if (src.includes('zillow') || src.includes('realtor.com') || src.includes('web') || src.includes('online') || src.includes('internet')) {
-        matchedKey = 'zillow';
-      } else if (src.includes('open house') || src.includes('sign')) {
-        matchedKey = 'open_house';
-      } else if (src.includes('referral') || src.includes('agent') || src.includes('broker')) {
-        matchedKey = 'referral';
-      } else if (src.includes('cold') || src.includes('door') || src.includes('mail') || src.includes('farm')) {
-        matchedKey = 'cold_call';
-      }
-
-      sourceMap[matchedKey].count += 1;
-      sourceMap[matchedKey].volume += (escrow.price || 0);
-      sourceMap[matchedKey].commission += (escrow.netCommission || 0);
-    });
-
-    const totalCount = nonCancelled.length || 1;
-    const sources = Object.entries(sourceMap).map(([key, data]) => ({
-      key,
-      label: data.label,
-      count: data.count,
-      percent: (data.count / totalCount) * 100,
-      volume: data.volume,
-      commission: data.commission
-    })).sort((a, b) => b.count - a.count);
-
-    return {
-      totalCount: nonCancelled.length,
-      sources
-    };
-  }, [escrows, selectedYear]);
-
   const formatCurrency = (val?: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -417,8 +361,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
     <div className="bg-[#FFFFFF] rounded-2xl border border-[#e5e5ea] overflow-hidden shadow-sm flex flex-col h-full">
       {/* Top Header with Navigation Tabs */}
       <div className="p-4 sm:p-5 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="text-[#1B3A5C]" size={18} />
+        <div>
           <h2 className="font-bold text-[#1d1d1f] text-sm sm:text-base tracking-tight">Sales Summary</h2>
         </div>
 
@@ -453,16 +396,6 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
             }`}
           >
             Net Commissions
-          </button>
-          <button
-            onClick={() => setActiveSubTab('source')}
-            className={`px-3 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
-              activeSubTab === 'source'
-                ? 'bg-black text-white shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f]'
-            }`}
-          >
-            Lead Source
           </button>
         </div>
       </div>
@@ -784,79 +717,6 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
               <div className="flex items-center gap-1.5 font-medium">
                 <DollarSign size={14} className="text-[#1B3A5C] shrink-0" />
                 <span>Showing matching closed transactions in Escrow List below</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeSubTab === 'source' && (
-          /* LEAD SOURCE ANALYTICS VIEW */
-          <div className="flex-1 flex flex-col gap-3 animate-fade-in justify-between">
-            {/* Header with Year filter */}
-            <div className="flex items-center justify-between shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-3 px-4">
-              <div>
-                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Lead Source Distribution</span>
-                <span className="text-xs font-black text-[#1B3A5C] tracking-tight leading-none mt-0.5 block">
-                  {leadSourceStats.totalCount} Total Escrow{leadSourceStats.totalCount === 1 ? '' : 's'}
-                </span>
-              </div>
-              
-              {/* Year Selector */}
-              <div className="relative inline-flex items-center">
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
-                >
-                  <option value="all">All Time</option>
-                  {availableYears.map((yr) => (
-                    <option key={yr} value={yr}>
-                      {yr}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute right-2.5 text-[#86868b] flex items-center">
-                  <ChevronDown size={12} />
-                </div>
-              </div>
-            </div>
-
-            {/* Source Cards Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[140px] overflow-y-auto pr-1">
-              {leadSourceStats.sources.filter(s => s.count > 0).length > 0 ? (
-                leadSourceStats.sources.filter(s => s.count > 0).map((source) => (
-                  <div key={source.key} className="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5 flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="inline-flex items-center justify-center min-w-[20px] px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-800 text-[10px] font-black tracking-tight leading-none shrink-0">
-                          {source.count}
-                        </span>
-                        <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider truncate">{source.label}</span>
-                      </div>
-                      <span className="text-[10px] font-black text-[#86868b] tracking-tight shrink-0">{Math.round(source.percent)}%</span>
-                    </div>
-                    <div className="text-[11px] mt-1.5 flex flex-col gap-0.5">
-                      <div className="flex items-center justify-between text-slate-700">
-                        <span className="text-[9px] text-[#86868b] uppercase font-bold">Vol:</span>
-                        <span className="font-black text-[#0f172a] tracking-tight leading-none">{formatCurrency(source.volume)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-[#059669]">
-                        <span className="text-[9px] text-[#86868b] uppercase font-bold">Comm:</span>
-                        <span className="font-black text-[#059669] tracking-tight leading-none">{formatCurrency(source.commission)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-3 text-center py-6 text-xs text-[#86868b]">No lead source data for this period.</div>
-              )}
-            </div>
-
-            {/* Helper Notice */}
-            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200/70 rounded-xl text-[11px] text-[#1B3A5C]">
-              <div className="flex items-center gap-1.5 font-medium">
-                <PieChart size={14} className="text-[#1B3A5C] shrink-0" />
-                <span>Showing all source records in Escrow List below</span>
               </div>
             </div>
           </div>
