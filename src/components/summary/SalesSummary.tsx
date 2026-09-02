@@ -573,7 +573,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
             </div>
 
             {/* Averages & Key Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Avg Sale Price</span>
                 <span className="text-sm sm:text-base font-black text-[#0f172a] tracking-tight leading-none mt-1.5">
@@ -584,12 +584,6 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Avg Net Commission</span>
                 <span className="text-sm sm:text-base font-black text-[#059669] tracking-tight leading-none mt-1.5">
                   {formatCurrency(totalStats.count > 0 ? totalStats.commission / totalStats.count : 0)}
-                </span>
-              </div>
-              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
-                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Effective Comm Rate</span>
-                <span className="text-sm sm:text-base font-black text-[#1B3A5C] tracking-tight leading-none mt-1.5">
-                  {totalStats.volume > 0 ? ((totalStats.grossCommission / totalStats.volume) * 100).toFixed(2) + '%' : '0%'}
                 </span>
               </div>
             </div>
