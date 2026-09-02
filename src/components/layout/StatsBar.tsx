@@ -59,53 +59,41 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
       {/* Metric Cards Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {/* Closed Commission Card */}
-        <div className="h-[80px] sm:h-[88px] bg-white border border-[#e2e8f0] shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] rounded-2xl px-4 py-2.5 flex flex-col justify-between min-w-0 transition-all hover:border-[#cbd5e1] group">
-          <div className="flex items-center justify-between gap-1 w-full">
-            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.8px] text-[#64748b] truncate">
-              Net Closed ({actualYear})
-            </span>
-            <span className="w-2 h-2 rounded-full bg-[#10b981] shrink-0" title="Closed Volume" />
+        <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
+          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
+            Net Closed ({actualYear})
           </div>
-          <div className="text-lg sm:text-2xl xl:text-[26px] font-black text-[#0f172a] tracking-tight leading-none truncate">
+          <div className="text-lg sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none truncate w-full">
             {formatCurrency(closedCommission)}
           </div>
         </div>
 
         {/* Pending Commission Card */}
-        <div className="h-[80px] sm:h-[88px] bg-white border border-[#e2e8f0] shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] rounded-2xl px-4 py-2.5 flex flex-col justify-between min-w-0 transition-all hover:border-[#cbd5e1] group">
-          <div className="flex items-center justify-between gap-1 w-full">
-            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.8px] text-[#64748b] truncate">
-              Net Pending
-            </span>
-            <span className="w-2 h-2 rounded-full bg-[#3b82f6] shrink-0" title="Pending Volume" />
+        <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
+          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
+            Net Pending
           </div>
-          <div className="text-lg sm:text-2xl xl:text-[26px] font-black text-[#0f172a] tracking-tight leading-none truncate">
+          <div className="text-lg sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none truncate w-full">
             {formatCurrency(pendingCommission)}
           </div>
         </div>
 
         {/* Open Escrows */}
-        <div className="h-[80px] sm:h-[88px] bg-white border border-[#e2e8f0] shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] rounded-2xl px-4 py-2.5 flex flex-col justify-between min-w-0 transition-all hover:border-[#cbd5e1] group">
-          <div className="flex items-center justify-between gap-1 w-full">
-            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.8px] text-[#64748b] truncate">
-              Open Escrows
-            </span>
-            <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" title="Active Escrows" />
+        <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
+          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
+            Open Escrows
           </div>
-          <div className="text-xl sm:text-2xl xl:text-[26px] font-black text-[#0f172a] tracking-tight leading-none">
+          <div className="text-xl sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none">
             {openCount}
           </div>
         </div>
 
         {/* Closed Escrows */}
-        <div className="h-[80px] sm:h-[88px] bg-white border border-[#e2e8f0] shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] rounded-2xl px-4 py-2.5 flex flex-col justify-between min-w-0 transition-all hover:border-[#cbd5e1] group">
-          <div className="flex items-center justify-between gap-1 w-full">
-            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.8px] text-[#64748b] truncate">
-              Closed Escrows
-            </span>
-            <span className="w-2 h-2 rounded-full bg-[#8b5cf6] shrink-0" title="Closed Units" />
+        <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
+          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
+            Closed Escrows
           </div>
-          <div className="text-xl sm:text-2xl xl:text-[26px] font-black text-[#0f172a] tracking-tight leading-none">
+          <div className="text-xl sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none">
             {closedYtd}
           </div>
         </div>
