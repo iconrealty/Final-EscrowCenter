@@ -543,7 +543,7 @@ export function parseCaliforniaRpaText(
 
   if (result.price && result.commissionPercent) {
     const gross = Math.round(result.price * (result.commissionPercent / 100));
-    result.netCommission = calculateNetFromGross(gross, result.leadSource || 'Zillow');
+    result.netCommission = calculateNetFromGross(gross, result.leadSource || 'Self');
   }
 
   return result;

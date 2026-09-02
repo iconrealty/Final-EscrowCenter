@@ -153,7 +153,8 @@ export function AddEditModal({
       const priceVal = data.price ? String(data.price) : prev.price;
       const compRate = data.commissionPercent || (prev.commissionPercent ? Number(prev.commissionPercent) : 2.5);
       const gross = priceVal ? Math.round(Number(priceVal) * (compRate / 100)) : 0;
-      const computedNet = data.netCommission || (prev.netCommission ? Number(prev.netCommission) : 0);
+      const activeLeadSource = (data.leadSource as any) || prev.leadSource || 'Self';
+      const computedNet = gross > 0 ? calculateNetFromGross(gross, activeLeadSource) : (data.netCommission || (prev.netCommission ? Number(prev.netCommission) : 0));
 
       const updatedContingencyDays = { ...prev.contingencyDays };
       if (data.contingencyDays && typeof data.contingencyDays === 'object') {
@@ -558,24 +559,54 @@ export function AddEditModal({
   };
 
   const handlePriceChange = (val: string) => {
-    setFormData(prev => ({
-      ...prev,
-      price: val
-    }));
+    setFormData(prev => {
+      const numPrice = Number(val) || 0;
+      const numCommPercent = prev.commissionPercent ? Number(prev.commissionPercent) : 2.5;
+      let newNet = prev.netCommission;
+      if (numPrice > 0 && numCommPercent > 0) {
+        const gross = Math.round((numPrice * numCommPercent) / 100);
+        newNet = String(calculateNetFromGross(gross, prev.leadSource));
+      }
+      return {
+        ...prev,
+        price: val,
+        netCommission: newNet
+      };
+    });
   };
 
   const handleCommissionPercentChange = (val: string) => {
-    setFormData(prev => ({
-      ...prev,
-      commissionPercent: val
-    }));
+    setFormData(prev => {
+      const numPrice = Number(prev.price) || 0;
+      const numCommPercent = Number(val) || 0;
+      let newNet = prev.netCommission;
+      if (numPrice > 0 && numCommPercent > 0) {
+        const gross = Math.round((numPrice * numCommPercent) / 100);
+        newNet = String(calculateNetFromGross(gross, prev.leadSource));
+      }
+      return {
+        ...prev,
+        commissionPercent: val,
+        netCommission: newNet
+      };
+    });
   };
 
   const handleLeadSourceChange = (newSource: string) => {
-    setFormData(prev => ({
-      ...prev,
-      leadSource: newSource as any
-    }));
+    setFormData(prev => {
+      const numPrice = Number(prev.price) || 0;
+      const numCommPercent = prev.commissionPercent ? Number(prev.commissionPercent) : 2.5;
+      let newNet = prev.netCommission;
+      if (numPrice > 0 && numCommPercent > 0) {
+        const gross = Math.round((numPrice * numCommPercent) / 100);
+        newNet = String(calculateNetFromGross(gross, newSource));
+      }
+      return {
+        ...prev,
+        leadSource: newSource as any,
+        netCommission: newNet
+      };
+    });
   };
 
   const handleRecalculateNet = () => {
