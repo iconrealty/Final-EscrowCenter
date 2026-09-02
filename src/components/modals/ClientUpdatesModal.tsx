@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Escrow, formatPropertyAddress } from '../../types';
-import { X, MessageSquare, Mail, Copy, Check, ChevronDown } from 'lucide-react';
-import { parseISO, format } from 'date-fns';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Escrow, formatPropertyAddress, adjustWeekendToMonday } from '../../types';
+import { X, MessageSquare, Mail, Copy, Check, ChevronDown, Calendar, Clock, Sparkles, CheckCircle2 } from 'lucide-react';
+import { parseISO, format, addDays, differenceInCalendarDays } from 'date-fns';
 import { motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-const OLD_FIRST_ESCROW = 'Hi [Esrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the buyer and Transaction Coordinator information.\n\nBuyers\nName: [Buyer Name]\nEmail: [Buyer Email]\nPhone: [Buyer Phone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!';
+const OLD_FIRST_ESCROW_V1 = 'Hi [Esrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the buyer and Transaction Coordinator information.\n\nBuyers\nName: [Buyer Name]\nEmail: [Buyer Email]\nPhone: [Buyer Phone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!';
+
+const OLD_FIRST_ESCROW_V2 = 'Hi [Escrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the buyer, lender, and Transaction Coordinator information.\n\nBuyers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Buyer2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!';
 
 const OLD_OPENING = 'Hi [ClientName], Escrow has officially been opened 🎉\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nEscrow will be sending you wire instructions shortly for the initial deposit (3%). Please follow the instructions carefully. If you have any questions at any time, I’m always available.\n\nInspection: I’m coordinating the inspection, tentatively for Wednesday afternoon. I’ll confirm availability and keep you posted.';
 
@@ -15,36 +17,38 @@ const OLD_LISTING_OPEN_V1 = 'Hi [Esrow Officer],\n\nPlease open escrow for our n
 
 const OLD_LISTING_OPEN_V2 = 'Hi [Escrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Client2Block]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!';
 
+const OLD_LISTING_OPEN_V3 = 'Hi [Escrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Seller2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!';
+
 const TEMPLATES = [
+  {
+    id: 'first_escrow_email',
+    label: 'First Escrow Email / Request to Open (Buyer)',
+    subject: 'First Escrow Email - [Address]',
+    text: 'Hi [Escrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the escrow term, buyer, lender, and Transaction Coordinator information.\n\nEscrow Length: [EscrowDays] Days\nEstimated Closing Date (COE): [COE]\n\nBuyers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Buyer2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
+  },
+  {
+    id: 'request_open_escrow_listing',
+    label: 'Request to Open Escrow (Listing side)',
+    subject: 'Request to Open Escrow: [Address]',
+    text: 'Hi [Escrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nEscrow Length: [EscrowDays] Days\nEstimated Closing Date (COE): [COE]\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Seller2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
+  },
   {
     id: 'opening',
     label: 'Escrow Opened (Buyer)',
     subject: 'Escrow Opened: [Address]',
-    text: 'Hi [ClientName], Escrow has officially been opened 🎉\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nLENDER:\n\nLender: [LenderName]\nLender email: [LenderEmail]\nLender phone number: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nEscrow will be sending you wire instructions shortly for the initial deposit (3%). Please follow the instructions carefully. If you have any questions at any time, I’m always available.\n\nInspection: I’m coordinating the inspection, tentatively for Wednesday afternoon. I’ll confirm availability and keep you posted.'
+    text: 'Hi [ClientName], Escrow has officially been opened 🎉\nTarget Closing Date: [COE] ([EscrowDays] Days Escrow)\n\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nLENDER:\n\nLender: [LenderName]\nLender email: [LenderEmail]\nLender phone number: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nEscrow will be sending you wire instructions shortly for the initial deposit (3%). Please follow the instructions carefully. If you have any questions at any time, I’m always available.\n\nInspection: I’m coordinating the inspection, tentatively for Wednesday afternoon. I’ll confirm availability and keep you posted.'
   },
   {
     id: 'opening_listing',
     label: 'Escrow Opened (Listing)',
     subject: 'Escrow Opened: [Address]',
-    text: 'Hi [ClientName], Escrow has officially been opened 🎉\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nWe will be coordinating the next steps with the buyer\'s side. If you have any questions at any time, I’m always available.'
-  },
-  {
-    id: 'first_escrow_email',
-    label: 'First Escrow Email / Request to Open (Buyer)',
-    subject: 'First Escrow Email - [Address]',
-    text: 'Hi [Escrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the buyer, lender, and Transaction Coordinator information.\n\nBuyers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Buyer2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
+    text: 'Hi [ClientName], Escrow has officially been opened 🎉\nTarget Closing Date: [COE] ([EscrowDays] Days Escrow)\n\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nWe will be coordinating the next steps with the buyer\'s side. If you have any questions at any time, I’m always available.'
   },
   {
     id: 'inspection_day',
     label: 'Schedule Inspection',
     subject: 'Schedule Inspection - [Address]',
     text: 'Hi [ClientFirstName],\n\nThe inspection usually takes about 1.5 hours, and I recommend that you be present for at least the last 30 minutes so the inspector can walk you through the main findings. \nAt the same time, we’ll be conducting our initial visual home inspection.'
-  },
-  {
-    id: 'request_open_escrow_listing',
-    label: 'Request to Open Escrow (Listing side)',
-    subject: 'Request to Open Escrow: [Address]',
-    text: 'Hi [Escrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Seller2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
   },
   {
     id: 'emd',
@@ -105,22 +109,22 @@ const TEMPLATES = [
 const upgradeTemplateIfNeeded = (t: typeof TEMPLATES[number], custom?: { id: string; text?: string; subject?: string }) => {
   if (!custom || !custom.text) return t;
 
-  // Upgrade 'request_open_escrow_listing' if it doesn't contain Lender or Seller 2 details
+  // Upgrade 'request_open_escrow_listing' if it doesn't contain Lender or Seller 2 details or EscrowDays
   if (t.id === 'request_open_escrow_listing') {
     const textLower = custom.text.toLowerCase();
     const hasLender = textLower.includes('lender');
     const hasSeller2 = custom.text.includes('Seller2Block') || custom.text.includes('Seller 2') || custom.text.includes('Client2Block') || custom.text.includes('Seller2');
-    if (!hasLender || !hasSeller2 || custom.text === OLD_LISTING_OPEN_V1 || custom.text === OLD_LISTING_OPEN_V2) {
+    if (!hasLender || !hasSeller2 || custom.text === OLD_LISTING_OPEN_V1 || custom.text === OLD_LISTING_OPEN_V2 || custom.text === OLD_LISTING_OPEN_V3) {
       return t;
     }
   }
 
-  // Upgrade 'first_escrow_email' if it doesn't contain Lender or Buyer 2 details
+  // Upgrade 'first_escrow_email' if it doesn't contain Lender or Buyer 2 details or EscrowDays
   if (t.id === 'first_escrow_email') {
     const textLower = custom.text.toLowerCase();
     const hasLender = textLower.includes('lender');
     const hasBuyer2 = custom.text.includes('Buyer2Block') || custom.text.includes('Buyer 2') || custom.text.includes('Client2Block') || custom.text.includes('Buyer2');
-    if (!hasLender || !hasBuyer2 || custom.text === OLD_FIRST_ESCROW) {
+    if (!hasLender || !hasBuyer2 || custom.text === OLD_FIRST_ESCROW_V1 || custom.text === OLD_FIRST_ESCROW_V2) {
       return t;
     }
   }
@@ -139,35 +143,38 @@ const upgradeTemplateIfNeeded = (t: typeof TEMPLATES[number], custom?: { id: str
 
 export function ClientUpdatesModal({
   escrow,
-  onClose
+  onClose,
+  onUpdateEscrow
 }: {
   escrow: Escrow;
   onClose: () => void;
+  onUpdateEscrow?: (id: string, updates: Partial<Escrow>) => void;
 }) {
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   const { user } = useAuth();
-
-  const [templates, setTemplates] = useState<typeof TEMPLATES>(() => {
+  
+  // Initialize templates state
+  const [templates, setTemplates] = useState(() => {
     const saved = localStorage.getItem('escrow_custom_templates');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        const upgraded = TEMPLATES.map(t => {
-          const custom = parsed.find((p: any) => p.id === t.id);
-          return upgradeTemplateIfNeeded(t, custom);
-        });
-        localStorage.setItem('escrow_custom_templates', JSON.stringify(upgraded));
-        return upgraded;
+        if (Array.isArray(parsed)) {
+          return TEMPLATES.map(t => {
+            const custom = parsed.find((p: any) => p.id === t.id);
+            return upgradeTemplateIfNeeded(t, custom);
+          });
+        }
       } catch (e) {
-        return TEMPLATES;
+        console.error("Failed to parse local templates", e);
       }
     }
     return TEMPLATES;
   });
 
-  // Load centralized templates from Firestore when logged in
+  // Load centralized templates from Firestore
   useEffect(() => {
     if (!user) return;
 
@@ -175,17 +182,15 @@ export function ClientUpdatesModal({
       try {
         const docRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data && Array.isArray(data.customTemplates)) {
-            const cloudTemplates = data.customTemplates;
-            const upgraded = TEMPLATES.map(t => {
+        if (docSnap.exists() && docSnap.data().customTemplates) {
+          const cloudTemplates = docSnap.data().customTemplates;
+          if (Array.isArray(cloudTemplates)) {
+            const merged = TEMPLATES.map(t => {
               const custom = cloudTemplates.find((p: any) => p.id === t.id);
               return upgradeTemplateIfNeeded(t, custom);
             });
-            setTemplates(upgraded);
-            localStorage.setItem('escrow_custom_templates', JSON.stringify(upgraded));
-            await setDoc(docRef, { customTemplates: upgraded }, { merge: true });
+            setTemplates(merged);
+            localStorage.setItem('escrow_custom_templates', JSON.stringify(merged));
           }
         }
       } catch (err) {
@@ -196,9 +201,100 @@ export function ClientUpdatesModal({
     loadCloudTemplates();
   }, [user]);
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState('opening');
+  // Initial template: default to 'first_escrow_email' or 'request_open_escrow_listing' based on representation
+  const defaultTemplateId = escrow.representation === 'Seller' ? 'request_open_escrow_listing' : 'first_escrow_email';
+  const [selectedTemplateId, setSelectedTemplateId] = useState(defaultTemplateId);
   const isEscrowOfficerTemplate = selectedTemplateId === 'first_escrow_email' || selectedTemplateId === 'request_open_escrow_listing';
   
+  // Escrow Days & Start Date State
+  const initialStartDate = useMemo(() => {
+    if (escrow.acceptanceDate) return escrow.acceptanceDate;
+    if (escrow.contingencyStartDate) return escrow.contingencyStartDate;
+    return format(new Date(), 'yyyy-MM-dd');
+  }, [escrow.acceptanceDate, escrow.contingencyStartDate]);
+
+  const [startDate, setStartDate] = useState<string>(initialStartDate);
+
+  const initialEscrowDays = useMemo(() => {
+    if (escrow.coeDays && Number(escrow.coeDays) > 0) {
+      return Number(escrow.coeDays);
+    }
+    if (escrow.coeDate && (escrow.acceptanceDate || escrow.contingencyStartDate)) {
+      try {
+        const s = parseISO(escrow.acceptanceDate || escrow.contingencyStartDate || '');
+        const c = parseISO(escrow.coeDate);
+        const diff = differenceInCalendarDays(c, s);
+        if (diff > 0 && diff <= 180) return diff;
+      } catch {}
+    }
+    return 30;
+  }, [escrow.coeDays, escrow.coeDate, escrow.acceptanceDate, escrow.contingencyStartDate]);
+
+  const [escrowDays, setEscrowDays] = useState<number | string>(initialEscrowDays);
+  const [savedCoeSuccess, setSavedCoeSuccess] = useState(false);
+
+  // Weekend-aware Closing Date (COE) Calculation
+  // Calculates startDate + escrowDays. If the result lands on Saturday or Sunday, moves to the next Monday.
+  const closingCalculation = useMemo(() => {
+    const daysNum = typeof escrowDays === 'string' ? parseInt(escrowDays, 10) : escrowDays;
+    if (!startDate || isNaN(daysNum) || daysNum <= 0) {
+      return {
+        calculatedDate: null,
+        rawDate: null,
+        formattedFull: escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMMM d, yyyy') : 'the scheduled closing date',
+        formattedShort: escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMM d, yyyy') : 'TBD',
+        formattedWithDay: escrow.coeDate ? format(parseISO(escrow.coeDate), 'EEEE, MMMM d, yyyy') : 'TBD',
+        isoString: escrow.coeDate || '',
+        wasWeekendAdjusted: false,
+        originalDayName: '',
+      };
+    }
+
+    try {
+      const baseDate = parseISO(startDate);
+      if (isNaN(baseDate.getTime())) {
+        return {
+          calculatedDate: null,
+          rawDate: null,
+          formattedFull: escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMMM d, yyyy') : 'the scheduled closing date',
+          formattedShort: escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMM d, yyyy') : 'TBD',
+          formattedWithDay: escrow.coeDate ? format(parseISO(escrow.coeDate), 'EEEE, MMMM d, yyyy') : 'TBD',
+          isoString: escrow.coeDate || '',
+          wasWeekendAdjusted: false,
+          originalDayName: '',
+        };
+      }
+
+      const rawTarget = addDays(baseDate, daysNum);
+      const dayOfWeek = rawTarget.getDay(); // 0 = Sunday, 6 = Saturday
+      const wasWeekendAdjusted = dayOfWeek === 0 || dayOfWeek === 6;
+      const originalDayName = dayOfWeek === 6 ? 'Saturday' : dayOfWeek === 0 ? 'Sunday' : '';
+      const adjusted = adjustWeekendToMonday(rawTarget);
+
+      return {
+        calculatedDate: adjusted,
+        rawDate: rawTarget,
+        formattedFull: format(adjusted, 'MMMM d, yyyy'),
+        formattedShort: format(adjusted, 'MMM d, yyyy'),
+        formattedWithDay: format(adjusted, 'EEEE, MMMM d, yyyy'),
+        isoString: format(adjusted, 'yyyy-MM-dd'),
+        wasWeekendAdjusted,
+        originalDayName,
+      };
+    } catch {
+      return {
+        calculatedDate: null,
+        rawDate: null,
+        formattedFull: escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMMM d, yyyy') : 'the scheduled closing date',
+        formattedShort: escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMM d, yyyy') : 'TBD',
+        formattedWithDay: escrow.coeDate ? format(parseISO(escrow.coeDate), 'EEEE, MMMM d, yyyy') : 'TBD',
+        isoString: escrow.coeDate || '',
+        wasWeekendAdjusted: false,
+        originalDayName: '',
+      };
+    }
+  }, [startDate, escrowDays, escrow.coeDate]);
+
   const client1FullName = `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim();
   const client2FullName = `${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`.trim();
   const hasClient2 = Boolean(
@@ -328,7 +424,25 @@ export function ClientUpdatesModal({
     text = text.replace(/\[Zip\]/g, escrow.zipCode || '');
     text = text.replace(/\[ZipCode\]/g, escrow.zipCode || '');
     text = text.replace(/\[Zip Code\]/g, escrow.zipCode || '');
-    text = text.replace(/\[COE\]/g, escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMMM d, yyyy') : 'the scheduled closing date');
+
+    // Calculated Closing Date & Escrow Days Placeholders
+    const currentDaysStr = escrowDays ? `${escrowDays}` : '30';
+    const effectiveClosingFormatted = closingCalculation.formattedFull;
+
+    text = text.replace(/\[COE\]/g, effectiveClosingFormatted);
+    text = text.replace(/\[ClosingDate\]/g, effectiveClosingFormatted);
+    text = text.replace(/\[Closing Date\]/g, effectiveClosingFormatted);
+    text = text.replace(/\[CloseOfEscrow\]/g, effectiveClosingFormatted);
+    text = text.replace(/\[Close of Escrow\]/g, effectiveClosingFormatted);
+    text = text.replace(/\[TargetCOE\]/g, effectiveClosingFormatted);
+
+    text = text.replace(/\[EscrowDays\]/g, currentDaysStr);
+    text = text.replace(/\[Escrow Days\]/g, currentDaysStr);
+    text = text.replace(/\[EscrowPeriod\]/g, `${currentDaysStr} days`);
+    text = text.replace(/\[Escrow Period\]/g, `${currentDaysStr} days`);
+    text = text.replace(/\[AcceptanceDate\]/g, startDate ? format(parseISO(startDate), 'MMMM d, yyyy') : 'Acceptance Date');
+    text = text.replace(/\[Acceptance Date\]/g, startDate ? format(parseISO(startDate), 'MMMM d, yyyy') : 'Acceptance Date');
+
     text = text.replace(/\[Price\]/g, formatCurrency(escrow.price));
     text = text.replace(/\[AgentName\]/g, escrow.agentName || 'your agent');
     text = text.replace(/\[EscrowOfficer\]/g, escrow.escrowOfficer || 'the escrow officer');
@@ -367,16 +481,19 @@ export function ClientUpdatesModal({
     subject = subject.replace(/\[Street Address\]/g, escrow.address || 'the property');
     subject = subject.replace(/\[City\]/g, escrow.city || '');
     subject = subject.replace(/\[Zip\]/g, escrow.zipCode || '');
+    subject = subject.replace(/\[COE\]/g, closingCalculation.formattedShort);
+    subject = subject.replace(/\[EscrowDays\]/g, escrowDays ? `${escrowDays}` : '30');
     return subject;
   };
 
+  // Re-populate text when template, dates, or escrow change
   useEffect(() => {
     if (selectedTemplate) {
       setEditedText(getPopulatedText(selectedTemplate.text));
       setMasterSubject(selectedTemplate.subject);
       setMasterText(selectedTemplate.text);
     }
-  }, [selectedTemplateId, templates, escrow]);
+  }, [selectedTemplateId, templates, escrow, startDate, escrowDays, closingCalculation.formattedFull]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(editedText);
@@ -444,6 +561,17 @@ export function ClientUpdatesModal({
     }
   };
 
+  const handleSaveCoeToEscrow = () => {
+    if (!closingCalculation.isoString || !onUpdateEscrow) return;
+    onUpdateEscrow(escrow.id, {
+      coeDate: closingCalculation.isoString,
+      acceptanceDate: startDate,
+      coeDays: Number(escrowDays) || undefined,
+    });
+    setSavedCoeSuccess(true);
+    setTimeout(() => setSavedCoeSuccess(false), 2500);
+  };
+
   const insertPlaceholder = (tag: string, field: 'subject' | 'text') => {
     if (field === 'subject') {
       const input = subjectInputRef.current;
@@ -483,19 +611,19 @@ export function ClientUpdatesModal({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.15, ease: 'easeOut' }}
-        className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[88vh]"
+        className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[92vh]"
       >
         {/* Header */}
         <div className="px-5 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-start bg-slate-50 shrink-0">
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1B3A5C]/60 block mb-0.5">Quick Client Updates</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1B3A5C]/60 block mb-0.5">Escrow Communications & Updates</span>
             <h2 className="font-extrabold text-base sm:text-lg text-[#1B3A5C] truncate max-w-[220px] sm:max-w-none" title={escrow.address}>
               {escrow.address}
             </h2>
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 hover:bg-[#e5e5ea] rounded-full transition-colors text-slate-500 hover:text-slate-800"
+            className="p-1.5 hover:bg-[#e5e5ea] rounded-full transition-colors text-slate-500 hover:text-slate-800 cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -503,10 +631,13 @@ export function ClientUpdatesModal({
 
         {/* Content */}
         <div className="p-5 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-4">
-          <div className="flex justify-end items-center pb-2 border-b border-[#e5e5ea]">
+          <div className="flex justify-between items-center pb-2 border-b border-[#e5e5ea]">
+            <span className="text-xs font-bold text-slate-700">
+              {isEscrowOfficerTemplate ? '📝 Opening Escrow Email' : '✉️ Milestone Update Email'}
+            </span>
             <button
               onClick={() => setIsEditingMaster(!isEditingMaster)}
-              className={`px-3 py-1 rounded-xl text-[11px] font-bold flex items-center transition-all ${
+              className={`px-3 py-1 rounded-xl text-[11px] font-bold flex items-center transition-all cursor-pointer ${
                 isEditingMaster 
                   ? 'bg-[#1B3A5C] text-white' 
                   : 'bg-slate-100 hover:bg-slate-200 text-[#334155]'
@@ -521,7 +652,7 @@ export function ClientUpdatesModal({
               {/* Template Selection Dropdown */}
               <div className="relative w-full z-30">
                 <label className="text-[10px] font-extrabold uppercase tracking-widest text-[#1B3A5C]/60 block mb-1.5">
-                  Select Update Milestone
+                  Select Email / Update Template
                 </label>
                 <div className="relative">
                   <button
@@ -571,6 +702,125 @@ export function ClientUpdatesModal({
                 </div>
               </div>
 
+              {/* Escrow Terms */}
+              <div className="bg-gradient-to-br from-blue-50/70 via-slate-50 to-indigo-50/50 border border-blue-200/80 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-xl bg-[#1B3A5C] text-white flex items-center justify-center shadow-sm shrink-0">
+                      <Calendar size={14} />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-extrabold text-[#1B3A5C]">
+                        Escrow Terms
+                      </h3>
+                    </div>
+                  </div>
+
+                  {onUpdateEscrow && closingCalculation.isoString && (
+                    <button
+                      type="button"
+                      onClick={handleSaveCoeToEscrow}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
+                        savedCoeSuccess
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-[#1B3A5C] hover:bg-[#11253C] text-white'
+                      }`}
+                      title="Save this calculated COE date directly to the escrow record"
+                    >
+                      {savedCoeSuccess ? (
+                        <>
+                          <CheckCircle2 size={13} />
+                          <span>COE Saved to Escrow!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock size={13} />
+                          <span>Save COE to Escrow</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* Start Date / Acceptance Date Input */}
+                  <div>
+                    <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-600 mb-1">
+                      Acceptance / Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] shadow-sm"
+                    />
+                  </div>
+
+                  {/* Escrow Days Input */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-600">
+                        Escrow Days
+                      </label>
+                      <span className="text-[10px] font-bold text-[#1B3A5C]">
+                        {escrowDays} Days
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="365"
+                        value={escrowDays}
+                        onChange={(e) => setEscrowDays(e.target.value)}
+                        placeholder="e.g. 30"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-800 focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] shadow-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <span className="text-[10px] font-bold text-slate-500 mr-1">Quick Presets:</span>
+                  {[15, 21, 30].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setEscrowDays(d)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                        Number(escrowDays) === d
+                          ? 'bg-[#1B3A5C] text-white shadow-sm'
+                          : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      {d} Days
+                    </button>
+                  ))}
+                </div>
+
+                {/* Calculation Result Banner */}
+                <div className="bg-white border border-blue-100 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black text-[#1B3A5C]">
+                      📅 Estimated COE (Closing Date):
+                    </span>
+                    <span className="text-sm font-extrabold text-indigo-900 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-lg">
+                      {closingCalculation.formattedWithDay || closingCalculation.formattedFull}
+                    </span>
+                  </div>
+
+                  {closingCalculation.wasWeekendAdjusted && (
+                    <div className="flex items-center gap-1 text-[10px] font-extrabold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
+                      <Sparkles size={11} className="text-amber-600 shrink-0" />
+                      <span>
+                        Landed on {closingCalculation.originalDayName} &rarr; Moved to Monday
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Recipient Details & Workspace */}
               <div className="bg-slate-50 border border-[#e5e5ea] rounded-2xl p-4 flex flex-col gap-3">
                 <div className="flex flex-wrap justify-between items-center gap-2">
@@ -597,7 +847,7 @@ export function ClientUpdatesModal({
                 <textarea
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
-                  className="w-full bg-white border border-[#e5e5ea] rounded-xl p-3 text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed shadow-inner h-28 sm:h-48 min-h-[100px]"
+                  className="w-full bg-white border border-[#e5e5ea] rounded-xl p-3 text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed shadow-inner h-28 sm:h-44 min-h-[100px]"
                 />
 
                 <div className="flex flex-col gap-3 pt-3 border-t border-[#e5e5ea] w-full">
@@ -712,12 +962,20 @@ export function ClientUpdatesModal({
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-[10px] uppercase font-extrabold text-[#334155] tracking-wider">Subject Template</label>
-                  <button 
-                    onClick={() => insertPlaceholder('[Address]', 'subject')}
-                    className="text-[8px] bg-white border border-[#e5e5ea] rounded px-1.5 py-0.5 font-mono text-[#1B3A5C] hover:bg-slate-100 font-bold cursor-pointer"
-                  >
-                    + [Address]
-                  </button>
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => insertPlaceholder('[Address]', 'subject')}
+                      className="text-[8px] bg-white border border-[#e5e5ea] rounded px-1.5 py-0.5 font-mono text-[#1B3A5C] hover:bg-slate-100 font-bold cursor-pointer"
+                    >
+                      + [Address]
+                    </button>
+                    <button 
+                      onClick={() => insertPlaceholder('[COE]', 'subject')}
+                      className="text-[8px] bg-white border border-[#e5e5ea] rounded px-1.5 py-0.5 font-mono text-[#1B3A5C] hover:bg-slate-100 font-bold cursor-pointer"
+                    >
+                      + [COE]
+                    </button>
+                  </div>
                 </div>
                 <input
                   ref={subjectInputRef}
@@ -738,6 +996,9 @@ export function ClientUpdatesModal({
                   <div className="flex flex-wrap gap-1 bg-white p-2 rounded-xl border border-[#e5e5ea]">
                     <span className="text-[8px] font-bold text-[#86868b] uppercase tracking-wider self-center mr-1">Insert placeholders:</span>
                     {[
+                      { tag: '[EscrowDays]', label: 'Escrow Days (e.g. 30)' },
+                      { tag: '[COE]', label: 'Closing Date (COE)' },
+                      { tag: '[AcceptanceDate]', label: 'Acceptance Date' },
                       { tag: '[ClientName]', label: 'Client(s) Full Name' },
                       { tag: '[ClientFirstName]', label: 'Client 1 First Name' },
                       { tag: '[ClientLastName]', label: 'Client 1 Last Name' },
@@ -754,7 +1015,6 @@ export function ClientUpdatesModal({
                       { tag: '[LenderEmail]', label: 'Lender Email' },
                       { tag: '[LenderBlock]', label: 'Lender Details Block' },
                       { tag: '[Address]', label: 'Property Address' },
-                      { tag: '[COE]', label: 'COE Date' },
                       { tag: '[Price]', label: 'Sale Price' },
                       { tag: '[AgentName]', label: 'Agent Name' },
                       { tag: '[EscrowOfficer]', label: 'Escrow Officer' },
@@ -787,7 +1047,7 @@ export function ClientUpdatesModal({
                   placeholder="Type your template body text here..."
                 />
                 <p className="text-[10px] text-[#86868b] mt-1.5 leading-normal">
-                  <strong>Brackets Guide:</strong> When viewing an escrow, placeholders like <code>[ClientName]</code>, <code>[Client2Block]</code>, <code>[LenderName]</code>, or <code>[Address]</code> will automatically fill with real info.
+                  <strong>Brackets Guide:</strong> When viewing an escrow, placeholders like <code>[EscrowDays]</code>, <code>[COE]</code>, <code>[ClientName]</code>, <code>[Client2Block]</code>, <code>[LenderName]</code>, or <code>[Address]</code> will automatically fill with real info.
                 </p>
               </div>
 

@@ -313,6 +313,7 @@ function App() {
         <ClientUpdatesModal 
           escrow={escrows.find(e => e.id === clientUpdateEscrow.id) || clientUpdateEscrow} 
           onClose={() => setClientUpdateEscrow(null)}
+          onUpdateEscrow={(id, data) => editEscrow(id, data)}
         />
       )}
 

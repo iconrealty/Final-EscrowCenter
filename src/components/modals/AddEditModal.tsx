@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Escrow, EscrowDocument, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
-import { X, FileText, CheckCircle2, Calculator, Sparkles, RefreshCw, Info, Paperclip } from 'lucide-react';
-import { addMonths, addDays, parseISO, format } from 'date-fns';
+import { X, FileText, CheckCircle2, Calculator, Sparkles, RefreshCw, Info, Paperclip, Calendar } from 'lucide-react';
+import { addMonths, addDays, parseISO, format, differenceInCalendarDays } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { storage } from '../../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -73,6 +73,7 @@ export function AddEditModal({
       commissionPercent: '',
       acceptanceDate: '',
       coeDate: '',
+      coeDays: '30',
       contingencyStartDate: '',
       status: 'Open',
       representation: 'Buyer' as 'Buyer' | 'Seller' | 'Dual',
@@ -199,6 +200,7 @@ export function AddEditModal({
         lenderEmail: data.lenderEmail || prev.lenderEmail,
         acceptanceDate: data.acceptanceDate || prev.acceptanceDate,
         coeDate: data.coeDate || prev.coeDate,
+        coeDays: data.coeDays ? String(data.coeDays) : (data.coeDate && data.acceptanceDate ? String(differenceInCalendarDays(parseISO(data.coeDate), parseISO(data.acceptanceDate))) : prev.coeDays),
         contingencyStartDate: data.contingencyStartDate || prev.contingencyStartDate,
         contingencyDays: updatedContingencyDays,
       };
@@ -392,6 +394,18 @@ export function AddEditModal({
         }
       }
 
+      let initCoeDays = '30';
+      if (escrow.coeDays && Number(escrow.coeDays) > 0) {
+        initCoeDays = String(escrow.coeDays);
+      } else if (escrow.coeDate && escrow.acceptanceDate) {
+        try {
+          const s = parseISO(escrow.acceptanceDate);
+          const c = parseISO(escrow.coeDate);
+          const diff = differenceInCalendarDays(c, s);
+          if (diff > 0 && diff <= 365) initCoeDays = String(diff);
+        } catch {}
+      }
+
       setFormData({
         escrowNumber: escrow.escrowNumber || '',
         mlsId: escrow.mlsId || '',
@@ -431,6 +445,7 @@ export function AddEditModal({
         acceptanceDate: escrow.acceptanceDate || '',
         contingencyStartDate: escrow.contingencyStartDate || '',
         coeDate: escrow.coeDate || '',
+        coeDays: initCoeDays,
         status: escrow.status || 'Open',
         representation: escrow.representation || 'Buyer',
         leadSource: (escrow.leadSource as any) || 'Zillow',
@@ -480,6 +495,7 @@ export function AddEditModal({
         commissionPercent: '',
         acceptanceDate: '',
         coeDate: '',
+        coeDays: '30',
         contingencyStartDate: '',
         status: 'Open',
         representation: 'Buyer',
@@ -491,6 +507,21 @@ export function AddEditModal({
       });
     }
   }, [escrow]);
+
+  const calculateWeekendAdjustedCoe = (startDateStr: string, daysNum: number): { dateStr: string; wasAdjusted: boolean } => {
+    if (!startDateStr || isNaN(daysNum) || daysNum <= 0) return { dateStr: '', wasAdjusted: false };
+    try {
+      const sDate = parseISO(startDateStr);
+      if (isNaN(sDate.getTime())) return { dateStr: '', wasAdjusted: false };
+      const rawTarget = addDays(sDate, daysNum);
+      const dayOfWeek = rawTarget.getDay(); // 0 = Sunday, 6 = Saturday
+      const wasAdjusted = dayOfWeek === 0 || dayOfWeek === 6;
+      const adjusted = adjustWeekendToMonday(rawTarget);
+      return { dateStr: format(adjusted, 'yyyy-MM-dd'), wasAdjusted };
+    } catch {
+      return { dateStr: '', wasAdjusted: false };
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -510,6 +541,7 @@ export function AddEditModal({
       price: Number(formData.price) || 0,
       netCommission: Number(formData.netCommission) || 0,
       commissionPercent: formData.commissionPercent ? Number(formData.commissionPercent) : undefined,
+      coeDays: formData.coeDays ? Number(formData.coeDays) : undefined,
       contingencyDays: parsedDays
     };
 
@@ -558,9 +590,49 @@ export function AddEditModal({
   };
 
   const handleAcceptanceDateChange = (val: string) => {
+    const daysNum = Number(formData.coeDays);
+    let newCoe = formData.coeDate;
+    if (val && !isNaN(daysNum) && daysNum > 0) {
+      const calc = calculateWeekendAdjustedCoe(val, daysNum);
+      if (calc.dateStr) newCoe = calc.dateStr;
+    }
     setFormData(prev => ({
       ...prev,
       acceptanceDate: val,
+      coeDate: newCoe,
+    }));
+  };
+
+  const handleEscrowDaysChange = (val: string) => {
+    const daysNum = Number(val);
+    let newCoe = formData.coeDate;
+    if (formData.acceptanceDate && !isNaN(daysNum) && daysNum > 0) {
+      const calc = calculateWeekendAdjustedCoe(formData.acceptanceDate, daysNum);
+      if (calc.dateStr) newCoe = calc.dateStr;
+    }
+    setFormData(prev => ({
+      ...prev,
+      coeDays: val,
+      coeDate: newCoe,
+    }));
+  };
+
+  const handleCoeDateChange = (val: string) => {
+    let derivedDays = formData.coeDays;
+    if (val && formData.acceptanceDate) {
+      try {
+        const s = parseISO(formData.acceptanceDate);
+        const c = parseISO(val);
+        const diff = differenceInCalendarDays(c, s);
+        if (diff > 0 && diff <= 365) {
+          derivedDays = String(diff);
+        }
+      } catch {}
+    }
+    setFormData(prev => ({
+      ...prev,
+      coeDate: val,
+      coeDays: derivedDays,
     }));
   };
 
@@ -820,14 +892,95 @@ export function AddEditModal({
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Acceptance Date</label>
-                  <input type="date" value={formData.acceptanceDate || ''} onChange={e => handleAcceptanceDateChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
-                </div>
+                {/* Escrow Terms */}
+                <div className="md:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-2xs">
+                  <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-200">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#1B3A5C] flex items-center gap-1.5">
+                      <Calendar size={14} className="text-[#1B3A5C]" /> Escrow Terms
+                    </span>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">COE Date</label>
-                  <input type="date" value={formData.coeDate || ''} onChange={e => setFormData({...formData, coeDate: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Acceptance Date */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Acceptance Date
+                      </label>
+                      <input 
+                        type="date" 
+                        value={formData.acceptanceDate || ''} 
+                        onChange={e => handleAcceptanceDateChange(e.target.value)} 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] shadow-xs" 
+                      />
+                    </div>
+
+                    {/* Escrow Days with Presets */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs font-bold text-slate-700">
+                          Escrow Days
+                        </label>
+                        <span className="text-[11px] font-black text-[#1B3A5C]">
+                          {formData.coeDays || 30} Days
+                        </span>
+                      </div>
+                      <input 
+                        type="number"
+                        min="1"
+                        max="365"
+                        placeholder="30"
+                        value={formData.coeDays} 
+                        onChange={e => handleEscrowDaysChange(e.target.value)} 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] shadow-xs" 
+                      />
+                      
+                      {/* Presets */}
+                      <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                        <span className="text-[10px] font-bold text-slate-400">Presets:</span>
+                        {[15, 21, 30].map(d => (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => handleEscrowDaysChange(String(d))}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                              Number(formData.coeDays) === d
+                                ? 'bg-[#1B3A5C] text-white shadow-2xs'
+                                : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200'
+                            }`}
+                          >
+                            {d}d
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* COE Date */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs font-bold text-slate-700">
+                          COE Date
+                        </label>
+                        {(() => {
+                          if (!formData.acceptanceDate || !formData.coeDays) return null;
+                          const calc = calculateWeekendAdjustedCoe(formData.acceptanceDate, Number(formData.coeDays));
+                          if (calc.wasAdjusted) {
+                            return (
+                              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded" title="Target date landed on weekend, adjusted to next Monday">
+                                Mon Adjusted
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                      <input 
+                        type="date" 
+                        value={formData.coeDate || ''} 
+                        onChange={e => handleCoeDateChange(e.target.value)} 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] shadow-xs" 
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>

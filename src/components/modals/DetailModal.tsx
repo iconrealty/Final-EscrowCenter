@@ -78,8 +78,14 @@ export function DetailModal({
                   APN: <strong className="text-black font-semibold">{escrow.apn}</strong>
                 </span>
               )}
+              {escrow.acceptanceDate && (
+                <span className="text-[10px] sm:text-xs text-[#86868b]">
+                  Acceptance: <strong className="text-black font-semibold">{format(parseISO(escrow.acceptanceDate), 'MMM d, yyyy')}</strong>
+                </span>
+              )}
               <span className="text-[10px] sm:text-xs text-[#86868b]">
                 COE: <strong className="text-black font-semibold">{escrow.coeDate ? format(parseISO(escrow.coeDate), 'MMM d, yyyy') : 'TBD'}</strong>
+                {escrow.coeDays ? <span className="ml-1 text-[#1B3A5C] font-bold">({escrow.coeDays}d Escrow)</span> : null}
               </span>
             </div>
           </div>

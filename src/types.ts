@@ -61,6 +61,7 @@ export interface Escrow {
   commissionPercent?: number;
   acceptanceDate?: string;
   coeDate: string;
+  coeDays?: number;
   notes: string;
   status: 'Open' | 'Closed' | 'Cancelled';
   representation?: 'Buyer' | 'Seller' | 'Dual';
