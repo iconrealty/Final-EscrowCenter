@@ -54,6 +54,7 @@ export interface Escrow {
   agentEmail?: string;
   cooperatingBrokerage?: string;
   lenderName?: string;
+  lenderCompany?: string;
   lenderPhone?: string;
   lenderEmail?: string;
   price: number;

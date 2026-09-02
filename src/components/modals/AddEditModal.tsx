@@ -7,6 +7,7 @@ import { storage } from '../../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { usePreferredPartners } from '../../hooks/usePreferredPartners';
 import { PartnerDropdown } from '../common/PartnerDropdown';
+import { QuickPasteContact } from '../common/QuickPasteContact';
 import { PreferredPartner } from '../../types/partners';
 import { parseMlsText } from '../../utils/mlsParser';
 import { extractPdfPagesText, parseCaliforniaRpaText } from '../../utils/clientRpaParser';
@@ -66,6 +67,7 @@ export function AddEditModal({
       agentEmail: '',
       cooperatingBrokerage: '',
       lenderName: '',
+      lenderCompany: '',
       lenderPhone: '',
       lenderEmail: '',
       price: '',
@@ -216,6 +218,7 @@ export function AddEditModal({
         titlePhone: data.titlePhone || prev.titlePhone,
         titleEmail: data.titleEmail || prev.titleEmail,
         lenderName: data.lenderName || prev.lenderName,
+        lenderCompany: data.lenderCompany || prev.lenderCompany,
         lenderPhone: data.lenderPhone || prev.lenderPhone,
         lenderEmail: data.lenderEmail || prev.lenderEmail,
         acceptanceDate: data.acceptanceDate || prev.acceptanceDate,
@@ -457,6 +460,7 @@ export function AddEditModal({
         agentEmail: escrow.agentEmail || '',
         cooperatingBrokerage: escrow.cooperatingBrokerage || '',
         lenderName: escrow.lenderName || '',
+        lenderCompany: escrow.lenderCompany || '',
         lenderPhone: escrow.lenderPhone || '',
         lenderEmail: escrow.lenderEmail || '',
         price: escrow.price ? formatPriceString(escrow.price) : '',
@@ -508,6 +512,7 @@ export function AddEditModal({
         agentEmail: '',
         cooperatingBrokerage: '',
         lenderName: '',
+        lenderCompany: '',
         lenderPhone: '',
         lenderEmail: '',
         price: '',
@@ -1148,9 +1153,24 @@ export function AddEditModal({
                   <h3 className="text-sm font-bold text-blue-950">Client 1 (Primary)</h3>
                   <p className="text-[11px] text-blue-700/80">Main buyer or seller contact</p>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold uppercase tracking-wider">
-                  Primary Client
-                </span>
+                <div className="flex items-center gap-2">
+                  <QuickPasteContact
+                    role="client"
+                    roleLabel="Client 1"
+                    onApply={(p) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        clientFirstName: p.firstName || prev.clientFirstName,
+                        clientLastName: p.lastName || prev.clientLastName,
+                        clientPhone: p.phone || prev.clientPhone,
+                        clientEmail: p.email || prev.clientEmail,
+                      }));
+                    }}
+                  />
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold uppercase tracking-wider">
+                    Primary Client
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -1188,9 +1208,24 @@ export function AddEditModal({
                   <h3 className="text-sm font-bold text-purple-950">Client 2 (Optional)</h3>
                   <p className="text-[11px] text-purple-700/80">Co-buyer, spouse, or secondary signer</p>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 text-[10px] font-bold uppercase tracking-wider">
-                  Secondary Client
-                </span>
+                <div className="flex items-center gap-2">
+                  <QuickPasteContact
+                    role="client"
+                    roleLabel="Client 2"
+                    onApply={(p) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        client2FirstName: p.firstName || prev.client2FirstName,
+                        client2LastName: p.lastName || prev.client2LastName,
+                        client2Phone: p.phone || prev.client2Phone,
+                        client2Email: p.email || prev.client2Email,
+                      }));
+                    }}
+                  />
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 text-[10px] font-bold uppercase tracking-wider">
+                    Secondary Client
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -1228,9 +1263,24 @@ export function AddEditModal({
                   <h3 className="text-sm font-bold text-emerald-950">Other Agent & Cooperating Brokerage</h3>
                   <p className="text-[11px] text-emerald-700/80">Cross agent on the other side of transaction</p>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
-                  Other Agent
-                </span>
+                <div className="flex items-center gap-2">
+                  <QuickPasteContact
+                    role="agent"
+                    roleLabel="Other Agent"
+                    onApply={(p) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        agentName: p.name || prev.agentName,
+                        cooperatingBrokerage: p.company || prev.cooperatingBrokerage,
+                        agentPhone: p.phone || prev.agentPhone,
+                        agentEmail: p.email || prev.agentEmail,
+                      }));
+                    }}
+                  />
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                    Other Agent
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -1265,27 +1315,48 @@ export function AddEditModal({
                     Lender
                   </span>
                 </div>
-                <PartnerDropdown
-                  category="lender"
-                  categoryLabel="Lender"
-                  partners={partners}
-                  onAddNew={addPartner}
-                  onDelete={deletePartner}
-                  onSelect={(p: PreferredPartner) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      lenderName: p.company || p.name,
-                      lenderPhone: p.phone,
-                      lenderEmail: p.email,
-                    }));
-                  }}
-                />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <QuickPasteContact
+                    role="lender"
+                    roleLabel="Lender"
+                    onApply={(p) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        lenderName: p.name || prev.lenderName,
+                        lenderCompany: p.company || prev.lenderCompany,
+                        lenderPhone: p.phone || prev.lenderPhone,
+                        lenderEmail: p.email || prev.lenderEmail,
+                      }));
+                    }}
+                  />
+                  <PartnerDropdown
+                    category="lender"
+                    categoryLabel="Lender"
+                    partners={partners}
+                    onAddNew={addPartner}
+                    onDelete={deletePartner}
+                    onSelect={(p: PreferredPartner) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        lenderName: p.name || p.company,
+                        lenderCompany: p.company || '',
+                        lenderPhone: p.phone,
+                        lenderEmail: p.email,
+                      }));
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-bold text-amber-950 mb-1">Lender / Bank Name</label>
-                  <input type="text" value={formData.lenderName} onChange={e => setFormData({...formData, lenderName: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
+                  <label className="block text-xs font-bold text-amber-950 mb-1">Lender Company / Institution</label>
+                  <input type="text" placeholder="e.g. CrossCountry Mortgage, Chase, Zillow Home Loans" value={formData.lenderCompany} onChange={e => setFormData({...formData, lenderCompany: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-amber-950 mb-1">Loan Officer / Contact Name</label>
+                  <input type="text" placeholder="e.g. Thomas Sciutto" value={formData.lenderName} onChange={e => setFormData({...formData, lenderName: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
                 </div>
 
                 <div>
@@ -1293,7 +1364,7 @@ export function AddEditModal({
                   <input type="tel" value={formData.lenderPhone} onChange={e => setFormData({...formData, lenderPhone: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
                 </div>
 
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-xs font-bold text-amber-950 mb-1">Lender Email</label>
                   <input type="email" value={formData.lenderEmail} onChange={e => setFormData({...formData, lenderEmail: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
                 </div>
@@ -1309,22 +1380,37 @@ export function AddEditModal({
                     Escrow
                   </span>
                 </div>
-                <PartnerDropdown
-                  category="escrow"
-                  categoryLabel="Escrow"
-                  partners={partners}
-                  onAddNew={addPartner}
-                  onDelete={deletePartner}
-                  onSelect={(p: PreferredPartner) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      escrowCompany: p.company,
-                      escrowOfficer: p.name,
-                      escrowPhone: p.phone,
-                      escrowEmail: p.email,
-                    }));
-                  }}
-                />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <QuickPasteContact
+                    role="escrow"
+                    roleLabel="Escrow"
+                    onApply={(p) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        escrowOfficer: p.name || prev.escrowOfficer,
+                        escrowCompany: p.company || prev.escrowCompany,
+                        escrowPhone: p.phone || prev.escrowPhone,
+                        escrowEmail: p.email || prev.escrowEmail,
+                      }));
+                    }}
+                  />
+                  <PartnerDropdown
+                    category="escrow"
+                    categoryLabel="Escrow"
+                    partners={partners}
+                    onAddNew={addPartner}
+                    onDelete={deletePartner}
+                    onSelect={(p: PreferredPartner) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        escrowCompany: p.company,
+                        escrowOfficer: p.name,
+                        escrowPhone: p.phone,
+                        escrowEmail: p.email,
+                      }));
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -1359,22 +1445,37 @@ export function AddEditModal({
                     Title
                   </span>
                 </div>
-                <PartnerDropdown
-                  category="title"
-                  categoryLabel="Title"
-                  partners={partners}
-                  onAddNew={addPartner}
-                  onDelete={deletePartner}
-                  onSelect={(p: PreferredPartner) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      titleCompany: p.company,
-                      titleOfficer: p.name,
-                      titlePhone: p.phone,
-                      titleEmail: p.email,
-                    }));
-                  }}
-                />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <QuickPasteContact
+                    role="title"
+                    roleLabel="Title"
+                    onApply={(p) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        titleOfficer: p.name || prev.titleOfficer,
+                        titleCompany: p.company || prev.titleCompany,
+                        titlePhone: p.phone || prev.titlePhone,
+                        titleEmail: p.email || prev.titleEmail,
+                      }));
+                    }}
+                  />
+                  <PartnerDropdown
+                    category="title"
+                    categoryLabel="Title"
+                    partners={partners}
+                    onAddNew={addPartner}
+                    onDelete={deletePartner}
+                    onSelect={(p: PreferredPartner) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        titleCompany: p.company,
+                        titleOfficer: p.name,
+                        titlePhone: p.phone,
+                        titleEmail: p.email,
+                      }));
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">

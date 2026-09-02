@@ -131,7 +131,7 @@ export function DetailModal({
           
           {/* Apple/Tesla-style Minimalist Overview */}
           <section id="detail-overview" className="pb-6 border-b border-[#e5e5ea]">
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-6 sm:gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6 sm:gap-8">
               
               {/* Sale Price */}
               <div className="flex flex-col">
@@ -178,6 +178,11 @@ export function DetailModal({
                 <span className="text-sm sm:text-base font-normal text-[#1d1d1f] truncate" title={escrow.escrowCompany || 'None Assigned'}>
                   {escrow.escrowCompany || 'None Assigned'}
                 </span>
+                {escrow.escrowOfficer && (
+                  <span className="text-xs text-[#86868b] mt-0.5 truncate" title={escrow.escrowOfficer}>
+                    {escrow.escrowOfficer}
+                  </span>
+                )}
                 {escrow.escrowNumber && (
                   <span className="text-xs text-[#86868b] mt-0.5">
                     File #{escrow.escrowNumber}
@@ -194,6 +199,19 @@ export function DetailModal({
                 {escrow.titleOfficer && escrow.titleCompany && (
                   <span className="text-xs text-[#86868b] mt-0.5 truncate" title={escrow.titleOfficer}>
                     {escrow.titleOfficer}
+                  </span>
+                )}
+              </div>
+
+              {/* Lender */}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-black mb-1">Lender</span>
+                <span className="text-sm sm:text-base font-normal text-[#1d1d1f] truncate" title={escrow.lenderCompany || (escrow.lenderName ? escrow.lenderName : 'None')}>
+                  {escrow.lenderCompany || (escrow.lenderName ? escrow.lenderName : 'None')}
+                </span>
+                {escrow.lenderName && escrow.lenderCompany && (
+                  <span className="text-xs text-[#86868b] mt-0.5 truncate" title={escrow.lenderName}>
+                    {escrow.lenderName}
                   </span>
                 )}
               </div>
