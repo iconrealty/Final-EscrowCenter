@@ -1,12 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Escrow } from '../../types';
 import { getEscrowYear } from '../../utils/csvUtils';
-import { TrendingUp, Calendar, DollarSign, ChevronDown, Building, Award, CheckCircle2, ChevronRight, BarChart3, Clock } from 'lucide-react';
+import { TrendingUp, Calendar, DollarSign, ChevronDown, Building, Award, CheckCircle2, ChevronRight, BarChart3, Clock, PieChart, Layers } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+
+export interface SummaryFilterContext {
+  mode: 'monthly' | 'total' | 'commission' | 'source';
+  selectedYear: string;
+  selectedMonth: string;
+  commissionYear?: string;
+  commissionMonth?: string;
+}
 
 interface SalesSummaryProps {
   escrows: Escrow[];
-  onSelectEscrow: (escrow: Escrow) => void;
+  onSelectEscrow?: (escrow: Escrow) => void;
+  filterContext?: SummaryFilterContext;
+  onFilterChange?: (filter: SummaryFilterContext) => void;
 }
 
 const MONTH_OPTIONS = [
@@ -24,16 +34,44 @@ const MONTH_OPTIONS = [
   { value: '12', label: 'December' },
 ];
 
-export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'total' | 'monthly' | 'commission' | 'source'>('monthly');
+export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterChange }: SalesSummaryProps) {
+  const [activeSubTab, setActiveSubTab] = useState<'total' | 'monthly' | 'commission' | 'source'>(
+    filterContext?.mode || 'monthly'
+  );
   const [commissionGroup, setCommissionGroup] = useState<'monthly' | 'yearly'>('monthly');
-  const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null);
 
   // Dedicated filters for Net Commission tab
-  const [commissionSelectedYear, setCommissionSelectedYear] = useState<string>(() => {
-    return new Date().getFullYear().toString();
+  const [commissionSelectedYear, setCommissionSelectedYear] = useState<string>(
+    filterContext?.commissionYear || new Date().getFullYear().toString()
+  );
+  const [commissionSelectedMonth, setCommissionSelectedMonth] = useState<string>(
+    filterContext?.commissionMonth || 'all'
+  );
+
+  // Selected year state for the Total Amount tab (defaults to actual current year)
+  const [selectedYear, setSelectedYear] = useState<string>(
+    filterContext?.selectedYear || new Date().getFullYear().toString()
+  );
+
+  // Selected month state for the standard monthly tab
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    if (filterContext?.selectedMonth) return filterContext.selectedMonth;
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
-  const [commissionSelectedMonth, setCommissionSelectedMonth] = useState<string>('all');
+
+  // Notify parent component of active filter context changes
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange({
+        mode: activeSubTab,
+        selectedYear,
+        selectedMonth,
+        commissionYear: commissionSelectedYear,
+        commissionMonth: commissionSelectedMonth,
+      });
+    }
+  }, [activeSubTab, selectedYear, selectedMonth, commissionSelectedYear, commissionSelectedMonth, onFilterChange]);
 
   // Helper function to extract exact YYYY-MM from escrow (Close of Escrow / COE date first, then Acceptance date)
   const getEscrowMonth = (e: Escrow): string => {
@@ -67,7 +105,6 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
   }, [escrows]);
 
   // Extract all unique months (YYYY-MM) from all non-cancelled escrows (both Open and Closed)
-  // plus all months of the current year (until December of the active year)
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
     
@@ -100,11 +137,6 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
 
     return Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
   }, [escrows]);
-
-  // Selected year state for the Total Amount tab (defaults to actual current year)
-  const [selectedYear, setSelectedYear] = useState<string>(() => {
-    return new Date().getFullYear().toString();
-  });
 
   // Extract all unique years (YYYY) from all escrows (excluding Cancelled)
   const availableYears = useMemo(() => {
@@ -146,12 +178,6 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
     return [...list].sort((a, b) => parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate));
   }, [closedEscrows, selectedYear]);
 
-  // Selected month state for the standard monthly tab
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
-
   // Calculate Total Sales Stats based on filtered closed escrows
   const totalStats = useMemo(() => {
     const volume = filteredClosedEscrows.reduce((sum, e) => sum + (e.price || 0), 0);
@@ -181,13 +207,6 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
       : closedEscrows.filter((e) => getEscrowMonth(e) === selectedMonth);
     return [...list].sort((a, b) => parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate));
   }, [closedEscrows, selectedMonth]);
-
-  // Combined escrows for the monthly view
-  const allMonthlyEscrows = useMemo(() => {
-    return [...pendingMonthlyEscrows, ...closedMonthlyEscrows].sort(
-      (a, b) => parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate)
-    );
-  }, [pendingMonthlyEscrows, closedMonthlyEscrows]);
 
   // Calculate Monthly Sales Stats (Expected vs Closed)
   const monthlyStats = useMemo(() => {
@@ -255,185 +274,159 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
       if (e.price && e.commissionPercent) return sum + (e.price * e.commissionPercent) / 100;
       return sum;
     }, 0);
-    const volume = filteredCommissionEscrows.reduce((sum, e) => sum + (e.price || 0), 0);
-    const count = filteredCommissionEscrows.length;
-    return { net, gross, volume, count };
+    return {
+      net,
+      gross,
+      count: filteredCommissionEscrows.length,
+    };
   }, [filteredCommissionEscrows]);
 
-  // Group Commissions by Month (filtered by commissionSelectedYear and commissionSelectedMonth)
-  const commissionByMonth = useMemo(() => {
-    const groups: { [key: string]: { key: string; label: string; amount: number; grossAmount: number; count: number; escrows: Escrow[] } } = {};
-    
+  // Grouped breakdown for Net Commission tab (monthly / yearly)
+  const commissionGroupsToRender = useMemo(() => {
+    if (commissionGroup === 'yearly' && commissionSelectedMonth === 'all') {
+      const yearMap = new Map<string, { label: string; amount: number; grossAmount: number; count: number }>();
+      filteredCommissionEscrows.forEach((escrow) => {
+        const yr = getEscrowYear(escrow) || 'Unknown';
+        const net = escrow.netCommission || 0;
+        const gross = escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0);
+        if (!yearMap.has(yr)) {
+          yearMap.set(yr, { label: `${yr}`, amount: 0, grossAmount: 0, count: 0 });
+        }
+        const g = yearMap.get(yr)!;
+        g.amount += net;
+        g.grossAmount += gross;
+        g.count += 1;
+      });
+      return Array.from(yearMap.entries())
+        .map(([key, data]) => ({ key, ...data }))
+        .sort((a, b) => b.key.localeCompare(a.key));
+    }
+
+    // Monthly grouping
+    const monthMap = new Map<string, { label: string; amount: number; grossAmount: number; count: number }>();
     filteredCommissionEscrows.forEach((escrow) => {
       const ym = getEscrowMonth(escrow);
-      if (ym && /^\d{4}-\d{2}$/.test(ym)) {
-        if (!groups[ym]) {
-          // Format month name
-          let formattedLabel = ym;
-          try {
-            const [year, month] = ym.split('-');
-            const date = new Date(Number(year), Number(month) - 1, 1);
-            formattedLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-          } catch {
-            // fallback
-          }
-          groups[ym] = { key: ym, label: formattedLabel, amount: 0, grossAmount: 0, count: 0, escrows: [] };
+      const key = ym && /^\d{4}-\d{2}$/.test(ym) ? ym : 'Unknown';
+      let label = key;
+      if (key !== 'Unknown') {
+        try {
+          const [y, m] = key.split('-');
+          const d = new Date(Number(y), Number(m) - 1, 1);
+          label = format(d, 'MMMM yyyy');
+        } catch {
+          label = key;
         }
-        groups[ym].amount += escrow.netCommission || 0;
-        groups[ym].grossAmount += (escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0));
-        groups[ym].count += 1;
-        groups[ym].escrows.push(escrow);
       }
+      const net = escrow.netCommission || 0;
+      const gross = escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0);
+
+      if (!monthMap.has(key)) {
+        monthMap.set(key, { label, amount: 0, grossAmount: 0, count: 0 });
+      }
+      const g = monthMap.get(key)!;
+      g.amount += net;
+      g.grossAmount += gross;
+      g.count += 1;
     });
 
-    return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
-  }, [filteredCommissionEscrows]);
+    return Array.from(monthMap.entries())
+      .map(([key, data]) => ({ key, ...data }))
+      .sort((a, b) => b.key.localeCompare(a.key));
+  }, [filteredCommissionEscrows, commissionGroup, commissionSelectedMonth]);
 
-  // Group Commissions by Year (filtered by commissionSelectedYear and commissionSelectedMonth)
-  const commissionByYear = useMemo(() => {
-    const groups: { [key: string]: { key: string; label: string; amount: number; grossAmount: number; count: number; escrows: Escrow[] } } = {};
-    
-    filteredCommissionEscrows.forEach((escrow) => {
-      const yr = getEscrowYear(escrow);
-      if (yr && /^\d{4}$/.test(yr)) {
-        if (!groups[yr]) {
-          groups[yr] = { key: yr, label: `${yr} Year Total`, amount: 0, grossAmount: 0, count: 0, escrows: [] };
-        }
-        groups[yr].amount += escrow.netCommission || 0;
-        groups[yr].grossAmount += (escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0));
-        groups[yr].count += 1;
-        groups[yr].escrows.push(escrow);
-      }
-    });
-
-    return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
-  }, [filteredCommissionEscrows]);
-
-  const commissionGroupsToRender = useMemo(() => {
-    return commissionGroup === 'monthly' ? commissionByMonth : commissionByYear;
-  }, [commissionGroup, commissionByMonth, commissionByYear]);
-
-  // Group Escrows by Lead Source
+  // Lead Source analytics
   const leadSourceStats = useMemo(() => {
-    const nonCancelled = escrows.filter(e => e.status !== 'Cancelled');
-    const filtered = selectedYear === 'all'
-      ? nonCancelled
-      : nonCancelled.filter(e => getEscrowYear(e) === selectedYear);
+    const nonCancelled = escrows.filter(e => {
+      if (e.status === 'Cancelled') return false;
+      if (selectedYear !== 'all') {
+        const yr = getEscrowYear(e);
+        if (yr !== selectedYear) return false;
+      }
+      return true;
+    });
 
-    const totalCount = filtered.length;
-    const sourcesMap: Record<string, { key: string; label: string; count: number; volume: number; commission: number; escrows: Escrow[] }> = {
-      'Zillow': { key: 'Zillow', label: 'Zillow', count: 0, volume: 0, commission: 0, escrows: [] },
-      'Self': { key: 'Self', label: 'Self', count: 0, volume: 0, commission: 0, escrows: [] },
-      'Team Lead': { key: 'Team Lead', label: 'Team Lead', count: 0, volume: 0, commission: 0, escrows: [] },
-      'Opcity': { key: 'Opcity', label: 'Opcity', count: 0, volume: 0, commission: 0, escrows: [] },
-      'Other': { key: 'Other', label: 'Other', count: 0, volume: 0, commission: 0, escrows: [] },
+    const sourceMap: { [key: string]: { label: string; count: number; volume: number; commission: number } } = {
+      'sphere': { label: 'Sphere of Influence', count: 0, volume: 0, commission: 0 },
+      'zillow': { label: 'Zillow / Online', count: 0, volume: 0, commission: 0 },
+      'open_house': { label: 'Open House', count: 0, volume: 0, commission: 0 },
+      'referral': { label: 'Referral / Agent', count: 0, volume: 0, commission: 0 },
+      'cold_call': { label: 'Outreach / Cold', count: 0, volume: 0, commission: 0 },
+      'other': { label: 'Other', count: 0, volume: 0, commission: 0 }
     };
 
-    filtered.forEach((e) => {
-      const src = e.leadSource || 'Zillow';
-      const key = (src === 'Zillow' || src === 'Self' || src === 'Team Lead' || src === 'Opcity') ? src : 'Other';
-      sourcesMap[key].count += 1;
-      sourcesMap[key].volume += e.price || 0;
-      sourcesMap[key].commission += e.netCommission || 0;
-      sourcesMap[key].escrows.push(e);
+    nonCancelled.forEach(escrow => {
+      const src = (escrow.leadSource || 'other').toLowerCase();
+      let matchedKey = 'other';
+      if (src.includes('sphere') || src.includes('friend') || src.includes('family') || src.includes('past')) {
+        matchedKey = 'sphere';
+      } else if (src.includes('zillow') || src.includes('realtor.com') || src.includes('web') || src.includes('online') || src.includes('internet')) {
+        matchedKey = 'zillow';
+      } else if (src.includes('open house') || src.includes('sign')) {
+        matchedKey = 'open_house';
+      } else if (src.includes('referral') || src.includes('agent') || src.includes('broker')) {
+        matchedKey = 'referral';
+      } else if (src.includes('cold') || src.includes('door') || src.includes('mail') || src.includes('farm')) {
+        matchedKey = 'cold_call';
+      }
+
+      sourceMap[matchedKey].count += 1;
+      sourceMap[matchedKey].volume += (escrow.price || 0);
+      sourceMap[matchedKey].commission += (escrow.netCommission || 0);
     });
 
+    const totalCount = nonCancelled.length || 1;
+    const sources = Object.entries(sourceMap).map(([key, data]) => ({
+      key,
+      label: data.label,
+      count: data.count,
+      percent: (data.count / totalCount) * 100,
+      volume: data.volume,
+      commission: data.commission
+    })).sort((a, b) => b.count - a.count);
+
     return {
-      totalCount,
-      sources: Object.values(sourcesMap).map(s => ({
-        ...s,
-        percent: totalCount > 0 ? (s.count / totalCount) * 100 : 0
-      }))
+      totalCount: nonCancelled.length,
+      sources
     };
   }, [escrows, selectedYear]);
 
-  const formatCurrency = (val: number) => {
+  const formatCurrency = (val?: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       maximumFractionDigits: 0,
-    }).format(val);
+    }).format(val || 0);
   };
 
-  const formatMonthName = (ym: string) => {
-    if (ym === 'all') return 'All Time';
+  const formatMonthName = (ymStr: string) => {
+    if (ymStr === 'all') return 'All Time';
     try {
-      const [year, month] = ym.split('-');
+      const [year, month] = ymStr.split('-');
       const date = new Date(Number(year), Number(month) - 1, 1);
-      return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      return format(date, 'MMMM yyyy');
     } catch {
-      return ym;
+      return ymStr;
     }
   };
 
-  const formatItemDate = (dateStr?: string) => {
-    if (!dateStr) return 'N/A';
-    try {
-      return format(parseISO(dateStr), 'MMM d, yyyy');
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const handlePeriodToggle = (key: string) => {
-    if (expandedPeriod === key) {
-      setExpandedPeriod(null);
-    } else {
-      setExpandedPeriod(key);
-    }
-  };
-
-  const activeYearLabel = useMemo(() => {
-    if (activeSubTab === 'monthly') {
-      if (selectedMonth === 'all') return 'All Time';
-      return formatMonthName(selectedMonth);
-    }
-    if (activeSubTab === 'commission') {
-      const monthObj = MONTH_OPTIONS.find(m => m.value === commissionSelectedMonth);
-      const monthName = monthObj ? monthObj.label : '';
-      if (commissionSelectedYear === 'all' && commissionSelectedMonth === 'all') return 'All Time';
-      if (commissionSelectedYear === 'all') return `${monthName} (All Years)`;
-      if (commissionSelectedMonth === 'all') return commissionSelectedYear;
-      return `${monthName} ${commissionSelectedYear}`;
-    }
-    return selectedYear === 'all' ? 'All Time' : selectedYear;
-  }, [activeSubTab, selectedMonth, selectedYear, commissionSelectedYear, commissionSelectedMonth]);
+  const monthlyCollectionPercent = monthlyStats.totalProjectedCommission > 0
+    ? Math.min(100, Math.round((monthlyStats.closedCommission / monthlyStats.totalProjectedCommission) * 100))
+    : 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-[#e5e5ea] overflow-hidden flex flex-col h-full shadow-sm">
-      {/* Tesla / Apple-inspired Minimalist Header with Sub-tabs */}
-      <div className="px-4 sm:px-5 py-3 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0 overflow-hidden">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="font-bold text-[#1d1d1f] text-xs uppercase tracking-wider leading-none">
-            Sales Summary
-          </h2>
-          <span className="text-slate-300 font-normal text-xs">•</span>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#1B3A5C] text-white text-[10px] font-mono font-bold tracking-wide uppercase shadow-2xs">
-            {activeYearLabel}
-          </span>
+    <div className="bg-[#FFFFFF] rounded-2xl border border-[#e5e5ea] overflow-hidden shadow-sm flex flex-col h-full">
+      {/* Top Header with Navigation Tabs */}
+      <div className="p-4 sm:p-5 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="text-[#1B3A5C]" size={18} />
+          <h2 className="font-bold text-[#1d1d1f] text-sm sm:text-base tracking-tight">Sales Summary</h2>
         </div>
 
-        {/* Minimal Sub-tabs */}
-        <div className="flex bg-slate-200/70 p-0.5 rounded-lg text-[11px] font-bold overflow-x-auto max-w-full scrollbar-none whitespace-nowrap shrink-0 w-full sm:w-auto">
+        {/* Sub Navigation Tabs */}
+        <div className="flex bg-neutral-200/60 p-0.5 rounded-lg text-xs font-bold self-start sm:self-auto overflow-x-auto max-w-full">
           <button
-            onClick={() => {
-              setActiveSubTab('total');
-              setExpandedPeriod(null);
-            }}
-            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
-              activeSubTab === 'total'
-                ? 'bg-black text-white shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f]'
-            }`}
-          >
-            Total Amount
-          </button>
-          <button
-            onClick={() => {
-              setActiveSubTab('monthly');
-              setExpandedPeriod(null);
-            }}
-            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
+            onClick={() => setActiveSubTab('monthly')}
+            className={`px-3 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
               activeSubTab === 'monthly'
                 ? 'bg-black text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
@@ -442,11 +435,18 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             Monthly
           </button>
           <button
-            onClick={() => {
-              setActiveSubTab('commission');
-              setExpandedPeriod(null);
-            }}
-            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
+            onClick={() => setActiveSubTab('total')}
+            className={`px-3 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
+              activeSubTab === 'total'
+                ? 'bg-black text-white shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f]'
+            }`}
+          >
+            Total Sales
+          </button>
+          <button
+            onClick={() => setActiveSubTab('commission')}
+            className={`px-3 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
               activeSubTab === 'commission'
                 ? 'bg-black text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
@@ -455,11 +455,8 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             Net Commissions
           </button>
           <button
-            onClick={() => {
-              setActiveSubTab('source');
-              setExpandedPeriod(null);
-            }}
-            className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
+            onClick={() => setActiveSubTab('source')}
+            className={`px-3 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
               activeSubTab === 'source'
                 ? 'bg-black text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f]'
@@ -471,133 +468,12 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white">
-        {activeSubTab === 'total' && (
-          /* TOTAL SALES VIEW */
-          <div className="flex-1 flex flex-col overflow-hidden p-5 gap-4">
-            {/* Year Selector dropdown */}
-            <div className="flex items-center justify-between shrink-0">
-              <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Select Year</span>
-              
-              <div className="relative inline-flex items-center">
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
-                >
-                  <option value="all">All Time</option>
-                  {availableYears.map((yr) => (
-                    <option key={yr} value={yr}>
-                      {yr}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute right-2.5 text-[#86868b] flex items-center">
-                  <ChevronDown size={12} />
-                </div>
-              </div>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Volume</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#1d1d1f] font-mono mt-0.5 truncate">
-                  {formatCurrency(totalStats.volume)}
-                </span>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Sales Count</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#1d1d1f] font-mono mt-0.5 truncate">
-                  {totalStats.count}
-                </span>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Net Commissions</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#059669] font-mono mt-0.5 truncate">
-                  {formatCurrency(totalStats.commission)}
-                </span>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Gross Commissions</span>
-                <span className="text-sm sm:text-base font-extrabold text-[#1B3A5C] font-mono mt-0.5 truncate">
-                  {formatCurrency(totalStats.grossCommission)}
-                </span>
-              </div>
-            </div>
-
-            {/* List Header */}
-            <div className="flex items-center text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
-              <span className="w-8 text-center shrink-0">#</span>
-              <span className="flex-1">Properties Closed in {selectedYear === 'all' ? 'All Time' : selectedYear} ({filteredClosedEscrows.length})</span>
-              <span className="w-20 text-right shrink-0">Price</span>
-              <span className="w-20 text-right shrink-0 ml-2">Net Comm</span>
-              <span className="w-20 text-right shrink-0 ml-2">Gross Comm</span>
-            </div>
-
-            {/* Scrollable list of properties */}
-            <div className="flex-1 overflow-y-auto pr-1">
-              {filteredClosedEscrows.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {filteredClosedEscrows.map((escrow, index) => {
-                    const grossVal = escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0);
-                    return (
-                      <div
-                        key={escrow.id}
-                        onClick={() => onSelectEscrow(escrow)}
-                        className="group flex items-center p-2.5 rounded-xl border border-transparent hover:border-[#e5e5ea] hover:bg-slate-50 transition-all duration-200 cursor-pointer"
-                      >
-                        <div className="w-8 text-center shrink-0 mr-1">
-                          <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1 rounded bg-[#1B3A5C] text-white text-[10px] font-mono font-bold">
-                            #{index + 1}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1 pr-2">
-                          <div className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
-                            {escrow.address}
-                          </div>
-                          <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
-                            <span className="font-semibold truncate">
-                              {escrow.clientFirstName} {escrow.clientLastName}
-                              {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
-                            </span>
-                            <span className="text-slate-300">•</span>
-                            <span className="font-mono">{formatItemDate(escrow.coeDate)}</span>
-                          </div>
-                        </div>
-                        <div className="text-xs font-extrabold text-[#1d1d1f] font-mono shrink-0 w-20 text-right">
-                          {formatCurrency(escrow.price || 0)}
-                        </div>
-                        <div className="text-xs font-bold text-[#059669] font-mono shrink-0 w-20 text-right ml-2">
-                          {formatCurrency(escrow.netCommission || 0)}
-                        </div>
-                        <div className="text-xs font-bold text-[#1B3A5C] font-mono shrink-0 w-20 text-right ml-2">
-                          {formatCurrency(grossVal)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="py-12 text-center text-[#86868b] text-sm font-medium flex flex-col items-center gap-3 justify-center h-full">
-                  <div className="w-10 h-10 rounded-full bg-neutral-50 border border-neutral-100 text-neutral-400 flex items-center justify-center shadow-sm">
-                    <Building size={16} />
-                  </div>
-                  <div>
-                    <p className="uppercase text-[9px] tracking-widest font-bold text-neutral-500">No sales recorded</p>
-                    <p className="text-[10px] text-[#86868b] mt-1 normal-case">Change an escrow status to "Closed" to see records here.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
+      <div className="flex-1 flex flex-col p-5 overflow-y-auto bg-white justify-between gap-4">
         {activeSubTab === 'monthly' && (
-          /* SIMPLE MONTHLY SALES VIEW - EXPECTED MONEY & MONTH */
-          <div className="flex-1 flex flex-col overflow-hidden p-5 gap-4 animate-fade-in">
-            {/* Top Bar: Month Selector & Summary (Already Received + Expected to Receive) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
+          /* MONTHLY SALES OVERVIEW */
+          <div className="flex-1 flex flex-col gap-4 animate-fade-in justify-between">
+            {/* Top Bar: Month Selector & Summary */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
               <div className="flex flex-wrap items-center gap-6">
                 {/* Already Received */}
                 <div>
@@ -632,10 +508,8 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                 <div className="relative inline-flex items-center">
                   <select
                     value={selectedMonth}
-                    onChange={(e) => {
-                      setSelectedMonth(e.target.value);
-                    }}
-                    className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-xs font-bold px-4 py-2 pr-8 rounded-xl border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 transition-all duration-200 shadow-sm"
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-xs font-bold px-3.5 py-1.5 pr-8 rounded-xl border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 transition-all duration-200 shadow-sm"
                   >
                     <option value="all">All Time</option>
                     {availableMonths.map((ym) => (
@@ -651,89 +525,157 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
               </div>
             </div>
 
-            {/* List Header */}
-            <div className="flex items-center text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-2 shrink-0">
-              <span className="w-8 text-center shrink-0">#</span>
-              <span className="flex-1">Properties Closing in {formatMonthName(selectedMonth)} ({allMonthlyEscrows.length})</span>
-              <span className="w-20 text-right shrink-0">Price</span>
-              <span className="w-24 text-right shrink-0 ml-2">Net Comm</span>
+            {/* Metrics Breakdown Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Total Projected</span>
+                <div className="mt-1 text-base sm:text-lg font-black text-[#1B3A5C] font-mono">
+                  {formatCurrency(monthlyStats.totalProjectedCommission)}
+                </div>
+                <div className="mt-1 text-[10px] text-slate-500 font-medium">
+                  {monthlyStats.totalCount} total deal{monthlyStats.totalCount === 1 ? '' : 's'} in month
+                </div>
+              </div>
+
+              <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-3 flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Pending / Open Volume</span>
+                <div className="mt-1 text-base sm:text-lg font-black text-emerald-900 font-mono">
+                  {formatCurrency(monthlyStats.expectedVolume)}
+                </div>
+                <div className="mt-1 text-[10px] text-emerald-700 font-medium">
+                  {monthlyStats.expectedCount} pending escrow{monthlyStats.expectedCount === 1 ? '' : 's'}
+                </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Closed Volume</span>
+                <div className="mt-1 text-base sm:text-lg font-black text-[#0f172a] font-mono">
+                  {formatCurrency(monthlyStats.closedVolume)}
+                </div>
+                <div className="mt-1 text-[10px] text-slate-500 font-medium">
+                  {monthlyStats.closedCount} closed escrow{monthlyStats.closedCount === 1 ? '' : 's'}
+                </div>
+              </div>
             </div>
 
-            {/* Scrollable list of properties */}
-            <div className="flex-1 overflow-y-auto pr-1">
-              {allMonthlyEscrows.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {allMonthlyEscrows.map((escrow, index) => {
-                    const isPending = escrow.status === 'Open';
-                    return (
-                      <div
-                        key={escrow.id}
-                        onClick={() => onSelectEscrow(escrow)}
-                        className={`group flex items-center p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
-                          isPending
-                            ? 'border-emerald-200/80 bg-emerald-50/30 hover:bg-emerald-50/70'
-                            : 'border-slate-100 bg-white hover:bg-slate-50'
-                        }`}
-                      >
-                        <div className="w-8 text-center shrink-0 mr-1">
-                          <span className={`w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] font-mono font-bold ${
-                            isPending ? 'bg-emerald-600 text-white' : 'bg-[#1B3A5C] text-white'
-                          }`}>
-                            #{index + 1}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0 pr-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
-                              {escrow.address}
-                            </span>
-                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wide shrink-0 ${
-                              isPending
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300/80'
-                                : 'bg-slate-100 text-slate-700 border border-slate-200'
-                            }`}>
-                              {isPending ? 'Expected' : 'Closed'}
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-[#86868b] mt-0.5 flex items-center gap-2">
-                            <span className="font-semibold truncate text-[#1d1d1f]">
-                              {escrow.clientFirstName} {escrow.clientLastName}
-                              {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
-                            </span>
-                            <span className="text-slate-300">•</span>
-                            <span className="font-mono text-slate-600">COE: {formatItemDate(escrow.coeDate)}</span>
-                          </div>
-                        </div>
-                        <div className="text-xs font-extrabold text-[#1d1d1f] font-mono shrink-0 w-20 text-right">
-                          {formatCurrency(escrow.price || 0)}
-                        </div>
-                        <div className="text-xs font-bold text-[#059669] font-mono shrink-0 w-24 text-right ml-2">
-                          {formatCurrency(escrow.netCommission || 0)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center p-8 text-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-neutral-50 border border-neutral-100 text-neutral-400 flex items-center justify-center shadow-sm">
-                    <Calendar size={16} />
-                  </div>
-                  <div>
-                    <p className="uppercase text-[9px] tracking-widest font-bold text-neutral-500">No escrows for {formatMonthName(selectedMonth)}</p>
-                    <p className="text-[10px] text-[#86868b] mt-1 normal-case">No pending or closed escrows found for this month.</p>
+            {/* Progress & Status Indicator */}
+            <div className="bg-slate-50/80 border border-slate-200/70 rounded-xl p-3 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-bold">
+                <span className="text-[#1d1d1f]">Monthly Revenue Collection</span>
+                <span className="text-[#1B3A5C] font-mono">{monthlyCollectionPercent}% Collected</span>
+              </div>
+              <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-[#1B3A5C] h-full rounded-full transition-all duration-500"
+                  style={{ width: `${monthlyCollectionPercent}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Helper Notice */}
+            <div className="flex items-center justify-between px-3 py-2 bg-blue-50/70 border border-blue-200/60 rounded-xl text-[11px] text-[#1B3A5C]">
+              <div className="flex items-center gap-1.5 font-medium">
+                <CheckCircle2 size={14} className="text-[#1B3A5C] shrink-0" />
+                <span>Showing <strong>{monthlyStats.expectedCount} open</strong> and <strong>{monthlyStats.closedCount} closed</strong> escrows in the Escrow List below</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeSubTab === 'total' && (
+          /* TOTAL SALES VIEW */
+          <div className="flex-1 flex flex-col gap-4 animate-fade-in justify-between">
+            {/* Year Selector Bar */}
+            <div className="flex items-center justify-between shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-3 px-4">
+              <span className="text-xs font-bold text-[#1d1d1f]">Annual Sales Performance</span>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-[#86868b]">Year:</span>
+                <div className="relative inline-flex items-center">
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-xs font-bold px-3.5 py-1.5 pr-8 rounded-xl border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 transition-all duration-200 shadow-sm"
+                  >
+                    <option value="all">All Time</option>
+                    {availableYears.map((yr) => (
+                      <option key={yr} value={yr}>
+                        {yr}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-2.5 text-[#86868b] flex items-center">
+                    <ChevronDown size={14} />
                   </div>
                 </div>
-              )}
+              </div>
+            </div>
+
+            {/* 4 Primary Metric Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-center">
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Total Volume</span>
+                <span className="text-sm sm:text-base font-extrabold text-[#1d1d1f] font-mono mt-0.5 truncate">
+                  {formatCurrency(totalStats.volume)}
+                </span>
+              </div>
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-center">
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Closed Deals</span>
+                <span className="text-sm sm:text-base font-extrabold text-[#1d1d1f] font-mono mt-0.5 truncate">
+                  {totalStats.count}
+                </span>
+              </div>
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-center">
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Net Commissions</span>
+                <span className="text-sm sm:text-base font-extrabold text-[#059669] font-mono mt-0.5 truncate">
+                  {formatCurrency(totalStats.commission)}
+                </span>
+              </div>
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-center">
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Gross Commissions</span>
+                <span className="text-sm sm:text-base font-extrabold text-[#1B3A5C] font-mono mt-0.5 truncate">
+                  {formatCurrency(totalStats.grossCommission)}
+                </span>
+              </div>
+            </div>
+
+            {/* Averages & Key Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Avg Sale Price</span>
+                <span className="text-sm font-bold text-[#1d1d1f] font-mono mt-1">
+                  {formatCurrency(totalStats.count > 0 ? totalStats.volume / totalStats.count : 0)}
+                </span>
+              </div>
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Avg Net Commission</span>
+                <span className="text-sm font-bold text-[#059669] font-mono mt-1">
+                  {formatCurrency(totalStats.count > 0 ? totalStats.commission / totalStats.count : 0)}
+                </span>
+              </div>
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Effective Comm Rate</span>
+                <span className="text-sm font-bold text-[#1B3A5C] font-mono mt-1">
+                  {totalStats.volume > 0 ? ((totalStats.grossCommission / totalStats.volume) * 100).toFixed(2) + '%' : '0%'}
+                </span>
+              </div>
+            </div>
+
+            {/* Helper Notice */}
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200/70 rounded-xl text-[11px] text-[#1B3A5C]">
+              <div className="flex items-center gap-1.5 font-medium">
+                <Building size={14} className="text-[#1B3A5C] shrink-0" />
+                <span>Showing <strong>{filteredClosedEscrows.length} escrows</strong> for <strong>{selectedYear === 'all' ? 'All Time' : selectedYear}</strong> in Escrow List below</span>
+              </div>
             </div>
           </div>
         )}
 
         {activeSubTab === 'commission' && (
           /* ONLY COMMISSION ANALYTICS VIEW */
-          <div className="flex-1 flex flex-col overflow-hidden p-5 gap-4 animate-fade-in">
+          <div className="flex-1 flex flex-col gap-3 animate-fade-in justify-between">
             {/* Top Bar with Year/Month selectors & Stats */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-3 px-4">
               <div>
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">
                   Net Commission Revenue
@@ -746,10 +688,6 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                   <span className="text-xs sm:text-sm font-bold text-[#1B3A5C] font-mono">
                     Gross: {formatCurrency(commissionStats.gross)}
                   </span>
-                  <span className="text-slate-300 font-normal text-xs">•</span>
-                  <span className="text-[11px] font-medium text-slate-500">
-                    {commissionStats.count} {commissionStats.count === 1 ? 'sale' : 'sales'}
-                  </span>
                 </div>
               </div>
               
@@ -759,10 +697,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                 <div className="relative inline-flex items-center">
                   <select
                     value={commissionSelectedYear}
-                    onChange={(e) => {
-                      setCommissionSelectedYear(e.target.value);
-                      setExpandedPeriod(null);
-                    }}
+                    onChange={(e) => setCommissionSelectedYear(e.target.value)}
                     className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3 py-1.5 pr-7 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-2xs"
                   >
                     <option value="all">All Years</option>
@@ -781,10 +716,7 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                 <div className="relative inline-flex items-center">
                   <select
                     value={commissionSelectedMonth}
-                    onChange={(e) => {
-                      setCommissionSelectedMonth(e.target.value);
-                      setExpandedPeriod(null);
-                    }}
+                    onChange={(e) => setCommissionSelectedMonth(e.target.value)}
                     className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3 py-1.5 pr-7 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-2xs"
                   >
                     <option value="all">All Months</option>
@@ -799,152 +731,72 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
                   </div>
                 </div>
 
-                {/* Grouping Mode Toggle (when All Months is selected) */}
+                {/* Grouping Mode Toggle */}
                 {commissionSelectedMonth === 'all' && (
                   <div className="flex bg-slate-100 p-0.5 rounded-lg text-[10px] font-bold">
                     <button
-                      onClick={() => {
-                        setCommissionGroup('monthly');
-                        setExpandedPeriod(null);
-                      }}
-                      className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+                      onClick={() => setCommissionGroup('monthly')}
+                      className={`px-2 py-1 rounded-md transition-all duration-200 cursor-pointer ${
                         commissionGroup === 'monthly'
                           ? 'bg-black text-white shadow-2xs'
                           : 'text-[#86868b] hover:text-[#1d1d1f]'
                       }`}
                     >
-                      By Month
+                      Monthly
                     </button>
                     <button
-                      onClick={() => {
-                        setCommissionGroup('yearly');
-                        setExpandedPeriod(null);
-                      }}
-                      className={`px-2.5 py-1 rounded-md transition-all duration-200 cursor-pointer ${
+                      onClick={() => setCommissionGroup('yearly')}
+                      className={`px-2 py-1 rounded-md transition-all duration-200 cursor-pointer ${
                         commissionGroup === 'yearly'
                           ? 'bg-black text-white shadow-2xs'
                           : 'text-[#86868b] hover:text-[#1d1d1f]'
                       }`}
                     >
-                      By Year
+                      Yearly
                     </button>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* List Header */}
-            <div className="flex items-center justify-between text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
-              <span>Period</span>
-              <span>Net / Gross Commission</span>
+            {/* Concise Period Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[140px] overflow-y-auto pr-1">
+              {commissionGroupsToRender.length > 0 ? (
+                commissionGroupsToRender.map((group) => (
+                  <div key={group.key} className="border border-slate-200/70 rounded-xl p-2.5 bg-slate-50/50 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-[#1d1d1f] block truncate">{group.label}</span>
+                      <span className="text-[10px] text-[#86868b]">{group.count} {group.count === 1 ? 'sale' : 'sales'}</span>
+                    </div>
+                    <div className="text-right font-mono">
+                      <div className="text-xs font-extrabold text-[#059669]">Net: {formatCurrency(group.amount)}</div>
+                      <div className="text-[10px] font-bold text-[#1B3A5C]">Gross: {formatCurrency(group.grossAmount)}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 text-center py-6 text-xs text-[#86868b]">No commission records match this filter.</div>
+              )}
             </div>
 
-            {/* Scrollable list of months/years */}
-            <div className="flex-1 overflow-y-auto pr-1">
-              {commissionGroupsToRender.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {commissionGroupsToRender.map((group) => {
-                    const isExpanded = expandedPeriod === group.key || (commissionSelectedMonth !== 'all' && commissionGroupsToRender.length === 1 && expandedPeriod !== 'collapsed');
-                    return (
-                      <div key={group.key} className="border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50">
-                        {/* Period summary button */}
-                        <button
-                          onClick={() => {
-                            if (commissionSelectedMonth !== 'all' && commissionGroupsToRender.length === 1) {
-                              setExpandedPeriod(isExpanded ? 'collapsed' : group.key);
-                            } else {
-                              handlePeriodToggle(group.key);
-                            }
-                          }}
-                          className="w-full flex items-center justify-between p-3 hover:bg-slate-100/50 transition-all duration-200 cursor-pointer text-left"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <ChevronDown
-                              size={14}
-                              className={`text-[#86868b] transition-transform duration-200 shrink-0 ${
-                                isExpanded ? 'transform rotate-0' : 'transform -rotate-90'
-                              }`}
-                            />
-                            <div className="min-w-0">
-                              <span className="text-xs font-bold text-[#1d1d1f] block truncate">
-                                {group.label}
-                              </span>
-                              <span className="text-[10px] text-[#86868b]">
-                                {group.count} {group.count === 1 ? 'sale' : 'sales'} closed
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-right font-mono shrink-0">
-                            <div className="text-xs font-extrabold text-[#059669]">
-                              Net: {formatCurrency(group.amount)}
-                            </div>
-                            <div className="text-[10px] font-bold text-[#1B3A5C]">
-                              Gross: {formatCurrency(group.grossAmount)}
-                            </div>
-                          </div>
-                        </button>
-
-                        {/* Collapsible list of escrows in that period */}
-                        {isExpanded && (
-                          <div className="bg-white border-t border-slate-100/60 p-2 flex flex-col gap-1.5 animate-slide-down">
-                            {group.escrows.map((escrow) => {
-                              const grossVal = escrow.grossCommission ?? (escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0);
-                              return (
-                                <div
-                                   key={escrow.id}
-                                   onClick={() => onSelectEscrow(escrow)}
-                                   className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-all duration-150 cursor-pointer"
-                                 >
-                                   <div className="min-w-0 flex-1 pr-3">
-                                     <div className="text-[11px] font-semibold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
-                                       {escrow.address}
-                                     </div>
-                                     <div className="text-[9px] text-[#86868b] mt-0.5">
-                                       {escrow.clientFirstName} {escrow.clientLastName} • {formatItemDate(escrow.coeDate)}
-                                     </div>
-                                   </div>
-                                   <div className="text-right font-mono shrink-0">
-                                     <div className="text-[11px] font-bold text-[#059669]">
-                                       Net: {formatCurrency(escrow.netCommission || 0)}
-                                     </div>
-                                     <div className="text-[9px] font-semibold text-[#1B3A5C]">
-                                       Gross: {formatCurrency(grossVal)}
-                                     </div>
-                                   </div>
-                                 </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="py-12 text-center text-[#86868b] text-sm font-medium flex flex-col items-center gap-3 justify-center h-full">
-                  <div className="w-10 h-10 rounded-full bg-neutral-50 border border-neutral-100 text-neutral-400 flex items-center justify-center shadow-sm">
-                    <BarChart3 size={16} />
-                  </div>
-                  <div>
-                    <p className="uppercase text-[9px] tracking-widest font-bold text-neutral-500">No commissions found</p>
-                    <p className="text-[10px] text-[#86868b] mt-1 normal-case">
-                      No closed escrows match the selected {commissionSelectedMonth !== 'all' ? 'month and year' : 'year'}.
-                    </p>
-                  </div>
-                </div>
-              )}
+            {/* Helper Notice */}
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200/70 rounded-xl text-[11px] text-[#1B3A5C]">
+              <div className="flex items-center gap-1.5 font-medium">
+                <DollarSign size={14} className="text-[#1B3A5C] shrink-0" />
+                <span>Showing matching closed transactions in Escrow List below</span>
+              </div>
             </div>
           </div>
         )}
 
         {activeSubTab === 'source' && (
           /* LEAD SOURCE ANALYTICS VIEW */
-          <div className="flex-1 flex flex-col overflow-hidden p-5 gap-4 animate-fade-in">
+          <div className="flex-1 flex flex-col gap-3 animate-fade-in justify-between">
             {/* Header with Year filter */}
-            <div className="flex items-center justify-between shrink-0">
+            <div className="flex items-center justify-between shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-3 px-4">
               <div>
-                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Escrows by Lead Source</span>
-                <span className="text-[13px] font-bold text-[#1B3A5C] font-mono mt-0.5 block">
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider block">Lead Source Distribution</span>
+                <span className="text-xs font-bold text-[#1B3A5C] font-mono mt-0.5 block">
                   {leadSourceStats.totalCount} Total Escrow{leadSourceStats.totalCount === 1 ? '' : 's'}
                 </span>
               </div>
@@ -970,120 +822,30 @@ export function SalesSummary({ escrows, onSelectEscrow }: SalesSummaryProps) {
             </div>
 
             {/* Source Cards Grid */}
-            {leadSourceStats.sources.filter(s => s.count > 0).length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                {leadSourceStats.sources.filter(s => s.count > 0).map((source) => (
-                  <div key={source.key} className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">{source.label}</span>
-                        <span className="text-[10px] font-mono font-bold text-[#86868b]">{Math.round(source.percent)}%</span>
-                      </div>
-                      <div className="text-lg font-extrabold text-[#1d1d1f] font-mono mt-1">
-                        {source.count} <span className="text-[10px] text-[#86868b] font-normal uppercase">escrows</span>
-                      </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[140px] overflow-y-auto pr-1">
+              {leadSourceStats.sources.filter(s => s.count > 0).length > 0 ? (
+                leadSourceStats.sources.filter(s => s.count > 0).map((source) => (
+                  <div key={source.key} className="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider truncate">{source.label}</span>
+                      <span className="text-[10px] font-mono font-bold text-[#86868b]">{Math.round(source.percent)}%</span>
                     </div>
-                    <div className="mt-2 pt-2 border-t border-slate-200/60 flex flex-col text-[10px] font-mono">
-                      <span className="text-[#86868b]">Vol: <strong className="text-[#1d1d1f]">{formatCurrency(source.volume)}</strong></span>
-                      <span className="text-[#86868b]">Comm: <strong className="text-[#059669]">{formatCurrency(source.commission)}</strong></span>
+                    <div className="text-xs font-extrabold text-[#1d1d1f] font-mono mt-1">
+                      {source.count} <span className="text-[9px] text-[#86868b] font-normal">deals</span> • {formatCurrency(source.commission)}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* List Header */}
-            <div className="flex items-center justify-between text-[10px] font-bold text-[#86868b] uppercase tracking-wider border-b border-slate-100 pb-1 shrink-0">
-              <span>Source Category</span>
-              <span>Escrows & Commission</span>
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-6 text-xs text-[#86868b]">No lead source data for this period.</div>
+              )}
             </div>
 
-            {/* Scrollable list of sources & escrows */}
-            <div className="flex-1 overflow-y-auto pr-1">
-              {leadSourceStats.sources.filter(s => s.count > 0).length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {leadSourceStats.sources.filter(s => s.count > 0).map((source) => {
-                    const isExpanded = expandedPeriod === source.key;
-                    return (
-                      <div key={source.key} className="border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50">
-                        {/* Source Summary row */}
-                        <button
-                          onClick={() => handlePeriodToggle(source.key)}
-                          className="w-full flex items-center justify-between p-3 hover:bg-slate-100/50 transition-all duration-200 cursor-pointer text-left"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <ChevronDown
-                              size={14}
-                              className={`text-[#86868b] transition-transform duration-200 shrink-0 ${
-                                isExpanded ? 'transform rotate-0' : 'transform -rotate-90'
-                              }`}
-                            />
-                            <div className="min-w-0">
-                              <span className="text-xs font-bold text-[#1d1d1f] block truncate">
-                                {source.label} Source
-                              </span>
-                              <span className="text-[10px] text-[#86868b]">
-                                {source.count} {source.count === 1 ? 'escrow' : 'escrows'} ({Math.round(source.percent)}%)
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="text-xs font-extrabold text-[#1B3A5C] font-mono block">
-                              {formatCurrency(source.volume)}
-                            </span>
-                            <span className="text-[10px] font-bold text-[#059669] font-mono block">
-                              {formatCurrency(source.commission)} comm.
-                            </span>
-                          </div>
-                        </button>
-
-                        {/* Collapsible list of escrows */}
-                        {isExpanded && (
-                          <div className="bg-white border-t border-slate-100/60 p-2 flex flex-col gap-1.5 animate-slide-down">
-                            {source.escrows.length > 0 ? (
-                              source.escrows.map((escrow) => (
-                                <div
-                                  key={escrow.id}
-                                  onClick={() => onSelectEscrow(escrow)}
-                                  className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-all duration-150 cursor-pointer"
-                                >
-                                  <div className="min-w-0 flex-1 pr-3">
-                                    <div className="text-[11px] font-semibold text-[#1B3A5C] truncate group-hover:text-[#1B3A5C]/80">
-                                      {escrow.address}
-                                    </div>
-                                    <div className="text-[9px] text-[#86868b] mt-0.5">
-                                      {escrow.clientFirstName} {escrow.clientLastName} • {escrow.status}
-                                    </div>
-                                  </div>
-                                  <div className="text-right shrink-0">
-                                    <div className="text-[11px] font-bold text-[#1d1d1f] font-mono">
-                                      {formatCurrency(escrow.price || 0)}
-                                    </div>
-                                    <div className="text-[9px] font-bold text-[#059669] font-mono">
-                                      {formatCurrency(escrow.netCommission || 0)}
-                                    </div>
-                                  </div>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="p-3 text-center text-[11px] text-[#86868b]">No escrows registered under {source.label}</div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="py-12 text-center text-[#86868b] text-sm font-medium flex flex-col items-center gap-3 justify-center h-full">
-                  <div className="w-10 h-10 rounded-full bg-neutral-50 border border-neutral-100 text-neutral-400 flex items-center justify-center shadow-sm">
-                    <BarChart3 size={16} />
-                  </div>
-                  <div>
-                    <p className="uppercase text-[9px] tracking-widest font-bold text-neutral-500">No Lead Source Data</p>
-                  </div>
-                </div>
-              )}
+            {/* Helper Notice */}
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200/70 rounded-xl text-[11px] text-[#1B3A5C]">
+              <div className="flex items-center gap-1.5 font-medium">
+                <PieChart size={14} className="text-[#1B3A5C] shrink-0" />
+                <span>Showing all source records in Escrow List below</span>
+              </div>
             </div>
           </div>
         )}

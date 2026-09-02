@@ -4,7 +4,7 @@ import { TopNav } from './components/layout/TopNav';
 import { StatsBar } from './components/layout/StatsBar';
 import { FilterBar } from './components/escrows/FilterBar';
 import { EscrowCard } from './components/escrows/EscrowCard';
-import { SalesSummary } from './components/summary/SalesSummary';
+import { SalesSummary, SummaryFilterContext } from './components/summary/SalesSummary';
 import { ChecklistTable } from './components/summary/ChecklistTable';
 import { YearlyRepresentationSummary } from './components/summary/YearlyRepresentationSummary';
 import { CalendarView } from './components/calendar/CalendarView';
@@ -39,6 +39,14 @@ function App() {
   const [search, setSearch] = useState('');
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   const [summaryFilter, setSummaryFilter] = useState<'All' | 'Open' | 'Closed'>('Open');
+  const [summaryFilterContext, setSummaryFilterContext] = useState<SummaryFilterContext>(() => {
+    const now = new Date();
+    return {
+      mode: 'monthly',
+      selectedYear: now.getFullYear().toString(),
+      selectedMonth: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    };
+  });
 
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingEscrow, setEditingEscrow] = useState<Escrow | null>(null);
@@ -221,24 +229,24 @@ function App() {
           {activeTab === 'summary' && (
             <div className="max-w-[1600px] mx-auto flex flex-col gap-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[400px] h-auto">
-                <SalesSummary escrows={escrows} onSelectEscrow={(escrow) => setDetailEscrow(escrow)} />
+                <SalesSummary 
+                  escrows={escrows} 
+                  onSelectEscrow={(escrow) => setDetailEscrow(escrow)} 
+                  filterContext={summaryFilterContext}
+                  onFilterChange={setSummaryFilterContext}
+                />
                 <YearlyRepresentationSummary escrows={escrows} />
               </div>
               
               <div className="w-full">
                 <ChecklistTable 
-                  escrows={
-                    summaryFilter === 'All' 
-                      ? escrows.filter(e => e.status !== 'Cancelled')
-                      : summaryFilter === 'Open' 
-                      ? escrows.filter(e => e.status === 'Open') 
-                      : escrows.filter(e => e.status === 'Closed')
-                  } 
+                  escrows={escrows} 
                   onSelectEscrow={(escrow) => setDetailEscrow(escrow)} 
                   onDeleteEscrow={(id) => setConfirmDeleteId(id)}
                   onOpenContacts={(escrow) => setContactsEscrow(escrow)}
                   summaryFilter={summaryFilter}
                   onFilterChange={setSummaryFilter}
+                  activeFilterContext={summaryFilterContext}
                 />
               </div>
             </div>

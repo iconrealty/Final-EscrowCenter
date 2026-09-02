@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Escrow, ALL_TASKS } from '../../types';
 import { getEscrowYear } from '../../utils/csvUtils';
-import { Trash2, Calendar, User, CheckCircle2, ChevronRight, ChevronDown, Users } from 'lucide-react';
-import { format, parseISO, differenceInCalendarDays } from 'date-fns';
+import { Trash2, Calendar, User, CheckCircle2, ChevronRight, ChevronDown, Users, Filter, Clock } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { StatusBadge } from '../shared/StatusBadge';
+import { SummaryFilterContext } from './SalesSummary';
 
 interface ChecklistTableProps {
   escrows: Escrow[];
@@ -12,6 +13,9 @@ interface ChecklistTableProps {
   onOpenContacts?: (escrow: Escrow) => void;
   summaryFilter?: 'All' | 'Open' | 'Closed';
   onFilterChange?: (filter: 'All' | 'Open' | 'Closed') => void;
+  activeFilterContext?: SummaryFilterContext;
+  onSyncMonthChange?: (month: string) => void;
+  onSyncYearChange?: (year: string) => void;
 }
 
 export function ChecklistTable({ 
@@ -19,10 +23,45 @@ export function ChecklistTable({
   onSelectEscrow, 
   onDeleteEscrow,
   onOpenContacts,
-  summaryFilter,
-  onFilterChange 
+  summaryFilter = 'Open',
+  onFilterChange,
+  activeFilterContext,
+  onSyncMonthChange,
+  onSyncYearChange
 }: ChecklistTableProps) {
-  const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [internalYear, setInternalYear] = useState<string>('all');
+  const [internalMonth, setInternalMonth] = useState<string>('all');
+
+  // Helper function to extract exact YYYY-MM from escrow
+  const getEscrowMonth = (e: Escrow): string => {
+    const dateStr = (e.coeDate || e.acceptanceDate || '').trim();
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}/.test(dateStr)) return dateStr.substring(0, 7);
+    if (/^\d{4}\/\d{2}/.test(dateStr)) return dateStr.substring(0, 7).replace('/', '-');
+    const match = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (match) {
+      const month = match[1].padStart(2, '0');
+      const year = match[3];
+      return `${year}-${month}`;
+    }
+    const parsed = new Date(dateStr);
+    if (!isNaN(parsed.getTime())) {
+      const m = String(parsed.getMonth() + 1).padStart(2, '0');
+      return `${parsed.getFullYear()}-${m}`;
+    }
+    return '';
+  };
+
+  const formatMonthName = (ymStr?: string) => {
+    if (!ymStr || ymStr === 'all') return 'All Time';
+    try {
+      const [year, month] = ymStr.split('-');
+      const date = new Date(Number(year), Number(month) - 1, 1);
+      return format(date, 'MMMM yyyy');
+    } catch {
+      return ymStr;
+    }
+  };
 
   const availableYears = useMemo(() => {
     const yearsSet = new Set<string>();
@@ -35,11 +74,62 @@ export function ChecklistTable({
     return Array.from(yearsSet).sort((a, b) => Number(b) - Number(a));
   }, [escrows]);
 
-  const yearFilteredEscrows = useMemo(() => {
-    const validEscrows = escrows.filter((e) => e.status !== 'Cancelled');
-    if (selectedYear === 'all') return validEscrows;
-    return validEscrows.filter((e) => getEscrowYear(e) === selectedYear);
-  }, [escrows, selectedYear]);
+  const availableMonths = useMemo(() => {
+    const monthsSet = new Set<string>();
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    for (let m = 1; m <= 12; m++) {
+      monthsSet.add(`${currentYear}-${String(m).padStart(2, '0')}`);
+    }
+    escrows.forEach((escrow) => {
+      if (escrow.status === 'Cancelled') return;
+      const ym = getEscrowMonth(escrow);
+      if (ym && /^\d{4}-\d{2}$/.test(ym)) monthsSet.add(ym);
+    });
+    return Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
+  }, [escrows]);
+
+  // Determine current active filter mode & values
+  const currentMode = activeFilterContext?.mode || 'monthly';
+  const effectiveMonth = activeFilterContext?.selectedMonth ?? internalMonth;
+  const effectiveYear = activeFilterContext?.selectedYear ?? internalYear;
+
+  // Filter escrows based on active SalesSummary selection + summaryFilter (Open / Closed / All)
+  const filteredEscrows = useMemo(() => {
+    return escrows.filter((escrow) => {
+      if (escrow.status === 'Cancelled') return false;
+
+      // Status filter
+      if (summaryFilter === 'Open' && escrow.status !== 'Open') return false;
+      if (summaryFilter === 'Closed' && escrow.status !== 'Closed') return false;
+
+      // Mode-based filters from SalesSummary
+      if (currentMode === 'monthly') {
+        if (effectiveMonth && effectiveMonth !== 'all') {
+          const ym = getEscrowMonth(escrow);
+          if (ym !== effectiveMonth) return false;
+        }
+      } else if (currentMode === 'total' || currentMode === 'source') {
+        if (effectiveYear && effectiveYear !== 'all') {
+          const yr = getEscrowYear(escrow);
+          if (yr !== effectiveYear) return false;
+        }
+      } else if (currentMode === 'commission') {
+        const commYear = activeFilterContext?.commissionYear || 'all';
+        const commMonth = activeFilterContext?.commissionMonth || 'all';
+        if (commYear !== 'all') {
+          const yr = getEscrowYear(escrow);
+          if (yr !== commYear) return false;
+        }
+        if (commMonth !== 'all') {
+          const ym = getEscrowMonth(escrow);
+          if (!ym || !ym.endsWith(`-${commMonth}`)) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [escrows, summaryFilter, currentMode, effectiveMonth, effectiveYear, activeFilterContext]);
 
   const parseCoeTime = (coeDate?: string): number => {
     if (!coeDate) return 0;
@@ -53,42 +143,46 @@ export function ChecklistTable({
   };
 
   const sortedEscrows = useMemo(() => {
-    return [...yearFilteredEscrows].sort((a, b) => {
+    return [...filteredEscrows].sort((a, b) => {
       return parseCoeTime(a.coeDate) - parseCoeTime(b.coeDate);
     });
-  }, [yearFilteredEscrows]);
+  }, [filteredEscrows]);
+
+  // Context title badge string
+  const contextBadgeTitle = useMemo(() => {
+    if (currentMode === 'monthly') {
+      return effectiveMonth === 'all' ? 'All Months' : formatMonthName(effectiveMonth);
+    }
+    if (currentMode === 'total' || currentMode === 'source') {
+      return effectiveYear === 'all' ? 'All Time' : `${effectiveYear}`;
+    }
+    if (currentMode === 'commission') {
+      const cy = activeFilterContext?.commissionYear || 'All Years';
+      const cm = activeFilterContext?.commissionMonth || 'All Months';
+      return `${cy === 'all' ? 'All Years' : cy}${cm !== 'all' ? ` (${cm})` : ''}`;
+    }
+    return 'All Escrows';
+  }, [currentMode, effectiveMonth, effectiveYear, activeFilterContext]);
 
   return (
     <div className="bg-[#FFFFFF] rounded-2xl border border-[#e5e5ea] overflow-hidden shadow-sm">
+      {/* Header with Title, Synchronized Scope, and Status Toggles */}
       <div className="p-4 sm:p-5 border-b border-[#e5e5ea] bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="font-bold text-[#1d1d1f] text-sm sm:text-base tracking-tight">Escrow List</h2>
           <span className="text-slate-300 font-normal text-xs">•</span>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#1B3A5C] text-white text-[10px] font-mono font-bold tracking-wide uppercase shadow-2xs">
-            {selectedYear === 'all' ? 'All Time' : selectedYear}
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-[#1B3A5C] text-white text-[11px] font-mono font-bold tracking-wide uppercase shadow-2xs">
+            {contextBadgeTitle}
+          </span>
+          <span className="text-[10px] text-slate-500 font-medium">
+            (Synced with Sales Summary {currentMode === 'monthly' ? 'Monthly' : currentMode === 'total' ? 'Annual' : currentMode === 'commission' ? 'Commissions' : 'Lead Source'})
           </span>
         </div>
         
         <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-auto">
-          {/* Year Filter Dropdown */}
-          <div className="relative inline-flex items-center">
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-xs font-bold px-3.5 py-1.5 pr-8 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-sm"
-            >
-              <option value="all">All Time</option>
-              {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#86868b] pointer-events-none" />
-          </div>
-
-          {summaryFilter && onFilterChange && (
-            <div className="inline-flex bg-neutral-200/50 p-0.5 rounded-full border border-neutral-200/40">
+          {/* Status Quick Filter (Open / Closed / All) */}
+          {onFilterChange && (
+            <div className="inline-flex bg-neutral-200/60 p-0.5 rounded-full border border-neutral-200/50">
               {(['Open', 'Closed', 'All'] as const).map((opt) => (
                 <button
                   key={opt}
@@ -100,11 +194,12 @@ export function ChecklistTable({
                       : 'text-[#86868b] hover:text-[#1d1d1f]'
                   }`}
                 >
-                  {opt}
+                  {opt} {opt === 'Open' ? 'Escrows' : opt === 'Closed' ? 'Escrows' : ''}
                 </button>
               ))}
             </div>
           )}
+
           <span className="text-[10px] sm:text-xs font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-2.5 py-1 rounded-full shrink-0">
             {sortedEscrows.length} {sortedEscrows.length === 1 ? 'Escrow' : 'Escrows'}
           </span>
@@ -112,8 +207,10 @@ export function ChecklistTable({
       </div>
 
       {sortedEscrows.length === 0 ? (
-        <div className="p-12 text-center text-[#86868b] text-sm font-medium">
-          No escrows found in this view.
+        <div className="p-12 text-center text-[#86868b] text-sm font-medium flex flex-col items-center justify-center gap-2">
+          <Clock size={24} className="text-slate-300" />
+          <p>No {summaryFilter.toLowerCase()} escrows found for <strong>{contextBadgeTitle}</strong>.</p>
+          <p className="text-xs text-slate-400">Try changing the status toggle to 'All' or selecting another period in the Sales Summary above.</p>
         </div>
       ) : (
         <div className="divide-y divide-[#e5e5ea]">
