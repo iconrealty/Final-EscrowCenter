@@ -132,6 +132,23 @@ export function AddEditModal({
     }));
   };
 
+  const parsePriceNum = (val: string | number | undefined) => {
+    if (!val) return 0;
+    const clean = String(val).replace(/[^0-9.]/g, '');
+    return Number(clean) || 0;
+  };
+
+  const formatPriceString = (val: string | number | undefined) => {
+    if (val === undefined || val === null || val === '') return '';
+    const clean = String(val).replace(/[^0-9.]/g, '');
+    if (!clean) return '';
+    const parts = clean.split('.');
+    const integerPart = parts[0];
+    const decimalPart = parts.length > 1 ? '.' + parts[1].slice(0, 2) : '';
+    const formattedInteger = integerPart ? Number(integerPart).toLocaleString('en-US') : '';
+    return formattedInteger + decimalPart;
+  };
+
   const applyExtractedDocumentData = (data: any, sourceLabel: string) => {
     if (!data) {
       setScanError('Could not find listing details in the provided file. You can enter them manually below.');
@@ -150,9 +167,11 @@ export function AddEditModal({
     }
 
     setFormData((prev) => {
-      const priceVal = data.price ? String(data.price) : prev.price;
+      const rawPrice = data.price ? String(data.price) : prev.price;
+      const priceVal = formatPriceString(rawPrice);
+      const numPrice = parsePriceNum(priceVal);
       const compRate = data.commissionPercent || (prev.commissionPercent ? Number(prev.commissionPercent) : 2.5);
-      const gross = priceVal ? Math.round(Number(priceVal) * (compRate / 100)) : 0;
+      const gross = numPrice ? Math.round(numPrice * (compRate / 100)) : 0;
       const activeLeadSource = (data.leadSource as any) || prev.leadSource || 'Self';
       const computedNet = gross > 0 ? calculateNetFromGross(gross, activeLeadSource) : (data.netCommission || (prev.netCommission ? Number(prev.netCommission) : 0));
 
@@ -440,7 +459,7 @@ export function AddEditModal({
         lenderName: escrow.lenderName || '',
         lenderPhone: escrow.lenderPhone || '',
         lenderEmail: escrow.lenderEmail || '',
-        price: escrow.price ? escrow.price.toString() : '',
+        price: escrow.price ? formatPriceString(escrow.price) : '',
         netCommission: escrow.netCommission ? escrow.netCommission.toString() : '',
         commissionPercent: escrow.commissionPercent?.toString() || '',
         acceptanceDate: escrow.acceptanceDate || '',
@@ -539,7 +558,7 @@ export function AddEditModal({
 
     const cleanedData: any = {
       ...formData,
-      price: Number(formData.price) || 0,
+      price: parsePriceNum(formData.price),
       netCommission: Number(formData.netCommission) || 0,
       commissionPercent: formData.commissionPercent ? Number(formData.commissionPercent) : undefined,
       coeDays: formData.coeDays ? Number(formData.coeDays) : undefined,
@@ -559,8 +578,9 @@ export function AddEditModal({
   };
 
   const handlePriceChange = (val: string) => {
+    const formattedVal = formatPriceString(val);
+    const numPrice = parsePriceNum(val);
     setFormData(prev => {
-      const numPrice = Number(val) || 0;
       const numCommPercent = prev.commissionPercent ? Number(prev.commissionPercent) : 2.5;
       let newNet = prev.netCommission;
       if (numPrice > 0 && numCommPercent > 0) {
@@ -569,7 +589,7 @@ export function AddEditModal({
       }
       return {
         ...prev,
-        price: val,
+        price: formattedVal,
         netCommission: newNet
       };
     });
@@ -577,7 +597,7 @@ export function AddEditModal({
 
   const handleCommissionPercentChange = (val: string) => {
     setFormData(prev => {
-      const numPrice = Number(prev.price) || 0;
+      const numPrice = parsePriceNum(prev.price);
       const numCommPercent = Number(val) || 0;
       let newNet = prev.netCommission;
       if (numPrice > 0 && numCommPercent > 0) {
@@ -594,7 +614,7 @@ export function AddEditModal({
 
   const handleLeadSourceChange = (newSource: string) => {
     setFormData(prev => {
-      const numPrice = Number(prev.price) || 0;
+      const numPrice = parsePriceNum(prev.price);
       const numCommPercent = prev.commissionPercent ? Number(prev.commissionPercent) : 2.5;
       let newNet = prev.netCommission;
       if (numPrice > 0 && numCommPercent > 0) {
@@ -610,7 +630,7 @@ export function AddEditModal({
   };
 
   const handleRecalculateNet = () => {
-    const numPrice = Number(formData.price) || 0;
+    const numPrice = parsePriceNum(formData.price);
     const numCommPercent = formData.commissionPercent ? Number(formData.commissionPercent) : 2.5;
     const gross = Math.round((numPrice * numCommPercent) / 100);
     const calculatedNet = calculateNetFromGross(gross, formData.leadSource);
@@ -1015,21 +1035,33 @@ export function AddEditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Sale Price ($)</label>
-                  <input 
-                    type="number" 
-                    value={formData.price} 
-                    onChange={e => handlePriceChange(e.target.value)} 
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700">Sale Price ($)</label>
+                    {Boolean(parsePriceNum(formData.price) > 0) && (
+                      <span className="text-[11px] font-bold text-[#1B3A5C] font-mono bg-blue-50/80 px-2 py-0.5 rounded border border-blue-200/80">
+                        ${parsePriceNum(formData.price).toLocaleString('en-US')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
+                    <input 
+                      type="text" 
+                      inputMode="numeric"
+                      placeholder="e.g. 620,000"
+                      value={formData.price} 
+                      onChange={e => handlePriceChange(e.target.value)} 
+                      className="w-full bg-white border border-slate-200 rounded-xl pl-7 pr-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">Gross Commission (%)</label>
-                    {Boolean(formData.price && formData.commissionPercent && Number(formData.price) > 0) && (
+                    {Boolean(parsePriceNum(formData.price) > 0 && formData.commissionPercent && Number(formData.commissionPercent) > 0) && (
                       <span className="text-sm font-black text-black font-mono tracking-tight">
-                        Gross: ${Math.round((Number(formData.price) * Number(formData.commissionPercent)) / 100).toLocaleString()}
+                        Gross: ${Math.round((parsePriceNum(formData.price) * Number(formData.commissionPercent)) / 100).toLocaleString('en-US')}
                       </span>
                     )}
                   </div>
@@ -1066,7 +1098,7 @@ export function AddEditModal({
                 {/* Live Formula & Calculation Breakdown Card */}
                 {(() => {
                   const commBreakdown = calculateCommissionBreakdown(
-                    Number(formData.price) || 0,
+                    parsePriceNum(formData.price),
                     Number(formData.commissionPercent) || 0,
                     formData.leadSource
                   );
@@ -1080,14 +1112,14 @@ export function AddEditModal({
                             {getFormulaLabel(formData.leadSource)}
                           </span>
                         </div>
-                        {Number(formData.price) > 0 && Number(formData.commissionPercent) > 0 && (
+                        {parsePriceNum(formData.price) > 0 && Number(formData.commissionPercent) > 0 && (
                           <span className="text-[11px] font-bold text-emerald-700 font-mono bg-emerald-100/70 px-2 py-0.5 rounded-md">
                             Calculated Net: ${commBreakdown.netCommission.toLocaleString()}
                           </span>
                         )}
                       </div>
 
-                      {Number(formData.price) > 0 && Number(formData.commissionPercent) > 0 ? (
+                      {parsePriceNum(formData.price) > 0 && Number(formData.commissionPercent) > 0 ? (
                         <div className="pt-2 text-[11px] text-slate-600 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
                           {commBreakdown.steps.map((step, idx) => (
                             <span key={idx} className="inline-flex items-center gap-1">
