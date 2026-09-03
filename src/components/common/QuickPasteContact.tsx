@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { parseContactSignature, ParsedContact, ContactRole } from '../../utils/contactParser';
+import { parseContactSignature, ParsedContact, ContactRole, cleanEmail } from '../../utils/contactParser';
 
 interface QuickPasteContactProps {
   role: ContactRole;
@@ -23,6 +23,9 @@ export function QuickPasteContact({
   useEffect(() => {
     if (rawText.trim()) {
       const result = parseContactSignature(rawText, role);
+      if (result.email) {
+        result.email = cleanEmail(result.email);
+      }
       setParsed(result);
     } else {
       setParsed(null);
@@ -39,7 +42,11 @@ export function QuickPasteContact({
 
   const handleApply = () => {
     if (!parsed) return;
-    onApply(parsed);
+    const sanitizedParsed: ParsedContact = {
+      ...parsed,
+      email: cleanEmail(parsed.email)
+    };
+    onApply(sanitizedParsed);
     setJustApplied(true);
     setTimeout(() => {
       setJustApplied(false);

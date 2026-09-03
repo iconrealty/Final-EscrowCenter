@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Escrow, EscrowDocument, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
-import { X, FileText, CheckCircle2, Calculator, Sparkles, RefreshCw, Info, Paperclip, Calendar } from 'lucide-react';
+import { X, FileText, CheckCircle2, Calculator, Sparkles, RefreshCw, Info, Paperclip } from 'lucide-react';
 import { addMonths, addDays, parseISO, format, differenceInCalendarDays } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { storage } from '../../lib/firebase';
@@ -8,6 +8,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { usePreferredPartners } from '../../hooks/usePreferredPartners';
 import { PartnerDropdown } from '../common/PartnerDropdown';
 import { QuickPasteContact } from '../common/QuickPasteContact';
+import { cleanEmail } from '../../utils/contactParser';
 import { PreferredPartner } from '../../types/partners';
 import { parseMlsText } from '../../utils/mlsParser';
 import { extractPdfPagesText, parseCaliforniaRpaText } from '../../utils/clientRpaParser';
@@ -134,6 +135,36 @@ export function AddEditModal({
     }));
   };
 
+  // Email auto-clean helper: cleans "email:", "mailto:", etc. when typing, pasting, or leaving email inputs
+  const handleEmailInputChange = (fieldName: 'agentEmail' | 'lenderEmail' | 'escrowEmail' | 'titleEmail' | 'clientEmail' | 'client2Email', rawVal: string) => {
+    let cleaned = rawVal;
+    if (/^\s*(?:(?:other\s+agent|agent|escrow|escrow\s+officer|title|title\s+officer|lender|loan\s+officer|mortgage|client|buyer|seller)\s*)?(?:e-?mail|mail|mailto)\s*[:\-–]\s*/i.test(cleaned)) {
+      cleaned = cleanEmail(cleaned);
+    }
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: cleaned,
+    }));
+  };
+
+  const handleEmailInputPaste = (fieldName: 'agentEmail' | 'lenderEmail' | 'escrowEmail' | 'titleEmail' | 'clientEmail' | 'client2Email') => (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData('text');
+    if (pasted && (/^(?:(?:other\s+agent|agent|escrow|escrow\s+officer|title|title\s+officer|lender|loan\s+officer|mortgage|client|buyer|seller)\s*)?(?:e-?mail|mail|mailto)\s*[:\-–]/i.test(pasted.trim()) || pasted.includes('@'))) {
+      e.preventDefault();
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: cleanEmail(pasted),
+      }));
+    }
+  };
+
+  const handleEmailInputBlur = (fieldName: 'agentEmail' | 'lenderEmail' | 'escrowEmail' | 'titleEmail' | 'clientEmail' | 'client2Email') => () => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: cleanEmail(prev[fieldName] as string),
+    }));
+  };
+
   const parsePriceNum = (val: string | number | undefined) => {
     if (!val) return 0;
     const clean = String(val).replace(/[^0-9.]/g, '');
@@ -199,28 +230,28 @@ export function AddEditModal({
         netCommission: computedNet ? String(computedNet) : prev.netCommission,
         agentName: data.agentName || data.listingAgentName || data.buyerAgentName || prev.agentName,
         agentPhone: data.agentPhone || data.listingAgentPhone || data.buyerAgentPhone || prev.agentPhone,
-        agentEmail: data.agentEmail || data.listingAgentEmail || data.buyerAgentEmail || prev.agentEmail,
+        agentEmail: cleanEmail(data.agentEmail || data.listingAgentEmail || data.buyerAgentEmail) || prev.agentEmail,
         cooperatingBrokerage: data.cooperatingBrokerage || data.listingBrokerage || data.buyerBrokerage || prev.cooperatingBrokerage,
         clientFirstName: data.clientFirstName || prev.clientFirstName,
         clientLastName: data.clientLastName || prev.clientLastName,
         clientPhone: data.clientPhone || prev.clientPhone,
-        clientEmail: data.clientEmail || prev.clientEmail,
+        clientEmail: cleanEmail(data.clientEmail) || prev.clientEmail,
         client2FirstName: data.client2FirstName || prev.client2FirstName,
         client2LastName: data.client2LastName || prev.client2LastName,
         client2Phone: data.client2Phone || prev.client2Phone,
-        client2Email: data.client2Email || prev.client2Email,
+        client2Email: cleanEmail(data.client2Email) || prev.client2Email,
         escrowCompany: data.escrowCompany || prev.escrowCompany,
         escrowOfficer: data.escrowOfficer || prev.escrowOfficer,
         escrowPhone: data.escrowPhone || prev.escrowPhone,
-        escrowEmail: data.escrowEmail || prev.escrowEmail,
+        escrowEmail: cleanEmail(data.escrowEmail) || prev.escrowEmail,
         titleCompany: data.titleCompany || prev.titleCompany,
         titleOfficer: data.titleOfficer || prev.titleOfficer,
         titlePhone: data.titlePhone || prev.titlePhone,
-        titleEmail: data.titleEmail || prev.titleEmail,
+        titleEmail: cleanEmail(data.titleEmail) || prev.titleEmail,
         lenderName: data.lenderName || prev.lenderName,
         lenderCompany: data.lenderCompany || prev.lenderCompany,
         lenderPhone: data.lenderPhone || prev.lenderPhone,
-        lenderEmail: data.lenderEmail || prev.lenderEmail,
+        lenderEmail: cleanEmail(data.lenderEmail) || prev.lenderEmail,
         acceptanceDate: data.acceptanceDate || prev.acceptanceDate,
         coeDate: data.coeDate || prev.coeDate,
         coeDays: data.coeDays ? String(data.coeDays) : (data.coeDate && data.acceptanceDate ? String(differenceInCalendarDays(parseISO(data.coeDate), parseISO(data.acceptanceDate))) : prev.coeDays),
@@ -440,29 +471,29 @@ export function AddEditModal({
         clientFirstName: escrow.clientFirstName || '',
         clientLastName: escrow.clientLastName || '',
         clientPhone: escrow.clientPhone || '',
-        clientEmail: escrow.clientEmail || '',
+        clientEmail: cleanEmail(escrow.clientEmail || ''),
         clientBirthday: cleanBday1,
         client2FirstName: escrow.client2FirstName || '',
         client2LastName: escrow.client2LastName || '',
         client2Phone: escrow.client2Phone || '',
-        client2Email: escrow.client2Email || '',
+        client2Email: cleanEmail(escrow.client2Email || ''),
         client2Birthday: cleanBday2,
         collaborator: escrow.collaborator || '',
         escrowOfficer: escrow.escrowOfficer || '',
         escrowPhone: escrow.escrowPhone || '',
-        escrowEmail: escrow.escrowEmail || '',
+        escrowEmail: cleanEmail(escrow.escrowEmail || ''),
         titleCompany: escrow.titleCompany || '',
         titleOfficer: escrow.titleOfficer || '',
         titlePhone: escrow.titlePhone || '',
-        titleEmail: escrow.titleEmail || '',
+        titleEmail: cleanEmail(escrow.titleEmail || ''),
         agentName: escrow.agentName || '',
         agentPhone: escrow.agentPhone || '',
-        agentEmail: escrow.agentEmail || '',
+        agentEmail: cleanEmail(escrow.agentEmail || ''),
         cooperatingBrokerage: escrow.cooperatingBrokerage || '',
         lenderName: escrow.lenderName || '',
         lenderCompany: escrow.lenderCompany || '',
         lenderPhone: escrow.lenderPhone || '',
-        lenderEmail: escrow.lenderEmail || '',
+        lenderEmail: cleanEmail(escrow.lenderEmail || ''),
         price: escrow.price ? formatPriceString(escrow.price) : '',
         netCommission: escrow.netCommission ? escrow.netCommission.toString() : '',
         commissionPercent: escrow.commissionPercent?.toString() || '',
@@ -563,6 +594,12 @@ export function AddEditModal({
 
     const cleanedData: any = {
       ...formData,
+      clientEmail: cleanEmail(formData.clientEmail),
+      client2Email: cleanEmail(formData.client2Email),
+      agentEmail: cleanEmail(formData.agentEmail),
+      lenderEmail: cleanEmail(formData.lenderEmail),
+      escrowEmail: cleanEmail(formData.escrowEmail),
+      titleEmail: cleanEmail(formData.titleEmail),
       price: parsePriceNum(formData.price),
       netCommission: Number(formData.netCommission) || 0,
       commissionPercent: formData.commissionPercent ? Number(formData.commissionPercent) : undefined,
@@ -859,13 +896,10 @@ export function AddEditModal({
           </div>
 
           <div className="space-y-4">
-            {/* Section 1: Property & Financial Terms */}
+            {/* Section 1: Property Information */}
             <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <h3 className="text-sm font-bold text-slate-900">Property & Transaction Terms</h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider">
-                  Core Info
-                </span>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">PROPERTY INFORMATION</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -891,15 +925,6 @@ export function AddEditModal({
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">APN # (Parcel ID)</label>
                   <input type="text" value={formData.apn} onChange={e => setFormData({...formData, apn: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Representation</label>
-                  <select value={formData.representation} onChange={e => setFormData({...formData, representation: e.target.value as any})} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]">
-                    <option value="Buyer">Representing Buyer</option>
-                    <option value="Seller">Representing Seller</option>
-                    <option value="Dual">Representing Dual</option>
-                  </select>
                 </div>
 
                 <div className="md:col-span-2">
@@ -933,26 +958,11 @@ export function AddEditModal({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Lead Source</label>
-                  <select 
-                    value={formData.leadSource} 
-                    onChange={e => handleLeadSourceChange(e.target.value)} 
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] font-semibold text-slate-800"
-                  >
-                    <option value="Zillow">Zillow</option>
-                    <option value="Self">Self</option>
-                    <option value="Team Lead">Team Lead</option>
-                    <option value="Opcity">Opcity</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
                 {/* Escrow Terms */}
                 <div className="md:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-2xs">
                   <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-200">
-                    <span className="text-xs font-black uppercase tracking-wider text-[#1B3A5C] flex items-center gap-1.5">
-                      <Calendar size={14} className="text-[#1B3A5C]" /> Escrow Terms
+                    <span className="text-xs font-black uppercase tracking-wider text-[#1B3A5C]">
+                      ESCROW TERMS
                     </span>
                   </div>
 
@@ -1039,110 +1049,154 @@ export function AddEditModal({
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-slate-700">Sale Price ($)</label>
-                    {Boolean(parsePriceNum(formData.price) > 0) && (
-                      <span className="text-[11px] font-bold text-[#1B3A5C] font-mono bg-blue-50/80 px-2 py-0.5 rounded border border-blue-200/80">
-                        ${parsePriceNum(formData.price).toLocaleString('en-US')}
-                      </span>
-                    )}
+                {/* Price and Commission */}
+                <div className="md:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-2xs">
+                  <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-200">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#1B3A5C]">
+                      PRICE AND COMMISSION
+                    </span>
                   </div>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
-                    <input 
-                      type="text" 
-                      inputMode="numeric"
-                      placeholder="e.g. 620,000"
-                      value={formData.price} 
-                      onChange={e => handlePriceChange(e.target.value)} 
-                      className="w-full bg-white border border-slate-200 rounded-xl pl-7 pr-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-slate-700">Gross Commission (%)</label>
-                    {Boolean(parsePriceNum(formData.price) > 0 && formData.commissionPercent && Number(formData.commissionPercent) > 0) && (
-                      <span className="text-sm font-black text-black font-mono tracking-tight">
-                        Gross: ${Math.round((parsePriceNum(formData.price) * Number(formData.commissionPercent)) / 100).toLocaleString('en-US')}
-                      </span>
-                    )}
-                  </div>
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    value={formData.commissionPercent} 
-                    onChange={e => handleCommissionPercentChange(e.target.value)} 
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
-                  />
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {/* Representation */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Representation</label>
+                      <select 
+                        value={formData.representation} 
+                        onChange={e => setFormData({...formData, representation: e.target.value as any})} 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] font-semibold text-slate-800"
+                      >
+                        <option value="Buyer">Representing Buyer</option>
+                        <option value="Seller">Representing Seller</option>
+                        <option value="Dual">Representing Dual</option>
+                      </select>
+                    </div>
 
-                <div className="md:col-span-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-slate-700">Net Commission ($)</label>
-                    <button
-                      type="button"
-                      onClick={handleRecalculateNet}
-                      className="text-[11px] text-[#1B3A5C] hover:text-blue-700 font-bold flex items-center gap-1 cursor-pointer transition-colors px-2 py-0.5 rounded-md hover:bg-slate-100"
-                      title="Recalculate from formula"
-                    >
-                      <RefreshCw size={11} />
-                      <span>Auto-Calculate</span>
-                    </button>
-                  </div>
-                  <input 
-                    type="number" 
-                    value={formData.netCommission} 
-                    onChange={e => setFormData({...formData, netCommission: e.target.value})} 
-                    className="w-full bg-emerald-50/30 border border-emerald-300 text-emerald-950 font-mono font-bold rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600" 
-                  />
-                </div>
+                    {/* Lead Source */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Lead Source</label>
+                      <select 
+                        value={formData.leadSource} 
+                        onChange={e => handleLeadSourceChange(e.target.value)} 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] font-semibold text-slate-800"
+                      >
+                        <option value="Zillow">Zillow</option>
+                        <option value="Self">Self</option>
+                        <option value="Team Lead">Team Lead</option>
+                        <option value="Opcity">Opcity</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
 
-                {/* Live Formula & Calculation Breakdown Card */}
-                {(() => {
-                  const commBreakdown = calculateCommissionBreakdown(
-                    parsePriceNum(formData.price),
-                    Number(formData.commissionPercent) || 0,
-                    formData.leadSource
-                  );
-                  return (
-                    <div className="md:col-span-2 bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200/90 rounded-xl p-3 text-xs">
-                      <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5 border-b border-slate-200/70">
-                        <div className="flex items-center gap-1.5 font-bold text-slate-800">
-                          <Calculator size={13} className="text-[#1B3A5C]" />
-                          <span>Lead Source Formula:</span>
-                          <span className="px-2 py-0.5 rounded-md bg-[#1B3A5C]/10 text-[#1B3A5C] font-bold text-[11px]">
-                            {getFormulaLabel(formData.leadSource)}
-                          </span>
-                        </div>
-                        {parsePriceNum(formData.price) > 0 && Number(formData.commissionPercent) > 0 && (
-                          <span className="text-[11px] font-bold text-emerald-700 font-mono bg-emerald-100/70 px-2 py-0.5 rounded-md">
-                            Calculated Net: ${commBreakdown.netCommission.toLocaleString()}
+                    {/* Sale Price */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700">Sale Price ($)</label>
+                        {Boolean(parsePriceNum(formData.price) > 0) && (
+                          <span className="text-[11px] font-bold text-[#1B3A5C] font-mono bg-blue-50/80 px-2 py-0.5 rounded border border-blue-200/80">
+                            ${parsePriceNum(formData.price).toLocaleString('en-US')}
                           </span>
                         )}
                       </div>
-
-                      {parsePriceNum(formData.price) > 0 && Number(formData.commissionPercent) > 0 ? (
-                        <div className="pt-2 text-[11px] text-slate-600 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
-                          {commBreakdown.steps.map((step, idx) => (
-                            <span key={idx} className="inline-flex items-center gap-1">
-                              {idx > 0 && <span className="text-slate-400">→</span>}
-                              <span className={idx === commBreakdown.steps.length - 1 ? 'font-bold text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200' : ''}>
-                                {step}
-                              </span>
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="pt-1.5 text-[11px] text-slate-500 italic">
-                          Enter Sale Price and Gross Commission % to see instant automated breakdown.
-                        </p>
-                      )}
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
+                        <input 
+                          type="text" 
+                          inputMode="numeric"
+                          placeholder="e.g. 620,000"
+                          value={formData.price} 
+                          onChange={e => handlePriceChange(e.target.value)} 
+                          className="w-full bg-white border border-slate-200 rounded-xl pl-7 pr-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
+                        />
+                      </div>
                     </div>
-                  );
-                })()}
+
+                    {/* Gross Commission */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700">Gross Commission (%)</label>
+                        {Boolean(parsePriceNum(formData.price) > 0 && formData.commissionPercent && Number(formData.commissionPercent) > 0) && (
+                          <span className="text-sm font-black text-black font-mono tracking-tight">
+                            Gross: ${Math.round((parsePriceNum(formData.price) * Number(formData.commissionPercent)) / 100).toLocaleString('en-US')}
+                          </span>
+                        )}
+                      </div>
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        value={formData.commissionPercent} 
+                        onChange={e => handleCommissionPercentChange(e.target.value)} 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C]" 
+                      />
+                    </div>
+
+                    {/* Net Commission */}
+                    <div className="md:col-span-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700">Net Commission ($)</label>
+                        <button
+                          type="button"
+                          onClick={handleRecalculateNet}
+                          className="text-[11px] text-[#1B3A5C] hover:text-blue-700 font-bold flex items-center gap-1 cursor-pointer transition-colors px-2 py-0.5 rounded-md hover:bg-slate-100"
+                          title="Recalculate from formula"
+                        >
+                          <RefreshCw size={11} />
+                          <span>Auto-Calculate</span>
+                        </button>
+                      </div>
+                      <input 
+                        type="number" 
+                        value={formData.netCommission} 
+                        onChange={e => setFormData({...formData, netCommission: e.target.value})} 
+                        className="w-full bg-emerald-50/30 border border-emerald-300 text-emerald-950 font-mono font-bold rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600" 
+                      />
+                    </div>
+
+                    {/* Live Formula & Calculation Breakdown Card */}
+                    {(() => {
+                      const commBreakdown = calculateCommissionBreakdown(
+                        parsePriceNum(formData.price),
+                        Number(formData.commissionPercent) || 0,
+                        formData.leadSource
+                      );
+                      return (
+                        <div className="md:col-span-2 bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200/90 rounded-xl p-3 text-xs">
+                          <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5 border-b border-slate-200/70">
+                            <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                              <Calculator size={13} className="text-[#1B3A5C]" />
+                              <span>Lead Source Formula:</span>
+                              <span className="px-2 py-0.5 rounded-md bg-[#1B3A5C]/10 text-[#1B3A5C] font-bold text-[11px]">
+                                {getFormulaLabel(formData.leadSource)}
+                              </span>
+                            </div>
+                            {parsePriceNum(formData.price) > 0 && Number(formData.commissionPercent) > 0 && (
+                              <span className="text-[11px] font-bold text-emerald-700 font-mono bg-emerald-100/70 px-2 py-0.5 rounded-md">
+                                Calculated Net: ${commBreakdown.netCommission.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+
+                          {parsePriceNum(formData.price) > 0 && Number(formData.commissionPercent) > 0 ? (
+                            <div className="pt-2 text-[11px] text-slate-600 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
+                              {commBreakdown.steps.map((step, idx) => (
+                                <span key={idx} className="inline-flex items-center gap-1">
+                                  {idx > 0 && <span className="text-slate-400">→</span>}
+                                  <span className={idx === commBreakdown.steps.length - 1 ? 'font-bold text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200' : ''}>
+                                    {step}
+                                  </span>
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="pt-1.5 text-[11px] text-slate-500 italic">
+                              Enter Sale Price and Gross Commission % to see instant automated breakdown.
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1150,7 +1204,7 @@ export function AddEditModal({
             <div className="bg-blue-50/50 border border-blue-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-blue-200/70">
                 <div>
-                  <h3 className="text-sm font-bold text-blue-950">Client 1 (Primary)</h3>
+                  <h3 className="text-sm font-bold text-blue-950 uppercase tracking-wider">CLIENT 1 (PRIMARY)</h3>
                   <p className="text-[11px] text-blue-700/80">Main buyer or seller contact</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1163,13 +1217,10 @@ export function AddEditModal({
                         clientFirstName: p.firstName || prev.clientFirstName,
                         clientLastName: p.lastName || prev.clientLastName,
                         clientPhone: p.phone || prev.clientPhone,
-                        clientEmail: p.email || prev.clientEmail,
+                        clientEmail: cleanEmail(p.email) || prev.clientEmail,
                       }));
                     }}
                   />
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold uppercase tracking-wider">
-                    Primary Client
-                  </span>
                 </div>
               </div>
 
@@ -1191,7 +1242,14 @@ export function AddEditModal({
 
                 <div>
                   <label className="block text-xs font-bold text-blue-950 mb-1">Client 1 Email</label>
-                  <input type="email" value={formData.clientEmail} onChange={e => setFormData({...formData, clientEmail: e.target.value})} className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                  <input 
+                    type="email" 
+                    value={formData.clientEmail} 
+                    onChange={e => handleEmailInputChange('clientEmail', e.target.value)} 
+                    onPaste={handleEmailInputPaste('clientEmail')}
+                    onBlur={handleEmailInputBlur('clientEmail')}
+                    className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
+                  />
                 </div>
 
                 <div className="md:col-span-2">
@@ -1201,11 +1259,11 @@ export function AddEditModal({
               </div>
             </div>
 
-            {/* Section 3: Client Number 2 (Optional) */}
+            {/* Section 3: Client Number 2 */}
             <div className="bg-purple-50/40 border border-purple-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-purple-200/70">
                 <div>
-                  <h3 className="text-sm font-bold text-purple-950">Client 2 (Optional)</h3>
+                  <h3 className="text-sm font-bold text-purple-950 uppercase tracking-wider">CLIENT 2</h3>
                   <p className="text-[11px] text-purple-700/80">Co-buyer, spouse, or secondary signer</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1218,13 +1276,10 @@ export function AddEditModal({
                         client2FirstName: p.firstName || prev.client2FirstName,
                         client2LastName: p.lastName || prev.client2LastName,
                         client2Phone: p.phone || prev.client2Phone,
-                        client2Email: p.email || prev.client2Email,
+                        client2Email: cleanEmail(p.email) || prev.client2Email,
                       }));
                     }}
                   />
-                  <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 text-[10px] font-bold uppercase tracking-wider">
-                    Secondary Client
-                  </span>
                 </div>
               </div>
 
@@ -1246,7 +1301,14 @@ export function AddEditModal({
 
                 <div>
                   <label className="block text-xs font-bold text-purple-950 mb-1">Client 2 Email</label>
-                  <input type="email" value={formData.client2Email} onChange={e => setFormData({...formData, client2Email: e.target.value})} className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
+                  <input 
+                    type="email" 
+                    value={formData.client2Email} 
+                    onChange={e => handleEmailInputChange('client2Email', e.target.value)} 
+                    onPaste={handleEmailInputPaste('client2Email')}
+                    onBlur={handleEmailInputBlur('client2Email')}
+                    className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" 
+                  />
                 </div>
 
                 <div className="md:col-span-2">
@@ -1256,11 +1318,11 @@ export function AddEditModal({
               </div>
             </div>
 
-            {/* Section 4: Other Agent & Cooperating Brokerage */}
+            {/* Section 4: Other Agent */}
             <div className="bg-emerald-50/40 border border-emerald-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-emerald-200/70">
                 <div>
-                  <h3 className="text-sm font-bold text-emerald-950">Other Agent & Cooperating Brokerage</h3>
+                  <h3 className="text-sm font-bold text-emerald-950 uppercase tracking-wider">OTHER AGENT</h3>
                   <p className="text-[11px] text-emerald-700/80">Cross agent on the other side of transaction</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1273,13 +1335,10 @@ export function AddEditModal({
                         agentName: p.name || prev.agentName,
                         cooperatingBrokerage: p.company || prev.cooperatingBrokerage,
                         agentPhone: p.phone || prev.agentPhone,
-                        agentEmail: p.email || prev.agentEmail,
+                        agentEmail: cleanEmail(p.email) || prev.agentEmail,
                       }));
                     }}
                   />
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
-                    Other Agent
-                  </span>
                 </div>
               </div>
 
@@ -1301,7 +1360,14 @@ export function AddEditModal({
 
                 <div>
                   <label className="block text-xs font-bold text-emerald-950 mb-1">Other Agent Email</label>
-                  <input type="email" value={formData.agentEmail} onChange={e => setFormData({...formData, agentEmail: e.target.value})} className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                  <input 
+                    type="email" 
+                    value={formData.agentEmail} 
+                    onChange={e => handleEmailInputChange('agentEmail', e.target.value)} 
+                    onPaste={handleEmailInputPaste('agentEmail')}
+                    onBlur={handleEmailInputBlur('agentEmail')}
+                    className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" 
+                  />
                 </div>
               </div>
             </div>
@@ -1309,12 +1375,7 @@ export function AddEditModal({
             {/* Section 5: Lender Details */}
             <div className="bg-amber-50/40 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-amber-200/70">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-amber-950">Lender</h3>
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold uppercase tracking-wider">
-                    Lender
-                  </span>
-                </div>
+                <h3 className="text-sm font-bold text-amber-950 uppercase tracking-wider">LENDER</h3>
                 <div className="flex items-center gap-2 flex-wrap">
                   <QuickPasteContact
                     role="lender"
@@ -1325,7 +1386,7 @@ export function AddEditModal({
                         lenderName: p.name || prev.lenderName,
                         lenderCompany: p.company || prev.lenderCompany,
                         lenderPhone: p.phone || prev.lenderPhone,
-                        lenderEmail: p.email || prev.lenderEmail,
+                        lenderEmail: cleanEmail(p.email) || prev.lenderEmail,
                       }));
                     }}
                   />
@@ -1341,7 +1402,7 @@ export function AddEditModal({
                         lenderName: p.name || p.company,
                         lenderCompany: p.company || '',
                         lenderPhone: p.phone,
-                        lenderEmail: p.email,
+                        lenderEmail: cleanEmail(p.email),
                       }));
                     }}
                   />
@@ -1366,7 +1427,14 @@ export function AddEditModal({
 
                 <div>
                   <label className="block text-xs font-bold text-amber-950 mb-1">Lender Email</label>
-                  <input type="email" value={formData.lenderEmail} onChange={e => setFormData({...formData, lenderEmail: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
+                  <input 
+                    type="email" 
+                    value={formData.lenderEmail} 
+                    onChange={e => handleEmailInputChange('lenderEmail', e.target.value)} 
+                    onPaste={handleEmailInputPaste('lenderEmail')}
+                    onBlur={handleEmailInputBlur('lenderEmail')}
+                    className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" 
+                  />
                 </div>
               </div>
             </div>
@@ -1374,12 +1442,7 @@ export function AddEditModal({
             {/* Section 6: Escrow Company & Officer */}
             <div className="bg-indigo-50/40 border border-indigo-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-indigo-200/70">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-indigo-950">Escrow</h3>
-                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-bold uppercase tracking-wider">
-                    Escrow
-                  </span>
-                </div>
+                <h3 className="text-sm font-bold text-indigo-950 uppercase tracking-wider">ESCROW</h3>
                 <div className="flex items-center gap-2 flex-wrap">
                   <QuickPasteContact
                     role="escrow"
@@ -1390,7 +1453,7 @@ export function AddEditModal({
                         escrowOfficer: p.name || prev.escrowOfficer,
                         escrowCompany: p.company || prev.escrowCompany,
                         escrowPhone: p.phone || prev.escrowPhone,
-                        escrowEmail: p.email || prev.escrowEmail,
+                        escrowEmail: cleanEmail(p.email) || prev.escrowEmail,
                       }));
                     }}
                   />
@@ -1406,7 +1469,7 @@ export function AddEditModal({
                         escrowCompany: p.company,
                         escrowOfficer: p.name,
                         escrowPhone: p.phone,
-                        escrowEmail: p.email,
+                        escrowEmail: cleanEmail(p.email),
                       }));
                     }}
                   />
@@ -1431,7 +1494,14 @@ export function AddEditModal({
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-indigo-950 mb-1">Escrow Officer Email</label>
-                  <input type="email" value={formData.escrowEmail} onChange={e => setFormData({...formData, escrowEmail: e.target.value})} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
+                  <input 
+                    type="email" 
+                    value={formData.escrowEmail} 
+                    onChange={e => handleEmailInputChange('escrowEmail', e.target.value)} 
+                    onPaste={handleEmailInputPaste('escrowEmail')}
+                    onBlur={handleEmailInputBlur('escrowEmail')}
+                    className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" 
+                  />
                 </div>
               </div>
             </div>
@@ -1439,12 +1509,7 @@ export function AddEditModal({
             {/* Section 7: Title Company Details */}
             <div className="bg-cyan-50/40 border border-cyan-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-cyan-200/70">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-cyan-950">Title</h3>
-                  <span className="px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200 text-[10px] font-bold uppercase tracking-wider">
-                    Title
-                  </span>
-                </div>
+                <h3 className="text-sm font-bold text-cyan-950 uppercase tracking-wider">TITLE</h3>
                 <div className="flex items-center gap-2 flex-wrap">
                   <QuickPasteContact
                     role="title"
@@ -1455,7 +1520,7 @@ export function AddEditModal({
                         titleOfficer: p.name || prev.titleOfficer,
                         titleCompany: p.company || prev.titleCompany,
                         titlePhone: p.phone || prev.titlePhone,
-                        titleEmail: p.email || prev.titleEmail,
+                        titleEmail: cleanEmail(p.email) || prev.titleEmail,
                       }));
                     }}
                   />
@@ -1471,7 +1536,7 @@ export function AddEditModal({
                         titleCompany: p.company,
                         titleOfficer: p.name,
                         titlePhone: p.phone,
-                        titleEmail: p.email,
+                        titleEmail: cleanEmail(p.email),
                       }));
                     }}
                   />
@@ -1496,7 +1561,14 @@ export function AddEditModal({
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-cyan-950 mb-1">Title Email</label>
-                  <input type="email" value={formData.titleEmail} onChange={e => setFormData({...formData, titleEmail: e.target.value})} className="w-full bg-white border border-cyan-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" />
+                  <input 
+                    type="email" 
+                    value={formData.titleEmail} 
+                    onChange={e => handleEmailInputChange('titleEmail', e.target.value)} 
+                    onPaste={handleEmailInputPaste('titleEmail')}
+                    onBlur={handleEmailInputBlur('titleEmail')}
+                    className="w-full bg-white border border-cyan-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" 
+                  />
                 </div>
               </div>
             </div>
@@ -1504,10 +1576,7 @@ export function AddEditModal({
             {/* Section 8: Collaborator & Notes */}
             <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <h3 className="text-sm font-bold text-slate-900">Collaborator & Notes</h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider">
-                  Internal
-                </span>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">COLLABORATOR & NOTES</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -1527,7 +1596,7 @@ export function AddEditModal({
             <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-3 border-b border-slate-200">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Contingency Milestones</h3>
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">CONTINGENCIES</h3>
                   <p className="text-[11px] text-slate-500">Timeline days automatically calculate weekend-adjusted due dates</p>
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
@@ -1652,30 +1721,30 @@ export function AddEditModal({
                 </div>
               </div>
 
-              {/* Contingencies (L3–L8) with Minimalist Quick Batch Setter */}
+              {/* Contingencies (L3–L8) with Compact Batch Setter */}
               <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3">
+                {/* Compact Set All Controller */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
-                  <div className="text-xs font-bold text-slate-900">
-                    Contingencies (L3 – L8)
-                  </div>
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    Set all L3 – L8:
+                  </span>
                   
-                  {/* Minimalist Batch Setter */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] font-bold text-slate-600">Set all L3–L8:</span>
-                    <div className="flex items-center bg-slate-50 border border-slate-300 rounded-lg px-1.5 py-0.5 shadow-2xs focus-within:border-[#1B3A5C] focus-within:bg-white">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center bg-slate-50 border border-slate-300 rounded-lg px-2 py-0.5 shadow-2xs focus-within:border-[#1B3A5C] focus-within:bg-white">
                       <input 
                         type="number"
-                        value={commonL3ToL8Val}
-                        placeholder={isL3ToL8Synced ? '' : 'Mix'}
-                        onChange={e => handleBatchL3ToL8(e.target.value)}
-                        className="w-9 text-center font-bold text-xs text-[#1B3A5C] bg-transparent focus:outline-none"
                         min="0"
+                        max="365"
+                        value={commonL3ToL8Val}
+                        placeholder={isL3ToL8Synced ? '17' : 'Mix'}
+                        onChange={e => handleBatchL3ToL8(e.target.value)}
+                        className="w-10 text-center font-bold text-xs text-[#1B3A5C] bg-transparent focus:outline-none"
                       />
-                      <span className="text-[10px] text-slate-400 pr-0.5 select-none">d</span>
+                      <span className="text-[10px] text-slate-400 select-none pr-0.5">d</span>
                     </div>
 
                     <div className="flex items-center gap-1">
-                      {['7', '10', '14', '17'].map(preset => {
+                      {['7', '10', '14', '17', '21'].map(preset => {
                         const isActive = isL3ToL8Synced && commonL3ToL8Val === preset;
                         return (
                           <button
@@ -1696,7 +1765,7 @@ export function AddEditModal({
                   </div>
                 </div>
 
-                {/* Individual L3-L8 items with direct editable inputs */}
+                {/* Individual L3-L8 items */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                   {['L3', 'L4', 'L5', 'L6', 'L7', 'L8'].map(key => {
                     const c = CONTINGENCIES.find(item => item.key === key) || { key, label: key };
@@ -1709,7 +1778,6 @@ export function AddEditModal({
                         className="flex items-center justify-between gap-1.5 bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-xl px-2.5 py-1.5 transition-all"
                       >
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                           <span className="text-xs font-semibold text-slate-800 truncate" title={`${c.key} - ${c.label}`}>
                             <span className="font-bold text-slate-900">{c.key}</span> {c.label}
                           </span>

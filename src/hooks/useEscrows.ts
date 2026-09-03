@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Escrow, ALL_TASKS } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
+import { cleanEmail } from '../utils/contactParser';
 import { 
   collection, 
   doc, 
@@ -134,6 +135,12 @@ export function useEscrows() {
         loadedEscrows.push({
           id: doc.id,
           ...data,
+          agentEmail: cleanEmail(data.agentEmail),
+          lenderEmail: cleanEmail(data.lenderEmail),
+          escrowEmail: cleanEmail(data.escrowEmail),
+          titleEmail: cleanEmail(data.titleEmail),
+          clientEmail: cleanEmail(data.clientEmail),
+          client2Email: cleanEmail(data.client2Email),
           clientBirthday: sanitizeBday(data.clientBirthday, data.acceptanceDate, data.coeDate),
           client2Birthday: sanitizeBday(data.client2Birthday, data.acceptanceDate, data.coeDate),
           tasks
@@ -166,8 +173,17 @@ export function useEscrows() {
 
   const addEscrow = async (data: Omit<Escrow, 'id' | 'lastUpdated' | 'tasks'>) => {
     const newId = generateSafeId();
-    const newEscrow: Escrow = {
+    const sanitizedData = {
       ...data,
+      agentEmail: cleanEmail(data.agentEmail),
+      lenderEmail: cleanEmail(data.lenderEmail),
+      escrowEmail: cleanEmail(data.escrowEmail),
+      titleEmail: cleanEmail(data.titleEmail),
+      clientEmail: cleanEmail(data.clientEmail),
+      client2Email: cleanEmail(data.client2Email),
+    };
+    const newEscrow: Escrow = {
+      ...sanitizedData,
       id: newId,
       tasks: ALL_TASKS.reduce((acc, task) => ({ ...acc, [task.key]: false }), {}),
       lastUpdated: new Date().toISOString(),
@@ -188,12 +204,20 @@ export function useEscrows() {
   };
 
   const editEscrow = async (id: string, data: Partial<Escrow>) => {
+    const sanitizedData: Partial<Escrow> = { ...data };
+    if ('agentEmail' in data) sanitizedData.agentEmail = cleanEmail(data.agentEmail);
+    if ('lenderEmail' in data) sanitizedData.lenderEmail = cleanEmail(data.lenderEmail);
+    if ('escrowEmail' in data) sanitizedData.escrowEmail = cleanEmail(data.escrowEmail);
+    if ('titleEmail' in data) sanitizedData.titleEmail = cleanEmail(data.titleEmail);
+    if ('clientEmail' in data) sanitizedData.clientEmail = cleanEmail(data.clientEmail);
+    if ('client2Email' in data) sanitizedData.client2Email = cleanEmail(data.client2Email);
+
     if (user) {
       try {
         const escrowDocRef = doc(db, 'users', user.uid, 'escrows', id);
         const escrowToUpdate = escrows.find(e => e.id === id);
         if (escrowToUpdate) {
-          const updated = { ...escrowToUpdate, ...data, lastUpdated: new Date().toISOString() };
+          const updated = { ...escrowToUpdate, ...sanitizedData, lastUpdated: new Date().toISOString() };
           
           // Auto-close logic
           const allTasksDone = updated.tasks && ALL_TASKS.length > 0 && ALL_TASKS.every((t) => updated.tasks[t.key]);
@@ -211,7 +235,7 @@ export function useEscrows() {
       setEscrows((prev) =>
         prev.map((escrow) => {
           if (escrow.id === id) {
-            const updated = { ...escrow, ...data, lastUpdated: new Date().toISOString() };
+            const updated = { ...escrow, ...sanitizedData, lastUpdated: new Date().toISOString() };
             
             // Auto-close logic
             const allTasksDone = updated.tasks && ALL_TASKS.length > 0 && ALL_TASKS.every((t) => updated.tasks[t.key]);

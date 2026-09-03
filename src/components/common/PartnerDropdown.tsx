@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PreferredPartner, PartnerCategory } from '../../types/partners';
 import { Plus, ChevronDown, Building2, User, Phone, Mail, X, Trash2 } from 'lucide-react';
+import { cleanEmail } from '../../utils/contactParser';
 
 interface PartnerDropdownProps {
   category: PartnerCategory;
@@ -52,13 +53,14 @@ export function PartnerDropdown({
       return;
     }
     setFormError('');
+    const sanitizedEmail = cleanEmail(newEmail.trim());
     if (onAddNew) {
       onAddNew({
         category,
         company: newCompany.trim(),
         name: newName.trim(),
         phone: newPhone.trim(),
-        email: newEmail.trim(),
+        email: sanitizedEmail,
         isSystemDefault: false,
       });
       // auto-select it
@@ -68,7 +70,7 @@ export function PartnerDropdown({
         company: newCompany.trim(),
         name: newName.trim(),
         phone: newPhone.trim(),
-        email: newEmail.trim(),
+        email: sanitizedEmail,
         isSystemDefault: false,
       });
     }

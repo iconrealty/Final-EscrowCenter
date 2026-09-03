@@ -486,13 +486,14 @@ export function EscrowCard({
             <span>Client Updates</span>
           </button>
           <button 
+            id={`escrow-card-updates-btn-${escrow.id}`}
             onClick={(e) => {
               e.stopPropagation();
               onUpdateTasks();
             }}
             className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
           >
-            <span>Tasks Update</span>
+            <span>Updates</span>
           </button>
           <button 
             onClick={(e) => {

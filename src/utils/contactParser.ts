@@ -50,6 +50,31 @@ function cleanNameString(rawName: string): string {
   return name;
 }
 
+/**
+ * Sanitizes an email string by stripping prefixes like "Email:", "email:", "mailto:", 
+ * role tags (e.g. "Escrow Email:", "Other Agent Email:"), surrounding angle brackets, 
+ * and extraneous whitespace.
+ */
+export function cleanEmail(rawEmail?: string | null): string {
+  if (!rawEmail) return '';
+  let email = String(rawEmail).trim();
+
+  // Strip leading label prefixes like "Email:", "email:", "E-mail:", "mailto:", "Escrow Email:", etc.
+  email = email.replace(/^(?:(?:other\s+agent|agent|escrow|escrow\s+officer|title|title\s+officer|lender|loan\s+officer|mortgage|client|buyer|seller)\s*)?(?:e-?mail|mail|mailto)\s*[:\-–]\s*/gi, '');
+  email = email.replace(/^mailto:\s*/gi, '');
+
+  // Extract actual email address if surrounded by brackets, angle brackets <>, parentheses, or quotes
+  const match = email.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+  if (match) {
+    return match[1].trim();
+  }
+
+  // Fallback: strip any remaining "email:" or "email" prefix just in case
+  email = email.replace(/^(?:e-?mail|mailto)\s*[:\-–]?\s*/gi, '').trim();
+
+  return email;
+}
+
 // Split full name into first and last name safely
 export function splitFullName(fullName: string): { firstName: string; lastName: string } {
   const cleaned = cleanNameString(fullName);
@@ -79,10 +104,15 @@ export function parseContactSignature(rawText: string, role: ContactRole = 'gene
 
   const text = rawText.trim();
 
-  // 1. EXTRACT EMAIL
-  const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
-  if (emailMatch) {
-    result.email = emailMatch[1].trim();
+  // 1. EXTRACT EMAIL (clean any "email:" or "mailto:" prefixes)
+  const labeledEmailMatch = text.match(/(?:(?:other\s+agent|agent|escrow|escrow\s+officer|title|title\s+officer|lender|loan\s+officer|mortgage|client|buyer|seller)\s*)?(?:e-?mail|mail|mailto)\s*[:\-–]\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+  if (labeledEmailMatch) {
+    result.email = cleanEmail(labeledEmailMatch[1]);
+  } else {
+    const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+    if (emailMatch) {
+      result.email = cleanEmail(emailMatch[1]);
+    }
   }
 
   // 2. EXTRACT PHONE
@@ -140,8 +170,14 @@ export function parseContactSignature(rawText: string, role: ContactRole = 'gene
       continue;
     }
 
-    // Skip lines that are just emails or URLs
-    if (line.includes('@') && line.length < 50 && !line.includes(' ')) {
+    // Skip lines that are just emails, email labels, or URLs
+    if (/^(?:(?:other\s+agent|agent|escrow|escrow\s+officer|title|title\s+officer|lender|loan\s+officer|mortgage|client|buyer|seller)\s*)?(?:e-?mail|mail|mailto)\s*[:\-–]/i.test(line) || line.includes('@')) {
+      if (!result.email) {
+        const m = line.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+        if (m) {
+          result.email = cleanEmail(m[1]);
+        }
+      }
       continue;
     }
     if (/^(?:https?:\/\/|www\.)/i.test(line) || /^[\w-]+\.(?:com|org|net|io|co)\b/i.test(line)) {
