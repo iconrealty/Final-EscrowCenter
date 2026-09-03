@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Escrow, formatPropertyAddress, adjustWeekendToMonday } from '../../types';
-import { X, MessageSquare, Mail, Copy, Check, ChevronDown, Calendar, Clock, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, MessageSquare, Mail, Copy, Check, ChevronDown } from 'lucide-react';
 import { parseISO, format, addDays, differenceInCalendarDays } from 'date-fns';
 import { motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
@@ -231,7 +231,6 @@ export function ClientUpdatesModal({
   }, [escrow.coeDays, escrow.coeDate, escrow.acceptanceDate, escrow.contingencyStartDate]);
 
   const [escrowDays, setEscrowDays] = useState<number | string>(initialEscrowDays);
-  const [savedCoeSuccess, setSavedCoeSuccess] = useState(false);
 
   // Weekend-aware Closing Date (COE) Calculation
   // Calculates startDate + escrowDays. If the result lands on Saturday or Sunday, moves to the next Monday.
@@ -561,17 +560,6 @@ export function ClientUpdatesModal({
     }
   };
 
-  const handleSaveCoeToEscrow = () => {
-    if (!closingCalculation.isoString || !onUpdateEscrow) return;
-    onUpdateEscrow(escrow.id, {
-      coeDate: closingCalculation.isoString,
-      acceptanceDate: startDate,
-      coeDays: Number(escrowDays) || undefined,
-    });
-    setSavedCoeSuccess(true);
-    setTimeout(() => setSavedCoeSuccess(false), 2500);
-  };
-
   const insertPlaceholder = (tag: string, field: 'subject' | 'text') => {
     if (field === 'subject') {
       const input = subjectInputRef.current;
@@ -614,39 +602,35 @@ export function ClientUpdatesModal({
         className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[92vh]"
       >
         {/* Header */}
-        <div className="px-5 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-start bg-slate-50 shrink-0">
+        <div className="px-5 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-center bg-slate-50 shrink-0">
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1B3A5C]/60 block mb-0.5">Escrow Communications & Updates</span>
             <h2 className="font-extrabold text-base sm:text-lg text-[#1B3A5C] truncate max-w-[220px] sm:max-w-none" title={escrow.address}>
               {escrow.address}
             </h2>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-1.5 hover:bg-[#e5e5ea] rounded-full transition-colors text-slate-500 hover:text-slate-800 cursor-pointer"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-4">
-          <div className="flex justify-between items-center pb-2 border-b border-[#e5e5ea]">
-            <span className="text-xs font-bold text-slate-700">
-              {isEscrowOfficerTemplate ? '📝 Opening Escrow Email' : '✉️ Milestone Update Email'}
-            </span>
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setIsEditingMaster(!isEditingMaster)}
-              className={`px-3 py-1 rounded-xl text-[11px] font-bold flex items-center transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center transition-all cursor-pointer ${
                 isEditingMaster 
                   ? 'bg-[#1B3A5C] text-white' 
-                  : 'bg-slate-100 hover:bg-slate-200 text-[#334155]'
+                  : 'bg-white border border-[#e5e5ea] hover:bg-slate-100 text-[#334155]'
               }`}
             >
               {isEditingMaster ? 'Cancel Customizing' : 'Customize Templates'}
             </button>
+            <button 
+              onClick={onClose}
+              className="p-1.5 hover:bg-[#e5e5ea] rounded-full transition-colors text-slate-500 hover:text-slate-800 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
           </div>
+        </div>
 
+        {/* Content */}
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-4">
           {!isEditingMaster ? (
             <>
               {/* Template Selection Dropdown */}
@@ -698,125 +682,6 @@ export function ClientUpdatesModal({
                         ))}
                       </div>
                     </>
-                  )}
-                </div>
-              </div>
-
-              {/* Escrow Terms */}
-              <div className="bg-gradient-to-br from-blue-50/70 via-slate-50 to-indigo-50/50 border border-blue-200/80 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-xl bg-[#1B3A5C] text-white flex items-center justify-center shadow-sm shrink-0">
-                      <Calendar size={14} />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-extrabold text-[#1B3A5C]">
-                        Escrow Terms
-                      </h3>
-                    </div>
-                  </div>
-
-                  {onUpdateEscrow && closingCalculation.isoString && (
-                    <button
-                      type="button"
-                      onClick={handleSaveCoeToEscrow}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
-                        savedCoeSuccess
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-[#1B3A5C] hover:bg-[#11253C] text-white'
-                      }`}
-                      title="Save this calculated COE date directly to the escrow record"
-                    >
-                      {savedCoeSuccess ? (
-                        <>
-                          <CheckCircle2 size={13} />
-                          <span>COE Saved to Escrow!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Clock size={13} />
-                          <span>Save COE to Escrow</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  {/* Start Date / Acceptance Date Input */}
-                  <div>
-                    <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-600 mb-1">
-                      Acceptance / Start Date
-                    </label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] shadow-sm"
-                    />
-                  </div>
-
-                  {/* Escrow Days Input */}
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-600">
-                        Escrow Days
-                      </label>
-                      <span className="text-[10px] font-bold text-[#1B3A5C]">
-                        {escrowDays} Days
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="1"
-                        max="365"
-                        value={escrowDays}
-                        onChange={(e) => setEscrowDays(e.target.value)}
-                        placeholder="e.g. 30"
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-800 focus:outline-none focus:border-[#1B3A5C] focus:ring-1 focus:ring-[#1B3A5C] shadow-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quick Presets */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                  <span className="text-[10px] font-bold text-slate-500 mr-1">Quick Presets:</span>
-                  {[15, 21, 30].map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setEscrowDays(d)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                        Number(escrowDays) === d
-                          ? 'bg-[#1B3A5C] text-white shadow-sm'
-                          : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}
-                    >
-                      {d} Days
-                    </button>
-                  ))}
-                </div>
-
-                {/* Calculation Result Banner */}
-                <div className="bg-white border border-blue-100 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-[#1B3A5C]">
-                      📅 Estimated COE (Closing Date):
-                    </span>
-                    <span className="text-sm font-extrabold text-indigo-900 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-lg">
-                      {closingCalculation.formattedWithDay || closingCalculation.formattedFull}
-                    </span>
-                  </div>
-
-                  {closingCalculation.wasWeekendAdjusted && (
-                    <div className="flex items-center gap-1 text-[10px] font-extrabold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
-                      <Sparkles size={11} className="text-amber-600 shrink-0" />
-                      <span>
-                        Landed on {closingCalculation.originalDayName} &rarr; Moved to Monday
-                      </span>
-                    </div>
                   )}
                 </div>
               </div>
