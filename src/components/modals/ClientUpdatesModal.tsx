@@ -604,7 +604,7 @@ export function ClientUpdatesModal({
         {/* Header */}
         <div className="px-5 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-center bg-slate-50 shrink-0">
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1B3A5C]/60 block mb-0.5">Escrow Communications & Updates</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1B3A5C]/60 block mb-0.5">Escrow Updates</span>
             <h2 className="font-extrabold text-base sm:text-lg text-[#1B3A5C] truncate max-w-[220px] sm:max-w-none" title={escrow.address}>
               {escrow.address}
             </h2>
@@ -686,27 +686,22 @@ export function ClientUpdatesModal({
                 </div>
               </div>
 
-              {/* Recipient Details & Workspace */}
+              {/* Workspace */}
               <div className="bg-slate-50 border border-[#e5e5ea] rounded-2xl p-4 flex flex-col gap-3">
-                <div className="flex flex-wrap justify-between items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-2.5 py-0.5 rounded-lg truncate max-w-full">
-                    Recipient: {recipientName} {recipientPhone && !hasClient2 ? `(${recipientPhone})` : ''}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {hasClient2 && !isEscrowOfficerTemplate && (
-                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-lg">
-                        2 Clients on File
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleResetCurrentToDefault}
-                      title="Reset this milestone message to latest default"
-                      className="text-[10px] font-bold text-slate-500 hover:text-[#1B3A5C] underline cursor-pointer"
-                    >
-                      Reset to default
-                    </button>
-                  </div>
+                <div className="flex justify-end items-center gap-2">
+                  {hasClient2 && !isEscrowOfficerTemplate && (
+                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-lg">
+                      2 Clients on File
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleResetCurrentToDefault}
+                    title="Reset this milestone message to latest default"
+                    className="text-[10px] font-bold text-slate-500 hover:text-[#1B3A5C] underline cursor-pointer"
+                  >
+                    Reset to default
+                  </button>
                 </div>
 
                 <textarea
