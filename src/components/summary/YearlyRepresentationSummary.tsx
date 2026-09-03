@@ -155,23 +155,23 @@ export function YearlyRepresentationSummary({ escrows }: YearlyRepresentationSum
       <div className="px-4 sm:px-5 py-3 border-b border-[#e5e5ea] bg-slate-50 flex flex-row items-center justify-between gap-2.5 sm:gap-3 shrink-0 overflow-hidden">
         <div className="flex items-center gap-2 max-w-full overflow-hidden">
           {/* Sub-tabs for Representation vs Lead Source */}
-          <div className="flex bg-slate-200/70 p-0.5 rounded-lg text-[11px] font-bold overflow-x-auto max-w-full scrollbar-none whitespace-nowrap">
+          <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold overflow-x-auto max-w-full scrollbar-none whitespace-nowrap">
             <button
               onClick={() => setViewMode('rep')}
-              className={`px-3 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${
                 viewMode === 'rep'
-                  ? 'bg-black text-white shadow-sm'
-                  : 'text-[#86868b] hover:text-[#1d1d1f]'
+                  ? 'bg-[#1B3A5C] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Representation
             </button>
             <button
               onClick={() => setViewMode('source')}
-              className={`px-3 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${
                 viewMode === 'source'
-                  ? 'bg-black text-white shadow-sm'
-                  : 'text-[#86868b] hover:text-[#1d1d1f]'
+                  ? 'bg-[#1B3A5C] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Lead Source

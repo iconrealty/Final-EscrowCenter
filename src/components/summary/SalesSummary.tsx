@@ -10,6 +10,7 @@ export interface SummaryFilterContext {
   selectedMonth: string;
   commissionYear?: string;
   commissionMonth?: string;
+  suggestedStatus?: 'All' | 'Open' | 'Closed';
 }
 
 interface SalesSummaryProps {
@@ -17,6 +18,8 @@ interface SalesSummaryProps {
   onSelectEscrow?: (escrow: Escrow) => void;
   filterContext?: SummaryFilterContext;
   onFilterChange?: (filter: SummaryFilterContext) => void;
+  statusFilter?: 'All' | 'Open' | 'Closed';
+  onStatusFilterChange?: (status: 'All' | 'Open' | 'Closed') => void;
 }
 
 const MONTH_OPTIONS = [
@@ -34,7 +37,14 @@ const MONTH_OPTIONS = [
   { value: '12', label: 'December' },
 ];
 
-export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterChange }: SalesSummaryProps) {
+export function SalesSummary({ 
+  escrows, 
+  onSelectEscrow, 
+  filterContext, 
+  onFilterChange,
+  statusFilter,
+  onStatusFilterChange
+}: SalesSummaryProps) {
   const [activeSubTab, setActiveSubTab] = useState<'total' | 'monthly' | 'commission'>(
     filterContext?.mode || 'monthly'
   );
@@ -60,6 +70,63 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
+  // Calculate smart status based on selected period
+  const getSmartStatus = (mode: 'total' | 'monthly' | 'commission', year: string, month: string): 'All' | 'Open' | 'Closed' => {
+    if (mode === 'total') {
+      return 'Closed';
+    }
+    if (mode === 'commission') {
+      return 'Closed';
+    }
+    // Monthly mode
+    let openCount = 0;
+    let closedCount = 0;
+    escrows.forEach((e) => {
+      if (e.status === 'Cancelled') return;
+      if (month !== 'all' && getEscrowMonth(e) !== month) return;
+      if (e.status === 'Open') openCount++;
+      if (e.status === 'Closed') closedCount++;
+    });
+
+    if (openCount === 0 && closedCount > 0) return 'Closed';
+    if (openCount > 0 && closedCount === 0) return 'Open';
+    return statusFilter || 'Open';
+  };
+
+  const handleSubTabSwitch = (newTab: 'total' | 'monthly' | 'commission') => {
+    setActiveSubTab(newTab);
+    const suggested = getSmartStatus(newTab, selectedYear, selectedMonth);
+    onStatusFilterChange?.(suggested);
+  };
+
+  const handleYearChange = (newYear: string) => {
+    setSelectedYear(newYear);
+    onStatusFilterChange?.(getSmartStatus('total', newYear, selectedMonth));
+  };
+
+  const handleMonthChange = (newMonth: string) => {
+    setSelectedMonth(newMonth);
+    onStatusFilterChange?.(getSmartStatus('monthly', selectedYear, newMonth));
+  };
+
+  const handleCommissionYearChange = (newYear: string) => {
+    setCommissionSelectedYear(newYear);
+    onStatusFilterChange?.('Closed');
+  };
+
+  const handleCommissionMonthChange = (newMonth: string) => {
+    setCommissionSelectedMonth(newMonth);
+    onStatusFilterChange?.('Closed');
+  };
+
+  // Sync on initial mount
+  useEffect(() => {
+    const initialStatus = getSmartStatus(activeSubTab, selectedYear, selectedMonth);
+    if (initialStatus && initialStatus !== statusFilter) {
+      onStatusFilterChange?.(initialStatus);
+    }
+  }, []);
+
   // Notify parent component of active filter context changes
   useEffect(() => {
     if (onFilterChange) {
@@ -69,6 +136,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
         selectedMonth,
         commissionYear: commissionSelectedYear,
         commissionMonth: commissionSelectedMonth,
+        suggestedStatus: getSmartStatus(activeSubTab, selectedYear, selectedMonth),
       });
     }
   }, [activeSubTab, selectedYear, selectedMonth, commissionSelectedYear, commissionSelectedMonth, onFilterChange]);
@@ -366,33 +434,33 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
         </div>
 
         {/* Sub Navigation Tabs */}
-        <div className="flex bg-neutral-200/60 p-0.5 rounded-lg text-xs font-bold self-start sm:self-auto overflow-x-auto max-w-full">
+        <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold self-start sm:self-auto overflow-x-auto max-w-full">
           <button
-            onClick={() => setActiveSubTab('monthly')}
-            className={`px-3 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
+            onClick={() => handleSubTabSwitch('monthly')}
+            className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${
               activeSubTab === 'monthly'
-                ? 'bg-black text-white shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f]'
+                ? 'bg-[#1B3A5C] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Monthly
           </button>
           <button
-            onClick={() => setActiveSubTab('total')}
-            className={`px-3 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
+            onClick={() => handleSubTabSwitch('total')}
+            className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${
               activeSubTab === 'total'
-                ? 'bg-black text-white shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f]'
+                ? 'bg-[#1B3A5C] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Total Sales
           </button>
           <button
-            onClick={() => setActiveSubTab('commission')}
-            className={`px-3 py-1 rounded-md transition-all duration-200 cursor-pointer shrink-0 ${
+            onClick={() => handleSubTabSwitch('commission')}
+            className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer shrink-0 ${
               activeSubTab === 'commission'
-                ? 'bg-black text-white shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f]'
+                ? 'bg-[#1B3A5C] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Net Commissions
@@ -407,28 +475,26 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
           <div className="flex-1 flex flex-col gap-4 animate-fade-in justify-between">
             {/* Top Bar: Month Selector & Summary */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
-              <div className="flex flex-wrap items-center gap-6">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                 {/* Already Received */}
                 <div>
-                  <span className="text-[10px] sm:text-[11px] font-bold text-black uppercase tracking-[0.8px] block">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-[#86868b] uppercase tracking-wider block">
                     Already Received
                   </span>
-                  <div className="mt-1">
-                    <span className="text-lg sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none">
+                  <div className="mt-0.5">
+                    <span className="text-lg sm:text-2xl xl:text-[25px] font-bold text-[#1d1d1f] tracking-tight leading-none">
                       {formatCurrency(monthlyStats.closedCommission)}
                     </span>
                   </div>
                 </div>
 
-                <div className="hidden sm:block w-px h-8 bg-slate-200" />
-
                 {/* Expected to Receive */}
                 <div>
-                  <span className="text-[10px] sm:text-[11px] font-bold text-black uppercase tracking-[0.8px] block">
-                    Expected to Receive ({formatMonthName(selectedMonth)})
+                  <span className="text-[10px] sm:text-[11px] font-bold text-[#86868b] uppercase tracking-wider block">
+                    Expected ({formatMonthName(selectedMonth)})
                   </span>
-                  <div className="mt-1">
-                    <span className="text-lg sm:text-2xl xl:text-[25px] font-black text-[#059669] tracking-tight leading-none">
+                  <div className="mt-0.5">
+                    <span className="text-lg sm:text-2xl xl:text-[25px] font-bold text-[#059669] tracking-tight leading-none">
                       {formatCurrency(monthlyStats.expectedCommission)}
                     </span>
                   </div>
@@ -441,7 +507,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                 <div className="relative inline-flex items-center">
                   <select
                     value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    onChange={(e) => handleMonthChange(e.target.value)}
                     className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-xs font-bold px-3.5 py-1.5 pr-8 rounded-xl border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 transition-all duration-200 shadow-sm"
                   >
                     <option value="all">All Time</option>
@@ -461,55 +527,39 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
             {/* Metrics Breakdown Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
-                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Total Projected</span>
-                <div className="mt-1 text-base sm:text-lg font-black text-[#1B3A5C] tracking-tight leading-none">
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">
+                  Total Projected
+                </span>
+                <div className="mt-1 text-base sm:text-lg font-bold text-[#1B3A5C] tracking-tight leading-none">
                   {formatCurrency(monthlyStats.totalProjectedCommission)}
                 </div>
-                <div className="mt-1 text-[10px] text-slate-500 font-medium">
+                <div className="mt-1 text-[10px] font-medium text-slate-500">
                   {monthlyStats.totalCount} total deal{monthlyStats.totalCount === 1 ? '' : 's'} in month
                 </div>
               </div>
 
               <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-3 flex flex-col justify-between">
-                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Pending / Open Volume</span>
-                <div className="mt-1 text-base sm:text-lg font-black text-emerald-900 tracking-tight leading-none">
+                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
+                  Pending / Open Volume
+                </span>
+                <div className="mt-1 text-base sm:text-lg font-bold text-emerald-900 tracking-tight leading-none">
                   {formatCurrency(monthlyStats.expectedVolume)}
                 </div>
-                <div className="mt-1 text-[10px] text-emerald-700 font-medium">
+                <div className="mt-1 text-[10px] font-medium text-emerald-700">
                   {monthlyStats.expectedCount} pending escrow{monthlyStats.expectedCount === 1 ? '' : 's'}
                 </div>
               </div>
 
               <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
-                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Closed Volume</span>
-                <div className="mt-1 text-base sm:text-lg font-black text-[#0f172a] tracking-tight leading-none">
+                <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">
+                  Closed Volume
+                </span>
+                <div className="mt-1 text-base sm:text-lg font-bold text-[#1d1d1f] tracking-tight leading-none">
                   {formatCurrency(monthlyStats.closedVolume)}
                 </div>
-                <div className="mt-1 text-[10px] text-slate-500 font-medium">
+                <div className="mt-1 text-[10px] font-medium text-slate-500">
                   {monthlyStats.closedCount} closed escrow{monthlyStats.closedCount === 1 ? '' : 's'}
                 </div>
-              </div>
-            </div>
-
-            {/* Progress & Status Indicator */}
-            <div className="bg-slate-50/80 border border-slate-200/70 rounded-xl p-3 flex flex-col gap-2">
-              <div className="flex items-center justify-between text-xs font-bold">
-                <span className="text-[#1d1d1f]">Monthly Revenue Collection</span>
-                <span className="text-[#1B3A5C] font-black tracking-tight">{monthlyCollectionPercent}% Collected</span>
-              </div>
-              <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                <div
-                  className="bg-[#1B3A5C] h-full rounded-full transition-all duration-500"
-                  style={{ width: `${monthlyCollectionPercent}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Helper Notice */}
-            <div className="flex items-center justify-between px-3 py-2 bg-blue-50/70 border border-blue-200/60 rounded-xl text-[11px] text-[#1B3A5C]">
-              <div className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 size={14} className="text-[#1B3A5C] shrink-0" />
-                <span>Showing <strong>{monthlyStats.expectedCount} open</strong> and <strong>{monthlyStats.closedCount} closed</strong> escrows in the Escrow List below</span>
               </div>
             </div>
           </div>
@@ -527,7 +577,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                 <div className="relative inline-flex items-center">
                   <select
                     value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
+                    onChange={(e) => handleYearChange(e.target.value)}
                     className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-xs font-bold px-3.5 py-1.5 pr-8 rounded-xl border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 transition-all duration-200 shadow-sm"
                   >
                     <option value="all">All Time</option>
@@ -547,26 +597,26 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
             {/* 4 Primary Metric Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-black uppercase tracking-[0.8px]">Total Volume</span>
-                <span className="text-sm sm:text-base font-black text-[#0f172a] tracking-tight leading-none mt-1 truncate">
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Total Volume</span>
+                <span className="text-sm sm:text-base font-bold text-[#1d1d1f] tracking-tight leading-none mt-1 truncate">
                   {formatCurrency(totalStats.volume)}
                 </span>
               </div>
               <div className="bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-black uppercase tracking-[0.8px]">Closed Deals</span>
-                <span className="text-sm sm:text-base font-black text-[#0f172a] tracking-tight leading-none mt-1 truncate">
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Closed Deals</span>
+                <span className="text-sm sm:text-base font-bold text-[#1d1d1f] tracking-tight leading-none mt-1 truncate">
                   {totalStats.count}
                 </span>
               </div>
               <div className="bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-black uppercase tracking-[0.8px]">Net Commissions</span>
-                <span className="text-sm sm:text-base font-black text-[#059669] tracking-tight leading-none mt-1 truncate">
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Net Commissions</span>
+                <span className="text-sm sm:text-base font-bold text-[#059669] tracking-tight leading-none mt-1 truncate">
                   {formatCurrency(totalStats.commission)}
                 </span>
               </div>
               <div className="bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-black uppercase tracking-[0.8px]">Gross Commissions</span>
-                <span className="text-sm sm:text-base font-black text-[#1B3A5C] tracking-tight leading-none mt-1 truncate">
+                <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">Gross Commissions</span>
+                <span className="text-sm sm:text-base font-bold text-[#1B3A5C] tracking-tight leading-none mt-1 truncate">
                   {formatCurrency(totalStats.grossCommission)}
                 </span>
               </div>
@@ -576,23 +626,15 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Avg Sale Price</span>
-                <span className="text-sm sm:text-base font-black text-[#0f172a] tracking-tight leading-none mt-1.5">
+                <span className="text-sm sm:text-base font-bold text-[#1d1d1f] tracking-tight leading-none mt-1.5">
                   {formatCurrency(totalStats.count > 0 ? totalStats.volume / totalStats.count : 0)}
                 </span>
               </div>
               <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Avg Net Commission</span>
-                <span className="text-sm sm:text-base font-black text-[#059669] tracking-tight leading-none mt-1.5">
+                <span className="text-sm sm:text-base font-bold text-[#059669] tracking-tight leading-none mt-1.5">
                   {formatCurrency(totalStats.count > 0 ? totalStats.commission / totalStats.count : 0)}
                 </span>
-              </div>
-            </div>
-
-            {/* Helper Notice */}
-            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200/70 rounded-xl text-[11px] text-[#1B3A5C]">
-              <div className="flex items-center gap-1.5 font-medium">
-                <Building size={14} className="text-[#1B3A5C] shrink-0" />
-                <span>Showing <strong>{filteredClosedEscrows.length} escrows</strong> for <strong>{selectedYear === 'all' ? 'All Time' : selectedYear}</strong> in Escrow List below</span>
               </div>
             </div>
           </div>
@@ -608,11 +650,11 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                   Net Commission Revenue
                 </span>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <span className="text-sm sm:text-base font-black text-[#059669] tracking-tight leading-none">
+                  <span className="text-sm sm:text-base font-bold text-[#059669] tracking-tight leading-none">
                     Net: {formatCurrency(commissionStats.net)}
                   </span>
                   <span className="text-slate-300 font-normal text-xs">•</span>
-                  <span className="text-xs sm:text-sm font-black text-[#1B3A5C] tracking-tight leading-none">
+                  <span className="text-xs sm:text-sm font-bold text-[#1B3A5C] tracking-tight leading-none">
                     Gross: {formatCurrency(commissionStats.gross)}
                   </span>
                 </div>
@@ -624,7 +666,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                 <div className="relative inline-flex items-center">
                   <select
                     value={commissionSelectedYear}
-                    onChange={(e) => setCommissionSelectedYear(e.target.value)}
+                    onChange={(e) => handleCommissionYearChange(e.target.value)}
                     className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3 py-1.5 pr-7 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-2xs"
                   >
                     <option value="all">All Years</option>
@@ -643,7 +685,7 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                 <div className="relative inline-flex items-center">
                   <select
                     value={commissionSelectedMonth}
-                    onChange={(e) => setCommissionSelectedMonth(e.target.value)}
+                    onChange={(e) => handleCommissionMonthChange(e.target.value)}
                     className="appearance-none bg-white hover:bg-neutral-50 text-[#1d1d1f] text-[11px] font-bold px-3 py-1.5 pr-7 rounded-full border border-[#e5e5ea] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1B3A5C]/30 transition-all duration-200 shadow-2xs"
                   >
                     <option value="all">All Months</option>
@@ -660,13 +702,13 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
 
                 {/* Grouping Mode Toggle */}
                 {commissionSelectedMonth === 'all' && (
-                  <div className="flex bg-slate-100 p-0.5 rounded-lg text-[10px] font-bold">
+                  <div className="flex bg-slate-100 p-0.5 rounded-lg text-[10px] font-semibold">
                     <button
                       onClick={() => setCommissionGroup('monthly')}
                       className={`px-2 py-1 rounded-md transition-all duration-200 cursor-pointer ${
                         commissionGroup === 'monthly'
-                          ? 'bg-black text-white shadow-2xs'
-                          : 'text-[#86868b] hover:text-[#1d1d1f]'
+                          ? 'bg-[#1B3A5C] text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       Monthly
@@ -675,8 +717,8 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                       onClick={() => setCommissionGroup('yearly')}
                       className={`px-2 py-1 rounded-md transition-all duration-200 cursor-pointer ${
                         commissionGroup === 'yearly'
-                          ? 'bg-black text-white shadow-2xs'
-                          : 'text-[#86868b] hover:text-[#1d1d1f]'
+                          ? 'bg-[#1B3A5C] text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       Yearly
@@ -693,25 +735,17 @@ export function SalesSummary({ escrows, onSelectEscrow, filterContext, onFilterC
                   <div key={group.key} className="border border-slate-200/70 rounded-xl p-2.5 bg-slate-50/50 flex items-center justify-between">
                     <div>
                       <span className="text-xs font-bold text-[#1d1d1f] block truncate">{group.label}</span>
-                      <span className="text-[10px] text-[#86868b] font-bold">{group.count} {group.count === 1 ? 'sale' : 'sales'}</span>
+                      <span className="text-[10px] text-[#86868b] font-medium">{group.count} {group.count === 1 ? 'sale' : 'sales'}</span>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs font-black text-[#059669] tracking-tight leading-none">Net: {formatCurrency(group.amount)}</div>
-                      <div className="text-[10px] font-black text-[#1B3A5C] tracking-tight leading-none mt-0.5">Gross: {formatCurrency(group.grossAmount)}</div>
+                      <div className="text-xs font-bold text-[#059669] tracking-tight leading-none">Net: {formatCurrency(group.amount)}</div>
+                      <div className="text-[10px] font-bold text-[#1B3A5C] tracking-tight leading-none mt-0.5">Gross: {formatCurrency(group.grossAmount)}</div>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="col-span-2 text-center py-6 text-xs text-[#86868b]">No commission records match this filter.</div>
               )}
-            </div>
-
-            {/* Helper Notice */}
-            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200/70 rounded-xl text-[11px] text-[#1B3A5C]">
-              <div className="flex items-center gap-1.5 font-medium">
-                <DollarSign size={14} className="text-[#1B3A5C] shrink-0" />
-                <span>Showing matching closed transactions in Escrow List below</span>
-              </div>
             </div>
           </div>
         )}

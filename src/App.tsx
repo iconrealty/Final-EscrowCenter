@@ -233,7 +233,14 @@ function App() {
                   escrows={escrows} 
                   onSelectEscrow={(escrow) => setDetailEscrow(escrow)} 
                   filterContext={summaryFilterContext}
-                  onFilterChange={setSummaryFilterContext}
+                  onFilterChange={(ctx) => {
+                    setSummaryFilterContext(ctx);
+                    if (ctx.suggestedStatus) {
+                      setSummaryFilter(ctx.suggestedStatus);
+                    }
+                  }}
+                  statusFilter={summaryFilter}
+                  onStatusFilterChange={setSummaryFilter}
                 />
                 <YearlyRepresentationSummary escrows={escrows} />
               </div>

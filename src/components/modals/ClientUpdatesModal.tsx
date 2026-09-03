@@ -668,14 +668,14 @@ export function ClientUpdatesModal({
                   </label>
 
                   {/* Minimalist Segmented Pill: Buyer / Seller / All */}
-                  <div className="inline-flex self-start sm:self-auto bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-[11px] font-bold">
+                  <div className="inline-flex self-start sm:self-auto bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-xs font-semibold">
                     <button
                       type="button"
                       onClick={() => handleSideFilterChange('buyer')}
                       className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                         sideFilter === 'buyer'
-                          ? 'bg-black text-white shadow-xs font-extrabold'
-                          : 'text-slate-600 hover:text-black'
+                          ? 'bg-[#1B3A5C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       Buyer
@@ -685,8 +685,8 @@ export function ClientUpdatesModal({
                       onClick={() => handleSideFilterChange('seller')}
                       className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                         sideFilter === 'seller'
-                          ? 'bg-black text-white shadow-xs font-extrabold'
-                          : 'text-slate-600 hover:text-black'
+                          ? 'bg-[#1B3A5C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       Seller
@@ -696,8 +696,8 @@ export function ClientUpdatesModal({
                       onClick={() => handleSideFilterChange('all')}
                       className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                         sideFilter === 'all'
-                          ? 'bg-black text-white shadow-xs font-extrabold'
-                          : 'text-slate-600 hover:text-black'
+                          ? 'bg-[#1B3A5C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       All

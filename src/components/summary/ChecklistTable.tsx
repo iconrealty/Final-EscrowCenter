@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Escrow, ALL_TASKS } from '../../types';
 import { getEscrowYear } from '../../utils/csvUtils';
 import { Trash2, Calendar, User, CheckCircle2, ChevronRight, ChevronDown, Users, Filter, Clock } from 'lucide-react';
@@ -131,6 +131,72 @@ export function ChecklistTable({
     });
   }, [escrows, summaryFilter, currentMode, effectiveMonth, effectiveYear, activeFilterContext]);
 
+  // Calculate counts within current period scope
+  const scopeCounts = useMemo(() => {
+    let open = 0;
+    let closed = 0;
+    let total = 0;
+
+    escrows.forEach((escrow) => {
+      if (escrow.status === 'Cancelled') return;
+
+      if (currentMode === 'monthly') {
+        if (effectiveMonth && effectiveMonth !== 'all') {
+          const ym = getEscrowMonth(escrow);
+          if (ym !== effectiveMonth) return;
+        }
+      } else if (currentMode === 'total') {
+        if (effectiveYear && effectiveYear !== 'all') {
+          const yr = getEscrowYear(escrow);
+          if (yr !== effectiveYear) return;
+        }
+      } else if (currentMode === 'commission') {
+        const commYear = activeFilterContext?.commissionYear || 'all';
+        const commMonth = activeFilterContext?.commissionMonth || 'all';
+        if (commYear !== 'all') {
+          const yr = getEscrowYear(escrow);
+          if (yr !== commYear) return;
+        }
+        if (commMonth !== 'all') {
+          const ym = getEscrowMonth(escrow);
+          if (!ym) return;
+          const parts = ym.split('-');
+          if (parts.length >= 2 && parts[1] !== commMonth) return;
+        }
+      }
+
+      total++;
+      if (escrow.status === 'Open') open++;
+      if (escrow.status === 'Closed') closed++;
+    });
+
+    return { open, closed, total };
+  }, [escrows, currentMode, effectiveMonth, effectiveYear, activeFilterContext]);
+
+  // Synchronize status filter when period context changes:
+  // If user selected a period that only has closed escrows (like a past year or past month),
+  // automatically show Closed escrows so the table isn't falsely empty.
+  const prevPeriodRef = useRef<string>('');
+  useEffect(() => {
+    const periodKey = `${currentMode}_${effectiveYear}_${effectiveMonth}_${activeFilterContext?.commissionYear}_${activeFilterContext?.commissionMonth}`;
+    if (prevPeriodRef.current !== periodKey) {
+      prevPeriodRef.current = periodKey;
+      if (currentMode === 'commission') {
+        if (summaryFilter !== 'Closed') {
+          onFilterChange?.('Closed');
+        }
+      } else if (currentMode === 'total') {
+        if (summaryFilter === 'Open' && scopeCounts.open === 0 && scopeCounts.closed > 0) {
+          onFilterChange?.('Closed');
+        }
+      } else if (currentMode === 'monthly') {
+        if (summaryFilter === 'Open' && scopeCounts.open === 0 && scopeCounts.closed > 0) {
+          onFilterChange?.('Closed');
+        }
+      }
+    }
+  }, [currentMode, effectiveYear, effectiveMonth, activeFilterContext, summaryFilter, scopeCounts.open, scopeCounts.closed, onFilterChange]);
+
   const parseCoeTime = (coeDate?: string): number => {
     if (!coeDate) return 0;
     const str = coeDate.trim();
@@ -158,8 +224,10 @@ export function ChecklistTable({
     }
     if (currentMode === 'commission') {
       const cy = activeFilterContext?.commissionYear || 'All Years';
-      const cm = activeFilterContext?.commissionMonth || 'All Months';
-      return `${cy === 'all' ? 'All Years' : cy}${cm !== 'all' ? ` (${cm})` : ''}`;
+      const cm = activeFilterContext?.commissionMonth || 'all';
+      const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const mLabel = cm !== 'all' ? (monthNames[parseInt(cm, 10)] || cm) : '';
+      return `${cy === 'all' ? 'All Years' : cy}${mLabel ? ` (${mLabel})` : ''}`;
     }
     return 'All Escrows';
   }, [currentMode, effectiveMonth, effectiveYear, activeFilterContext]);
@@ -171,7 +239,7 @@ export function ChecklistTable({
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="font-bold text-[#1d1d1f] text-sm sm:text-base tracking-tight">Escrow List</h2>
           <span className="text-slate-300 font-normal text-xs">•</span>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-[#1B3A5C] text-white text-[11px] font-mono font-bold tracking-wide uppercase shadow-2xs">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-[#1B3A5C] text-white text-[11px] font-bold uppercase shadow-2xs">
             {contextBadgeTitle}
           </span>
           <span className="text-[10px] text-slate-500 font-medium">
@@ -180,23 +248,33 @@ export function ChecklistTable({
         </div>
         
         <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-auto">
-          {/* Status Quick Filter (Open / Closed / All) */}
+          {/* Status Quick Filter (Open / Closed / All) with Live Scope Counts */}
           {onFilterChange && (
-            <div className="inline-flex bg-neutral-200/60 p-0.5 rounded-full border border-neutral-200/50">
-              {(['Open', 'Closed', 'All'] as const).map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => onFilterChange(opt)}
-                  className={`px-3.5 py-1 rounded-full text-[10px] font-extrabold tracking-wider transition-all duration-200 cursor-pointer ${
-                    summaryFilter === opt
-                      ? 'bg-black text-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
-                      : 'text-[#86868b] hover:text-[#1d1d1f]'
-                  }`}
-                >
-                  {opt} {opt === 'Open' ? 'Escrows' : opt === 'Closed' ? 'Escrows' : ''}
-                </button>
-              ))}
+            <div className="inline-flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/70">
+              {(['Open', 'Closed', 'All'] as const).map((opt) => {
+                const count = opt === 'Open' ? scopeCounts.open : opt === 'Closed' ? scopeCounts.closed : scopeCounts.total;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => onFilterChange(opt)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                      summaryFilter === opt
+                        ? 'bg-[#1B3A5C] text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <span>{opt}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold leading-none ${
+                        summaryFilter === opt ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-600'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -207,10 +285,42 @@ export function ChecklistTable({
       </div>
 
       {sortedEscrows.length === 0 ? (
-        <div className="p-12 text-center text-[#86868b] text-sm font-medium flex flex-col items-center justify-center gap-2">
-          <Clock size={24} className="text-slate-300" />
-          <p>No {summaryFilter.toLowerCase()} escrows found for <strong>{contextBadgeTitle}</strong>.</p>
-          <p className="text-xs text-slate-400">Try changing the status toggle to 'All' or selecting another period in the Sales Summary above.</p>
+        <div className="p-12 text-center text-[#86868b] text-sm font-medium flex flex-col items-center justify-center gap-3">
+          <Clock size={28} className="text-slate-300" />
+          {summaryFilter === 'Open' && scopeCounts.closed > 0 ? (
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-[#1d1d1f] font-bold text-base">No open escrows for {contextBadgeTitle}</p>
+              <p className="text-xs text-slate-500 max-w-md">All {scopeCounts.closed} deals in this period have already successfully closed.</p>
+              {onFilterChange && (
+                <button
+                  type="button"
+                  onClick={() => onFilterChange('Closed')}
+                  className="mt-1 px-4 py-2 bg-[#1B3A5C] hover:bg-[#152e4a] text-white text-xs font-semibold rounded-xl shadow-xs transition-all cursor-pointer"
+                >
+                  View {scopeCounts.closed} Closed Escrows
+                </button>
+              )}
+            </div>
+          ) : summaryFilter === 'Closed' && scopeCounts.open > 0 ? (
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-[#1d1d1f] font-bold text-base">No closed escrows yet for {contextBadgeTitle}</p>
+              <p className="text-xs text-slate-500 max-w-md">There {scopeCounts.open === 1 ? 'is' : 'are'} {scopeCounts.open} pending escrow{scopeCounts.open === 1 ? '' : 's'} scheduled for this period.</p>
+              {onFilterChange && (
+                <button
+                  type="button"
+                  onClick={() => onFilterChange('Open')}
+                  className="mt-1 px-4 py-2 bg-[#1B3A5C] hover:bg-[#152e4a] text-white text-xs font-semibold rounded-xl shadow-xs transition-all cursor-pointer"
+                >
+                  View {scopeCounts.open} Open Escrows
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-1">
+              <p>No {summaryFilter.toLowerCase()} escrows found for <strong>{contextBadgeTitle}</strong>.</p>
+              <p className="text-xs text-slate-400">Try changing the status toggle to 'All' or selecting another period in the Sales Summary above.</p>
+            </div>
+          )}
         </div>
       ) : (
         <div className="divide-y divide-[#e5e5ea]">

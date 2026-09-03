@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Search, Edit3, Trash2, Calendar, Download, Building, Check } from 'lucide-react';
 import { Escrow } from '../../types';
 import { downloadEscrowsCsv, getEscrowYear } from '../../utils/csvUtils';
+import { calculateNetFromGross } from '../../utils/commissionUtils';
 
 interface EscrowTableModalProps {
   isOpen: boolean;
@@ -136,6 +137,23 @@ export function EscrowTableModal({
     onUpdateEscrow(id, { [field]: value });
     setLastSavedId(id);
     setTimeout(() => setLastSavedId((prev) => (prev === id ? null : prev)), 1500);
+  };
+
+  const handleLeadSourceChange = (escrow: Escrow, newSource: string) => {
+    const updates: Partial<Escrow> = { leadSource: newSource as any };
+
+    // Recalculate net commission if gross commission is present
+    const gross = escrow.price && escrow.commissionPercent ? (escrow.price * escrow.commissionPercent) / 100 : 0;
+    if (gross > 0) {
+      const calculatedNet = calculateNetFromGross(gross, newSource);
+      if (calculatedNet > 0) {
+        updates.netCommission = calculatedNet;
+      }
+    }
+
+    onUpdateEscrow(escrow.id, updates);
+    setLastSavedId(escrow.id);
+    setTimeout(() => setLastSavedId((prev) => (prev === escrow.id ? null : prev)), 1500);
   };
 
   const getCellText = (id: string, field: keyof Escrow, defaultValue: number | undefined | null) => {
@@ -323,12 +341,10 @@ export function EscrowTableModal({
               )}
             </div>
           ) : (
-            <table className="w-full text-left border-collapse min-w-[1120px]">
+            <table className="w-full text-left border-collapse min-w-[980px]">
               <thead className="bg-slate-100/90 text-slate-600 text-[11px] font-bold uppercase tracking-wider sticky top-0 z-10 border-b border-slate-200">
                 <tr>
-                  <th className="py-2.5 px-3 w-[200px]">Address</th>
-                  <th className="py-2.5 px-3 w-[120px]">City</th>
-                  <th className="py-2.5 px-3 w-[80px]">Zip</th>
+                  <th className="py-2.5 px-3 w-[220px]">Address</th>
                   <th className="py-2.5 px-3 w-[100px]">Escrow #</th>
                   <th className="py-2.5 px-3 w-[100px]">MLS ID</th>
                   <th className="py-2.5 px-3 w-[160px]">Client Name</th>
@@ -336,7 +352,7 @@ export function EscrowTableModal({
                   <th className="py-2.5 px-3 w-[100px]">Side</th>
                   <th className="py-2.5 px-3 w-[110px]">Gross Comm. (%)</th>
                   <th className="py-2.5 px-3 w-[120px]">Net Comm ($)</th>
-                  <th className="py-2.5 px-3 w-[125px]">COE Date</th>
+                  <th className="py-2.5 px-3 w-[120px]">Lead Source</th>
                   <th className="py-2.5 px-3 w-[80px] text-right">Actions</th>
                 </tr>
               </thead>
@@ -360,28 +376,6 @@ export function EscrowTableModal({
                           onChange={(e) => handleFieldChange(escrow.id, 'address', e.target.value)}
                           placeholder="Street Address"
                           className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-bold text-[#1d1d1f] text-xs transition-all outline-none"
-                        />
-                      </td>
-
-                      {/* City */}
-                      <td className="py-1.5 px-2">
-                        <input
-                          type="text"
-                          value={escrow.city || ''}
-                          onChange={(e) => handleFieldChange(escrow.id, 'city', e.target.value)}
-                          placeholder="City"
-                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] text-slate-700 text-xs transition-all outline-none"
-                        />
-                      </td>
-
-                      {/* Zip */}
-                      <td className="py-1.5 px-2">
-                        <input
-                          type="text"
-                          value={escrow.zipCode || ''}
-                          onChange={(e) => handleFieldChange(escrow.id, 'zipCode', e.target.value)}
-                          placeholder="Zip"
-                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] text-slate-700 text-xs transition-all outline-none"
                         />
                       </td>
 
@@ -491,14 +485,22 @@ export function EscrowTableModal({
                         </div>
                       </td>
 
-                      {/* COE Date */}
+                      {/* Lead Source */}
                       <td className="py-1.5 px-2">
-                        <input
-                          type="date"
-                          value={escrow.coeDate || ''}
-                          onChange={(e) => handleFieldChange(escrow.id, 'coeDate', e.target.value)}
-                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono text-slate-700 text-xs transition-all cursor-pointer outline-none"
-                        />
+                        <select
+                          value={escrow.leadSource || 'Zillow'}
+                          onChange={(e) => handleLeadSourceChange(escrow, e.target.value)}
+                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] text-slate-700 text-xs font-semibold transition-all cursor-pointer outline-none"
+                        >
+                          <option value="Zillow">Zillow</option>
+                          <option value="Self">Self</option>
+                          <option value="Team Lead">Team Lead</option>
+                          <option value="Opcity">Opcity</option>
+                          <option value="Other">Other</option>
+                          {escrow.leadSource && !['Zillow', 'Self', 'Team Lead', 'Opcity', 'Other'].includes(escrow.leadSource) && (
+                            <option value={escrow.leadSource}>{escrow.leadSource}</option>
+                          )}
+                        </select>
                       </td>
 
                       {/* Actions */}
