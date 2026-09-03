@@ -3,7 +3,6 @@ import { Escrow, MILESTONES, CONTINGENCIES, getApplicableContingencies, isContin
 import { X, Check } from 'lucide-react';
 import { MilestoneChip } from '../escrows/MilestoneChip';
 import { ContingencyChip } from '../escrows/ContingencyChip';
-import { ActiveContingenciesTicker } from '../escrows/ActiveContingenciesTicker';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
 
 export function MilestonesContingenciesModal({ 
@@ -47,7 +46,7 @@ export function MilestonesContingenciesModal({
 
   return (
     <div id="tasks-modal-overlay" className="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-3 pt-12 pb-6 sm:p-6 overflow-hidden">
-      <div id="tasks-modal-container" className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div id="tasks-modal-container" className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Header */}
         <div id="tasks-modal-header" className="px-4 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-start bg-slate-50 shrink-0">
           <div>
@@ -104,11 +103,15 @@ export function MilestonesContingenciesModal({
           {/* Milestones Section */}
           <div id="tasks-milestones-section" className="border border-[#e5e5ea] rounded-xl p-4">
             <div className="flex justify-between items-center mb-3.5 pb-1.5 border-b border-slate-100">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1B3A5C]">
-                Milestones ({completedMilestones}/{MILESTONES.length})
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1B3A5C]">
+                  Milestones ({completedMilestones}/{MILESTONES.length})
+                </h3>
+                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">• Click to toggle status</span>
+              </div>
               {hasIncompleteMilestones && (
                 <button 
+                  id="mark-all-milestones-done-btn"
                   onClick={handleCompleteAllMilestones}
                   className="text-xs text-[#1B3A5C] hover:text-[#11253C] font-bold hover:underline transition-all cursor-pointer"
                 >
@@ -116,10 +119,11 @@ export function MilestonesContingenciesModal({
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div id="milestones-pills-list" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {MILESTONES.map(m => (
                 <MilestoneChip 
                   key={m.key}
+                  taskKey={m.key}
                   label={m.label}
                   isDone={escrow.tasks[m.key]}
                   isOverdue={!escrow.tasks[m.key] && isUrgent}
@@ -129,19 +133,14 @@ export function MilestonesContingenciesModal({
             </div>
           </div>
 
-          {/* Active Contingency Mini Pill Ticker */}
-          <div className="w-full my-1">
-            <ActiveContingenciesTicker escrow={escrow} />
-          </div>
-
           {/* Contingencies Section */}
           <div id="tasks-contingencies-section" className="border border-[#e5e5ea] rounded-xl p-4">
             <div className="flex justify-between items-center mb-3.5 pb-1.5 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1B3A5C]">
-                  Contingencies Removed ({completedContingencies}/{applicableContingencies.length})
+                  Contingencies Status ({completedContingencies}/{applicableContingencies.length})
                 </h3>
-                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">• Click to toggle removed</span>
+                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">• Click to toggle status</span>
               </div>
               {hasIncompleteContingencies && (
                 <button 
