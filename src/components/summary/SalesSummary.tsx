@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Escrow } from '../../types';
 import { getEscrowYear } from '../../utils/csvUtils';
 import { Calendar, DollarSign, ChevronDown, Building, Award, CheckCircle2, ChevronRight, BarChart3, Clock, Layers } from 'lucide-react';
@@ -97,49 +97,69 @@ export function SalesSummary({
     setActiveSubTab(newTab);
     const suggested = getSmartStatus(newTab, selectedYear, selectedMonth);
     onStatusFilterChange?.(suggested);
+    onFilterChange?.({
+      mode: newTab,
+      selectedYear,
+      selectedMonth,
+      commissionYear: commissionSelectedYear,
+      commissionMonth: commissionSelectedMonth,
+      suggestedStatus: suggested,
+    });
   };
 
   const handleYearChange = (newYear: string) => {
     setSelectedYear(newYear);
-    onStatusFilterChange?.(getSmartStatus('total', newYear, selectedMonth));
+    const suggested = getSmartStatus('total', newYear, selectedMonth);
+    onStatusFilterChange?.(suggested);
+    onFilterChange?.({
+      mode: activeSubTab,
+      selectedYear: newYear,
+      selectedMonth,
+      commissionYear: commissionSelectedYear,
+      commissionMonth: commissionSelectedMonth,
+      suggestedStatus: suggested,
+    });
   };
 
   const handleMonthChange = (newMonth: string) => {
     setSelectedMonth(newMonth);
-    onStatusFilterChange?.(getSmartStatus('monthly', selectedYear, newMonth));
+    const suggested = getSmartStatus('monthly', selectedYear, newMonth);
+    onStatusFilterChange?.(suggested);
+    onFilterChange?.({
+      mode: activeSubTab,
+      selectedYear,
+      selectedMonth: newMonth,
+      commissionYear: commissionSelectedYear,
+      commissionMonth: commissionSelectedMonth,
+      suggestedStatus: suggested,
+    });
   };
 
   const handleCommissionYearChange = (newYear: string) => {
     setCommissionSelectedYear(newYear);
     onStatusFilterChange?.('Closed');
+    onFilterChange?.({
+      mode: activeSubTab,
+      selectedYear,
+      selectedMonth,
+      commissionYear: newYear,
+      commissionMonth: commissionSelectedMonth,
+      suggestedStatus: 'Closed',
+    });
   };
 
   const handleCommissionMonthChange = (newMonth: string) => {
     setCommissionSelectedMonth(newMonth);
     onStatusFilterChange?.('Closed');
+    onFilterChange?.({
+      mode: activeSubTab,
+      selectedYear,
+      selectedMonth,
+      commissionYear: commissionSelectedYear,
+      commissionMonth: newMonth,
+      suggestedStatus: 'Closed',
+    });
   };
-
-  // Sync on initial mount
-  useEffect(() => {
-    const initialStatus = getSmartStatus(activeSubTab, selectedYear, selectedMonth);
-    if (initialStatus && initialStatus !== statusFilter) {
-      onStatusFilterChange?.(initialStatus);
-    }
-  }, []);
-
-  // Notify parent component of active filter context changes
-  useEffect(() => {
-    if (onFilterChange) {
-      onFilterChange({
-        mode: activeSubTab,
-        selectedYear,
-        selectedMonth,
-        commissionYear: commissionSelectedYear,
-        commissionMonth: commissionSelectedMonth,
-        suggestedStatus: getSmartStatus(activeSubTab, selectedYear, selectedMonth),
-      });
-    }
-  }, [activeSubTab, selectedYear, selectedMonth, commissionSelectedYear, commissionSelectedMonth, onFilterChange]);
 
   // Helper function to extract exact YYYY-MM from escrow (Close of Escrow / COE date first, then Acceptance date)
   const getEscrowMonth = (e: Escrow): string => {

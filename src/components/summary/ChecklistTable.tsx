@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Escrow, ALL_TASKS } from '../../types';
 import { getEscrowYear } from '../../utils/csvUtils';
 import { Trash2, Calendar, User, CheckCircle2, ChevronRight, ChevronDown, Users, Filter, Clock } from 'lucide-react';
@@ -172,30 +172,6 @@ export function ChecklistTable({
 
     return { open, closed, total };
   }, [escrows, currentMode, effectiveMonth, effectiveYear, activeFilterContext]);
-
-  // Synchronize status filter when period context changes:
-  // If user selected a period that only has closed escrows (like a past year or past month),
-  // automatically show Closed escrows so the table isn't falsely empty.
-  const prevPeriodRef = useRef<string>('');
-  useEffect(() => {
-    const periodKey = `${currentMode}_${effectiveYear}_${effectiveMonth}_${activeFilterContext?.commissionYear}_${activeFilterContext?.commissionMonth}`;
-    if (prevPeriodRef.current !== periodKey) {
-      prevPeriodRef.current = periodKey;
-      if (currentMode === 'commission') {
-        if (summaryFilter !== 'Closed') {
-          onFilterChange?.('Closed');
-        }
-      } else if (currentMode === 'total') {
-        if (summaryFilter === 'Open' && scopeCounts.open === 0 && scopeCounts.closed > 0) {
-          onFilterChange?.('Closed');
-        }
-      } else if (currentMode === 'monthly') {
-        if (summaryFilter === 'Open' && scopeCounts.open === 0 && scopeCounts.closed > 0) {
-          onFilterChange?.('Closed');
-        }
-      }
-    }
-  }, [currentMode, effectiveYear, effectiveMonth, activeFilterContext, summaryFilter, scopeCounts.open, scopeCounts.closed, onFilterChange]);
 
   const parseCoeTime = (coeDate?: string): number => {
     if (!coeDate) return 0;

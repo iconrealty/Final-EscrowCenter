@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopNav } from './components/layout/TopNav';
 import { StatsBar } from './components/layout/StatsBar';
@@ -47,6 +47,17 @@ function App() {
       selectedMonth: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     };
   });
+
+  const handleSummaryFilterChange = useCallback((newFilter: 'All' | 'Open' | 'Closed') => {
+    setSummaryFilter(newFilter);
+  }, []);
+
+  const handleSummaryFilterContextChange = useCallback((ctx: SummaryFilterContext) => {
+    setSummaryFilterContext(ctx);
+    if (ctx.suggestedStatus) {
+      setSummaryFilter(ctx.suggestedStatus);
+    }
+  }, []);
 
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingEscrow, setEditingEscrow] = useState<Escrow | null>(null);
@@ -233,14 +244,9 @@ function App() {
                   escrows={escrows} 
                   onSelectEscrow={(escrow) => setDetailEscrow(escrow)} 
                   filterContext={summaryFilterContext}
-                  onFilterChange={(ctx) => {
-                    setSummaryFilterContext(ctx);
-                    if (ctx.suggestedStatus) {
-                      setSummaryFilter(ctx.suggestedStatus);
-                    }
-                  }}
+                  onFilterChange={handleSummaryFilterContextChange}
                   statusFilter={summaryFilter}
-                  onStatusFilterChange={setSummaryFilter}
+                  onStatusFilterChange={handleSummaryFilterChange}
                 />
                 <YearlyRepresentationSummary escrows={escrows} />
               </div>
@@ -252,7 +258,7 @@ function App() {
                   onDeleteEscrow={(id) => setConfirmDeleteId(id)}
                   onOpenContacts={(escrow) => setContactsEscrow(escrow)}
                   summaryFilter={summaryFilter}
-                  onFilterChange={setSummaryFilter}
+                  onFilterChange={handleSummaryFilterChange}
                   activeFilterContext={summaryFilterContext}
                 />
               </div>
