@@ -101,22 +101,27 @@ export function MilestonesContingenciesModal({
           </div>
 
           {/* Milestones Section */}
-          <div id="tasks-milestones-section" className="border border-[#e5e5ea] rounded-xl p-4">
-            <div className="flex justify-between items-center mb-3.5 pb-1.5 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1B3A5C]">
-                  Milestones ({completedMilestones}/{MILESTONES.length})
-                </h3>
-                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">• Click to toggle status</span>
+          <div id="tasks-milestones-section" className="border-2 border-slate-200 bg-slate-50/40 rounded-2xl p-4 sm:p-5 shadow-xs">
+            <div className="relative flex flex-col items-center justify-center mb-4 pb-3.5 border-b border-slate-200">
+              <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-[#1B3A5C] text-center">
+                Milestones
+              </h3>
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                <span className="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-3 py-0.5 rounded-full font-mono shadow-2xs">
+                  {completedMilestones} of {MILESTONES.length} Completed
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">• Click pill to toggle status</span>
               </div>
               {hasIncompleteMilestones && (
-                <button 
-                  id="mark-all-milestones-done-btn"
-                  onClick={handleCompleteAllMilestones}
-                  className="text-xs text-[#1B3A5C] hover:text-[#11253C] font-bold hover:underline transition-all cursor-pointer"
-                >
-                  Mark All Done
-                </button>
+                <div className="sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 mt-2.5 sm:mt-0">
+                  <button 
+                    id="mark-all-milestones-done-btn"
+                    onClick={handleCompleteAllMilestones}
+                    className="text-xs bg-white hover:bg-slate-100 text-[#1B3A5C] font-bold border border-slate-300 px-3 py-1.5 rounded-lg transition-all shadow-2xs hover:border-[#1B3A5C] cursor-pointer"
+                  >
+                    Mark All Done
+                  </button>
+                </div>
               )}
             </div>
             <div id="milestones-pills-list" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -133,23 +138,37 @@ export function MilestonesContingenciesModal({
             </div>
           </div>
 
+          {/* Section Divider */}
+          <div className="flex items-center justify-center gap-3 my-1">
+            <div className="h-px bg-slate-200/90 flex-1" />
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3 py-1 rounded-full bg-slate-100 border border-slate-200/80">
+              Escrow Conditions & Contingencies
+            </span>
+            <div className="h-px bg-slate-200/90 flex-1" />
+          </div>
+
           {/* Contingencies Section */}
-          <div id="tasks-contingencies-section" className="border border-[#e5e5ea] rounded-xl p-4">
-            <div className="flex justify-between items-center mb-3.5 pb-1.5 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1B3A5C]">
-                  Contingencies Status ({completedContingencies}/{applicableContingencies.length})
-                </h3>
-                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">• Click to toggle status</span>
+          <div id="tasks-contingencies-section" className="border-2 border-slate-200 bg-slate-50/40 rounded-2xl p-4 sm:p-5 shadow-xs">
+            <div className="relative flex flex-col items-center justify-center mb-4 pb-3.5 border-b border-slate-200">
+              <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-[#1B3A5C] text-center">
+                Contingencies Status
+              </h3>
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                <span className="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-3 py-0.5 rounded-full font-mono shadow-2xs">
+                  {completedContingencies} of {applicableContingencies.length} Removed
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">• Click pill to toggle status</span>
               </div>
               {hasIncompleteContingencies && (
-                <button 
-                  id="mark-all-contingencies-done-btn"
-                  onClick={handleCompleteAllContingencies}
-                  className="text-xs text-[#1B3A5C] hover:text-[#11253C] font-bold hover:underline transition-all cursor-pointer"
-                >
-                  Mark All Done
-                </button>
+                <div className="sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 mt-2.5 sm:mt-0">
+                  <button 
+                    id="mark-all-contingencies-done-btn"
+                    onClick={handleCompleteAllContingencies}
+                    className="text-xs bg-white hover:bg-slate-100 text-[#1B3A5C] font-bold border border-slate-300 px-3 py-1.5 rounded-lg transition-all shadow-2xs hover:border-[#1B3A5C] cursor-pointer"
+                  >
+                    Mark All Done
+                  </button>
+                </div>
               )}
             </div>
             <div id="contingencies-pills-list" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
