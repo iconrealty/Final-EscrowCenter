@@ -137,11 +137,15 @@ export function MilestonesContingenciesModal({
           {/* Contingencies Section */}
           <div id="tasks-contingencies-section" className="border border-[#e5e5ea] rounded-xl p-4">
             <div className="flex justify-between items-center mb-3.5 pb-1.5 border-b border-slate-100">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1B3A5C]">
-                Contingencies Removed ({completedContingencies}/{applicableContingencies.length})
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1B3A5C]">
+                  Contingencies Removed ({completedContingencies}/{applicableContingencies.length})
+                </h3>
+                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">• Click to toggle removed</span>
+              </div>
               {hasIncompleteContingencies && (
                 <button 
+                  id="mark-all-contingencies-done-btn"
                   onClick={handleCompleteAllContingencies}
                   className="text-xs text-[#1B3A5C] hover:text-[#11253C] font-bold hover:underline transition-all cursor-pointer"
                 >
@@ -149,7 +153,7 @@ export function MilestonesContingenciesModal({
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div id="contingencies-pills-list" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {applicableContingencies.map(c => (
                 <ContingencyChip 
                   key={c.key}

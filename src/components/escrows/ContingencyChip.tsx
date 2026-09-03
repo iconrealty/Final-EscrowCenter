@@ -1,5 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
+import { Check, CheckCircle2 } from 'lucide-react';
 
 export function ContingencyChip({ 
   taskKey,
@@ -21,91 +22,134 @@ export function ContingencyChip({
   daysLeft?: number | null;
   dueDate?: Date | null;
 }) {
-  let btnClasses = "inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase border transition-all duration-200 select-none max-w-full ";
-  let dotClasses = "w-1.5 h-1.5 rounded-full shrink-0 ";
-
-  if (isDone) {
-    btnClasses += "bg-[#1B3A5C] border-[#1B3A5C] text-white shadow-sm";
-    dotClasses += "bg-white";
-  } else if (isOverdue) {
-    btnClasses += "bg-amber-50 border-amber-200 text-amber-700 shadow-sm";
-    if (!readOnly) {
-      btnClasses += " hover:border-amber-400 hover:text-amber-800 hover:bg-amber-100/50 cursor-pointer";
-    }
-    dotClasses += "bg-amber-500 animate-pulse";
-  } else {
-    btnClasses += "bg-white border-[#e5e5ea] text-[#86868b]";
-    if (!readOnly) {
-      btnClasses += " hover:border-slate-300 hover:text-[#1d1d1f] hover:bg-slate-50/50 cursor-pointer";
-    }
-    dotClasses += "bg-[#e5e5ea]";
-  }
-
   const expDateStr = dueDate ? format(dueDate, 'MMM d') : null;
+  const isUrgent = isOverdue || (daysLeft !== null && daysLeft !== undefined && daysLeft <= 2);
+  const isApproaching = !isUrgent && daysLeft !== null && daysLeft !== undefined && daysLeft >= 3 && daysLeft <= 5;
 
-  let mainLabel = `${taskKey} - ${label}`;
-  let parenText = '';
+  let containerClasses = "w-full flex items-center justify-between gap-2.5 p-2.5 rounded-xl border transition-all duration-150 select-none shadow-xs text-left ";
+  let keyBadgeClasses = "text-xs font-mono font-bold px-2 py-0.5 rounded-md shrink-0 ";
+  let labelClasses = "text-xs sm:text-sm truncate min-w-0 flex-1 ";
 
   if (isDone) {
-    mainLabel = `DONE - ${taskKey} - ${label}`;
-    if (expDateStr) {
-      parenText = `(Exp: ${expDateStr})`;
+    containerClasses += "bg-[#1B3A5C] border-[#1B3A5C] text-white shadow-xs";
+    if (!readOnly) {
+      containerClasses += " hover:bg-[#152e4a] cursor-pointer active:scale-[0.99]";
     }
-  } else if (daysLeft !== null && daysLeft !== undefined) {
-    if (daysLeft > 1) {
-      parenText = expDateStr ? `(${expDateStr} • ${daysLeft}d left)` : `(${daysLeft} days left)`;
-    } else if (daysLeft === 1) {
-      parenText = expDateStr ? `(${expDateStr} • 1d left)` : `(1 day left)`;
-    } else if (daysLeft === 0) {
-      parenText = expDateStr ? `(${expDateStr} • Due today)` : `(Due today)`;
-    } else if (daysLeft === -1) {
-      parenText = expDateStr ? `(${expDateStr} • 1d overdue)` : `(1 day overdue)`;
-    } else {
-      parenText = expDateStr ? `(${expDateStr} • ${Math.abs(daysLeft)}d overdue)` : `(${Math.abs(daysLeft)} days overdue)`;
+    keyBadgeClasses += "bg-white/20 text-white";
+    labelClasses += "font-bold text-white";
+  } else if (isUrgent) {
+    containerClasses += "bg-rose-50 border-rose-200/90 text-slate-900 shadow-xs";
+    if (!readOnly) {
+      containerClasses += " hover:bg-rose-100/70 hover:border-rose-300 cursor-pointer active:scale-[0.99]";
     }
-  } else if (expDateStr) {
-    parenText = `(Exp: ${expDateStr})`;
+    keyBadgeClasses += "bg-rose-200/90 text-rose-900";
+    labelClasses += "font-bold text-slate-900";
+  } else if (isApproaching) {
+    containerClasses += "bg-amber-50/70 border-amber-200 text-slate-900 shadow-xs";
+    if (!readOnly) {
+      containerClasses += " hover:bg-amber-100/60 hover:border-amber-300 cursor-pointer active:scale-[0.99]";
+    }
+    keyBadgeClasses += "bg-amber-200/90 text-amber-900";
+    labelClasses += "font-bold text-slate-900";
+  } else {
+    containerClasses += "bg-white border-slate-200 text-slate-900 shadow-xs";
+    if (!readOnly) {
+      containerClasses += " hover:border-slate-300 hover:bg-slate-50/80 cursor-pointer active:scale-[0.99]";
+    }
+    keyBadgeClasses += "bg-slate-100 text-slate-700";
+    labelClasses += "font-semibold text-slate-800";
   }
 
-  // Parenthesis color logic:
-  // - Green if time is ok (>= 6 days left)
-  // - Orange if between 4-5 days remaining (3 to 5 days left)
-  // - Red if expired (< 0) or expiring on less than 2 days (<= 2 days)
-  let parenColorClass = '';
+  // Right-hand status badge text
+  let statusBadgeContent: React.ReactNode = null;
+
   if (isDone) {
-    parenColorClass = 'text-emerald-300 font-extrabold';
-  } else if (daysLeft !== null && daysLeft !== undefined) {
-    if (daysLeft <= 2) {
-      parenColorClass = 'text-rose-600 font-extrabold';
-    } else if (daysLeft >= 3 && daysLeft <= 5) {
-      parenColorClass = 'text-amber-600 font-extrabold';
+    statusBadgeContent = (
+      <span className="text-xs font-bold bg-white/15 text-emerald-300 px-2.5 py-1 rounded-lg shrink-0 flex items-center gap-1.5 whitespace-nowrap shadow-2xs">
+        <Check size={13} strokeWidth={3} className="text-emerald-300" />
+        <span>Removed</span>
+        {expDateStr && <span className="text-white/70 font-normal text-[11px]">({expDateStr})</span>}
+      </span>
+    );
+  } else if (isUrgent) {
+    let statusText = '';
+    if (daysLeft !== null && daysLeft !== undefined) {
+      if (daysLeft < 0) statusText = `${Math.abs(daysLeft)}d overdue`;
+      else if (daysLeft === 0) statusText = 'Due today';
+      else if (daysLeft === 1) statusText = '1d left';
+      else statusText = `${daysLeft}d left`;
     } else {
-      parenColorClass = 'text-emerald-600 font-extrabold';
+      statusText = 'Urgent';
     }
-  } else if (expDateStr) {
-    parenColorClass = 'text-emerald-600 font-extrabold';
+
+    statusBadgeContent = (
+      <span className="text-xs font-bold bg-white border border-rose-200 text-rose-700 px-2.5 py-1 rounded-lg shrink-0 flex items-center gap-1.5 whitespace-nowrap shadow-2xs">
+        {expDateStr && <span className="text-slate-700 font-semibold">{expDateStr}</span>}
+        <span className="font-extrabold text-rose-600">({statusText})</span>
+      </span>
+    );
+  } else if (isApproaching) {
+    const statusText = `${daysLeft}d left`;
+    statusBadgeContent = (
+      <span className="text-xs font-bold bg-white border border-amber-200 text-amber-800 px-2.5 py-1 rounded-lg shrink-0 flex items-center gap-1.5 whitespace-nowrap shadow-2xs">
+        {expDateStr && <span className="text-slate-700 font-semibold">{expDateStr}</span>}
+        <span className="font-extrabold text-amber-700">({statusText})</span>
+      </span>
+    );
+  } else {
+    statusBadgeContent = (
+      <span className="text-xs font-bold bg-slate-100 border border-slate-200/70 text-slate-700 px-2.5 py-1 rounded-lg shrink-0 flex items-center gap-1.5 whitespace-nowrap">
+        {expDateStr && <span className="text-slate-700 font-medium">{expDateStr}</span>}
+        {daysLeft !== null && daysLeft !== undefined ? (
+          <span className="font-bold text-emerald-700">({daysLeft}d left)</span>
+        ) : !expDateStr ? (
+          <span>Active</span>
+        ) : null}
+      </span>
+    );
   }
 
-  const tooltipTitle = dueDate ? `Due: ${format(dueDate, 'EEE, MMM d, yyyy')}` : undefined;
+  const tooltipTitle = dueDate 
+    ? `${label} (${taskKey}) - Due: ${format(dueDate, 'EEE, MMM d, yyyy')}${daysLeft !== null && daysLeft !== undefined ? ` • ${daysLeft}d left` : ''}${isDone ? ' • Marked Removed' : ' • Click to mark removed'}`
+    : `${label} (${taskKey})${isDone ? ' • Marked Removed' : ' • Click to mark removed'}`;
 
   const content = (
     <>
-      <span className={dotClasses}></span>
-      <span>{mainLabel}</span>
-      {parenText && <span className={`ml-0.5 ${parenColorClass}`}>{parenText}</span>}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        {isDone ? (
+          <CheckCircle2 size={16} className="text-emerald-300 shrink-0" />
+        ) : isUrgent ? (
+          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
+        ) : isApproaching ? (
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+        ) : (
+          <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0" />
+        )}
+        <span className={keyBadgeClasses}>{taskKey}</span>
+        <span className={labelClasses}>{label}</span>
+      </div>
+      {statusBadgeContent}
     </>
   );
 
+  const elementId = `contingency-chip-${taskKey.toLowerCase()}`;
+
   if (readOnly) {
     return (
-      <div className={btnClasses} title={tooltipTitle}>
+      <div id={elementId} className={containerClasses} title={tooltipTitle}>
         {content}
       </div>
     );
   }
 
   return (
-    <button onClick={onClick} className={`${btnClasses} cursor-pointer`} title={tooltipTitle}>
+    <button
+      id={elementId}
+      type="button"
+      onClick={onClick}
+      className={containerClasses}
+      title={tooltipTitle}
+    >
       {content}
     </button>
   );
