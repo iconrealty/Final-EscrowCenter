@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Escrow, formatPropertyAddress, adjustWeekendToMonday } from '../../types';
-import { X, MessageSquare, Mail, Copy, Check, ChevronDown } from 'lucide-react';
+import { X, MessageSquare, Mail, Check, ChevronDown } from 'lucide-react';
 import { parseISO, format, addDays, differenceInCalendarDays } from 'date-fns';
 import { motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
@@ -19,94 +19,118 @@ const OLD_LISTING_OPEN_V2 = 'Hi [Escrow Officer],\n\nPlease open escrow for our 
 
 const OLD_LISTING_OPEN_V3 = 'Hi [Escrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Seller2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!';
 
-const TEMPLATES = [
+export type TemplateSide = 'buyer' | 'seller' | 'both';
+
+export interface EmailTemplate {
+  id: string;
+  label: string;
+  subject: string;
+  text: string;
+  side: TemplateSide;
+}
+
+const TEMPLATES: EmailTemplate[] = [
   {
     id: 'first_escrow_email',
-    label: 'First Escrow Email / Request to Open (Buyer)',
+    label: 'First Escrow Email (Buyer)',
     subject: 'First Escrow Email - [Address]',
-    text: 'Hi [Escrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the escrow term, buyer, lender, and Transaction Coordinator information.\n\nEscrow Length: [EscrowDays] Days\nEstimated Closing Date (COE): [COE]\n\nBuyers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Buyer2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
+    text: 'Hi [Escrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the escrow term, buyer, lender, and Transaction Coordinator information.\n\nEscrow Length: [EscrowDays] Days\nEstimated Closing Date (COE): [COE]\n\nBuyers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Buyer2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!',
+    side: 'buyer'
   },
   {
     id: 'request_open_escrow_listing',
     label: 'Request to Open Escrow (Listing side)',
     subject: 'Request to Open Escrow: [Address]',
-    text: 'Hi [Escrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nEscrow Length: [EscrowDays] Days\nEstimated Closing Date (COE): [COE]\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Seller2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!'
+    text: 'Hi [Escrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nEscrow Length: [EscrowDays] Days\nEstimated Closing Date (COE): [COE]\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Seller2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!',
+    side: 'seller'
   },
   {
     id: 'opening',
     label: 'Escrow Opened (Buyer)',
     subject: 'Escrow Opened: [Address]',
-    text: 'Hi [ClientName], Escrow has officially been opened 🎉\nTarget Closing Date: [COE] ([EscrowDays] Days Escrow)\n\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nLENDER:\n\nLender: [LenderName]\nLender email: [LenderEmail]\nLender phone number: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nEscrow will be sending you wire instructions shortly for the initial deposit (3%). Please follow the instructions carefully. If you have any questions at any time, I’m always available.\n\nInspection: I’m coordinating the inspection, tentatively for Wednesday afternoon. I’ll confirm availability and keep you posted.'
+    text: 'Hi [ClientName], Escrow has officially been opened 🎉\nTarget Closing Date: [COE] ([EscrowDays] Days Escrow)\n\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nLENDER:\n\nLender: [LenderName]\nLender email: [LenderEmail]\nLender phone number: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nEscrow will be sending you wire instructions shortly for the initial deposit (3%). Please follow the instructions carefully. If you have any questions at any time, I’m always available.\n\nInspection: I’m coordinating the inspection, tentatively for Wednesday afternoon. I’ll confirm availability and keep you posted.',
+    side: 'buyer'
   },
   {
     id: 'opening_listing',
     label: 'Escrow Opened (Listing)',
     subject: 'Escrow Opened: [Address]',
-    text: 'Hi [ClientName], Escrow has officially been opened 🎉\nTarget Closing Date: [COE] ([EscrowDays] Days Escrow)\n\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nWe will be coordinating the next steps with the buyer\'s side. If you have any questions at any time, I’m always available.'
+    text: 'Hi [ClientName], Escrow has officially been opened 🎉\nTarget Closing Date: [COE] ([EscrowDays] Days Escrow)\n\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nWe will be coordinating the next steps with the buyer\'s side. If you have any questions at any time, I’m always available.',
+    side: 'seller'
   },
   {
     id: 'inspection_day',
     label: 'Schedule Inspection',
     subject: 'Schedule Inspection - [Address]',
-    text: 'Hi [ClientFirstName],\n\nThe inspection usually takes about 1.5 hours, and I recommend that you be present for at least the last 30 minutes so the inspector can walk you through the main findings. \nAt the same time, we’ll be conducting our initial visual home inspection.'
+    text: 'Hi [ClientFirstName],\n\nThe inspection usually takes about 1.5 hours, and I recommend that you be present for at least the last 30 minutes so the inspector can walk you through the main findings. \nAt the same time, we’ll be conducting our initial visual home inspection.',
+    side: 'buyer'
   },
   {
     id: 'emd',
     label: 'EMD Received by Escrow',
     subject: 'EMD Received - [Address]',
-    text: 'Hi [ClientName], this is to confirm that your Earnest Money Deposit (EMD) has been successfully received by [EscrowOfficer]. That is another major milestone complete! I will keep you posted on the next steps. - [AgentName]'
+    text: 'Hi [ClientName], this is to confirm that your Earnest Money Deposit (EMD) has been successfully received by [EscrowOfficer]. That is another major milestone complete! I will keep you posted on the next steps. - [AgentName]',
+    side: 'both'
   },
   {
     id: 'insurance',
     label: 'Get Insurance (Buyer)',
     subject: 'Home Insurance Quotes - [Address]',
-    text: 'Hi [ClientName],\n\nNow its time to get quotes on Home insurance, you can try first with your actual insurance company if you need any additional quotes please let me know. - [AgentName]'
+    text: 'Hi [ClientName],\n\nNow its time to get quotes on Home insurance, you can try first with your actual insurance company if you need any additional quotes please let me know. - [AgentName]',
+    side: 'buyer'
   },
   {
     id: 'appraisal',
     label: 'Appraisal Completed',
     subject: 'Appraisal Completed - [Address]',
-    text: 'Hi [ClientName], fantastic news! The property appraisal for [Address] has been completed and it came in at value! We are in great shape to move forward. - [AgentName]'
+    text: 'Hi [ClientName], fantastic news! The property appraisal for [Address] has been completed and it came in at value! We are in great shape to move forward. - [AgentName]',
+    side: 'both'
   },
   {
     id: 'disclosures',
     label: 'Disclosures Reviewed (Buyer)',
     subject: 'Disclosures Completed - [Address]',
-    text: 'Hi [ClientName], we have successfully completed the review and signature of all seller disclosures for [Address]. Thank you for your prompt responses! - [AgentName]'
+    text: 'Hi [ClientName], we have successfully completed the review and signature of all seller disclosures for [Address]. Thank you for your prompt responses! - [AgentName]',
+    side: 'buyer'
   },
   {
     id: 'loan_approval',
     label: 'Signing Appointment',
     subject: 'Signing Appointment - [Address]',
-    text: 'Hi [ClientName], congratulations! Your lender ([LenderName]) has issued the Final Loan Approval! This is a major milestone and means we are almost at the finish line. Next up will be signing our final loan documents. - [AgentName]'
+    text: 'Hi [ClientName], congratulations! Your lender ([LenderName]) has issued the Final Loan Approval! This is a major milestone and means we are almost at the finish line. Next up will be signing our final loan documents. - [AgentName]',
+    side: 'buyer'
   },
   {
     id: 'contingencies',
     label: 'Contingencies Removal',
     subject: 'Contingencies Removal - [Address]',
-    text: 'Hi [ClientName], we have officially removed the contingencies for your escrow on [Address]! This is a huge milestone that secures our position and brings us one step closer to closing on [COE]. - [AgentName]'
+    text: 'Hi [ClientName], we have officially removed the contingencies for your escrow on [Address]! This is a huge milestone that secures our position and brings us one step closer to closing on [COE]. - [AgentName]',
+    side: 'both'
   },
   {
     id: 'signing',
     label: 'Signed Docs sent to lender',
     subject: 'Signed Docs Sent to Lender - [Address]',
-    text: 'Hi [ClientName], great job signing the final escrow and loan documents today! We are now waiting on the final lender review, funding, and recording. - [AgentName]'
+    text: 'Hi [ClientName], great job signing the final escrow and loan documents today! We are now waiting on the final lender review, funding, and recording. - [AgentName]',
+    side: 'buyer'
   },
   {
     id: 'funds',
     label: 'Final Funds Wired',
     subject: 'Final Wire Received - [Address]',
-    text: 'Hi [ClientName], the escrow company has confirmed receipt of your final wire deposit. Everything is set on your side for recording. - [AgentName]'
+    text: 'Hi [ClientName], the escrow company has confirmed receipt of your final wire deposit. Everything is set on your side for recording. - [AgentName]',
+    side: 'buyer'
   },
   {
     id: 'closing',
     label: 'Transaction Closed',
     subject: 'Congratulations! Escrow Closed - [Address]',
-    text: 'Hi [ClientName], IT IS OFFICIAL! Our transaction has recorded and escrow is officially CLOSED on [Address]! Congratulations on your home! It has been an absolute pleasure working with you. - [AgentName]'
+    text: 'Hi [ClientName], IT IS OFFICIAL! Our transaction has recorded and escrow is officially CLOSED on [Address]! Congratulations on your home! It has been an absolute pleasure working with you. - [AgentName]',
+    side: 'both'
   }
 ];
 
-const upgradeTemplateIfNeeded = (t: typeof TEMPLATES[number], custom?: { id: string; text?: string; subject?: string }) => {
+const upgradeTemplateIfNeeded = (t: EmailTemplate, custom?: { id: string; text?: string; subject?: string }): EmailTemplate => {
   if (!custom || !custom.text) return t;
 
   // Upgrade 'request_open_escrow_listing' if it doesn't contain Lender or Seller 2 details or EscrowDays
@@ -201,11 +225,32 @@ export function ClientUpdatesModal({
     loadCloudTemplates();
   }, [user]);
 
-  // Initial template: default to 'first_escrow_email' or 'request_open_escrow_listing' based on representation
-  const defaultTemplateId = escrow.representation === 'Seller' ? 'request_open_escrow_listing' : 'first_escrow_email';
+  // Initial template: default to 'first_escrow_email' (Buyer)
+  const defaultTemplateId = 'first_escrow_email';
   const [selectedTemplateId, setSelectedTemplateId] = useState(defaultTemplateId);
   const isEscrowOfficerTemplate = selectedTemplateId === 'first_escrow_email' || selectedTemplateId === 'request_open_escrow_listing';
   
+  // Representation-aware filter tab: pre-select 'buyer' by default
+  const [sideFilter, setSideFilter] = useState<'buyer' | 'seller' | 'all'>('buyer');
+
+  // Filtered templates list based on sideFilter
+  const filteredTemplates = useMemo(() => {
+    if (sideFilter === 'all') return templates;
+    return templates.filter(t => t.side === sideFilter || t.side === 'both');
+  }, [templates, sideFilter]);
+
+  const handleSideFilterChange = (newSide: 'buyer' | 'seller' | 'all') => {
+    setSideFilter(newSide);
+    const nextTemplates = newSide === 'all' 
+      ? templates 
+      : templates.filter(t => t.side === newSide || t.side === 'both');
+    
+    const isCurrentStillVisible = nextTemplates.some(t => t.id === selectedTemplateId);
+    if (!isCurrentStillVisible && nextTemplates.length > 0) {
+      setSelectedTemplateId(nextTemplates[0].id);
+    }
+  };
+
   // Escrow Days & Start Date State
   const initialStartDate = useMemo(() => {
     if (escrow.acceptanceDate) return escrow.acceptanceDate;
@@ -542,24 +587,6 @@ export function ClientUpdatesModal({
     }
   };
 
-  const handleResetCurrentToDefault = async () => {
-    const original = TEMPLATES.find(t => t.id === selectedTemplateId);
-    if (original) {
-      const updated = templates.map(t => t.id === selectedTemplateId ? { ...original } : t);
-      setTemplates(updated);
-      localStorage.setItem('escrow_custom_templates', JSON.stringify(updated));
-      if (user) {
-        try {
-          const docRef = doc(db, 'users', user.uid);
-          await setDoc(docRef, { customTemplates: updated }, { merge: true });
-        } catch (err) {
-          console.error("Error updating centralized templates:", err);
-        }
-      }
-      setEditedText(getPopulatedText(original.text));
-    }
-  };
-
   const insertPlaceholder = (tag: string, field: 'subject' | 'text') => {
     if (field === 'subject') {
       const input = subjectInputRef.current;
@@ -603,13 +630,13 @@ export function ClientUpdatesModal({
       >
         {/* Header */}
         <div className="px-5 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-center bg-slate-50 shrink-0">
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1B3A5C]/60 block mb-0.5">Escrow Updates</span>
-            <h2 className="font-extrabold text-base sm:text-lg text-[#1B3A5C] truncate max-w-[220px] sm:max-w-none" title={escrow.address}>
+          <div className="min-w-0 pr-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/60 block mb-0.5">Escrow Updates</span>
+            <h2 className="font-extrabold text-base sm:text-lg text-black truncate max-w-[220px] sm:max-w-none" title={escrow.address}>
               {escrow.address}
             </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setIsEditingMaster(!isEditingMaster)}
               className={`px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center transition-all cursor-pointer ${
@@ -635,20 +662,70 @@ export function ClientUpdatesModal({
             <>
               {/* Template Selection Dropdown */}
               <div className="relative w-full z-30">
-                <label className="text-[10px] font-extrabold uppercase tracking-widest text-[#1B3A5C]/60 block mb-1.5">
-                  Select Email / Update Template
-                </label>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <label className="text-[10px] font-extrabold uppercase tracking-widest text-black/60">
+                    Select Email / Update Template
+                  </label>
+
+                  {/* Minimalist Segmented Pill: Buyer / Seller / All */}
+                  <div className="inline-flex self-start sm:self-auto bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-[11px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => handleSideFilterChange('buyer')}
+                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                        sideFilter === 'buyer'
+                          ? 'bg-black text-white shadow-xs font-extrabold'
+                          : 'text-slate-600 hover:text-black'
+                      }`}
+                    >
+                      Buyer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSideFilterChange('seller')}
+                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                        sideFilter === 'seller'
+                          ? 'bg-black text-white shadow-xs font-extrabold'
+                          : 'text-slate-600 hover:text-black'
+                      }`}
+                    >
+                      Seller
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSideFilterChange('all')}
+                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                        sideFilter === 'all'
+                          ? 'bg-black text-white shadow-xs font-extrabold'
+                          : 'text-slate-600 hover:text-black'
+                      }`}
+                    >
+                      All
+                    </button>
+                  </div>
+                </div>
+
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-white border border-[#e5e5ea] hover:border-[#1B3A5C]/30 rounded-2xl text-sm font-bold text-[#1B3A5C] shadow-sm transition-all cursor-pointer select-none active:scale-[0.99]"
+                    className="w-full flex items-center justify-between px-4 py-3 bg-white border border-[#e5e5ea] hover:border-black/30 rounded-2xl text-sm font-bold text-black shadow-sm transition-all cursor-pointer select-none active:scale-[0.99]"
                   >
-                    <span className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      {selectedTemplate.label}
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span className="truncate">{selectedTemplate.label}</span>
+                      {selectedTemplate.side === 'seller' && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/60 shrink-0">
+                          Seller
+                        </span>
+                      )}
+                      {selectedTemplate.side === 'buyer' && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200/60 shrink-0">
+                          Buyer
+                        </span>
+                      )}
                     </span>
-                    <ChevronDown size={18} className={`text-slate-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={18} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isDropdownOpen && (
@@ -660,26 +737,43 @@ export function ClientUpdatesModal({
                       />
                       
                       {/* Floating dropdown options */}
-                      <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#e5e5ea] rounded-2xl shadow-xl overflow-hidden z-20 max-h-60 overflow-y-auto py-1.5 animate-in fade-in-50 slide-in-from-top-1">
-                        {templates.map((t) => (
+                      <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#e5e5ea] rounded-2xl shadow-xl overflow-hidden z-20 max-h-64 overflow-y-auto py-1.5 animate-in fade-in-50 slide-in-from-top-1">
+                        {filteredTemplates.map((t) => (
                           <button
                             key={t.id}
                             onClick={() => {
                               setSelectedTemplateId(t.id);
                               setIsDropdownOpen(false);
                             }}
-                            className={`w-full text-left px-4 py-3.5 text-xs sm:text-sm font-semibold transition-colors flex items-center justify-between cursor-pointer ${
+                            className={`w-full text-left px-4 py-3 text-xs sm:text-sm font-semibold transition-colors flex items-center justify-between cursor-pointer ${
                               selectedTemplateId === t.id
-                                ? 'bg-[#1B3A5C]/5 text-[#1B3A5C] font-extrabold'
+                                ? 'bg-slate-100 text-black font-extrabold'
                                 : 'text-slate-700 hover:bg-slate-50'
                             }`}
                           >
-                            <span>{t.label}</span>
+                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                              <span className="truncate">{t.label}</span>
+                              {t.side === 'seller' && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60 shrink-0">
+                                  Seller
+                                </span>
+                              )}
+                              {t.side === 'buyer' && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200/60 shrink-0">
+                                  Buyer
+                                </span>
+                              )}
+                            </div>
                             {selectedTemplateId === t.id && (
-                              <Check size={16} className="text-[#1B3A5C]" />
+                              <Check size={16} className="text-black shrink-0" />
                             )}
                           </button>
                         ))}
+                        {filteredTemplates.length === 0 && (
+                          <div className="px-4 py-3 text-xs text-slate-400 italic">
+                            No templates in this category
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
@@ -688,21 +782,13 @@ export function ClientUpdatesModal({
 
               {/* Workspace */}
               <div className="bg-slate-50 border border-[#e5e5ea] rounded-2xl p-4 flex flex-col gap-3">
-                <div className="flex justify-end items-center gap-2">
-                  {hasClient2 && !isEscrowOfficerTemplate && (
+                {hasClient2 && !isEscrowOfficerTemplate && (
+                  <div className="flex justify-end items-center">
                     <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-lg">
                       2 Clients on File
                     </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleResetCurrentToDefault}
-                    title="Reset this milestone message to latest default"
-                    className="text-[10px] font-bold text-slate-500 hover:text-[#1B3A5C] underline cursor-pointer"
-                  >
-                    Reset to default
-                  </button>
-                </div>
+                  </div>
+                )}
 
                 <textarea
                   value={editedText}
@@ -807,9 +893,21 @@ export function ClientUpdatesModal({
           ) : (
             <div className="bg-slate-50 border border-[#e5e5ea] rounded-2xl p-4 flex flex-col gap-4">
               <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                <h4 className="text-xs font-bold text-[#1B3A5C]">
-                  Editing template phrasing: <span className="text-slate-800 font-extrabold">{selectedTemplate.label}</span>
-                </h4>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-xs font-bold text-black">
+                    Editing template phrasing: <span className="text-slate-800 font-extrabold">{selectedTemplate.label}</span>
+                  </h4>
+                  {selectedTemplate.side === 'seller' && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60">
+                      Seller
+                    </span>
+                  )}
+                  {selectedTemplate.side === 'buyer' && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200/60">
+                      Buyer
+                    </span>
+                  )}
+                </div>
                 <button
                   onClick={handleResetTemplate}
                   className="text-[10px] text-slate-500 hover:text-slate-800 underline font-bold cursor-pointer"

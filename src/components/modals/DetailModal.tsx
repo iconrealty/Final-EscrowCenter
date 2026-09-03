@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Escrow, CONTINGENCIES, getContingencyDaysLeft, getContingencyDueDate, formatPropertyAddress } from '../../types';
-import { X, Pencil, Trash2, ExternalLink, Check, Calculator } from 'lucide-react';
+import { X, Pencil, Trash2, ExternalLink, Check, Calculator, Copy } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
@@ -41,6 +41,29 @@ export function DetailModal({
     : 0;
 
   const hasClient2 = !!(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim());
+  const [copiedAddress, setCopiedAddress] = useState(false);
+  const fullAddress = formatPropertyAddress(escrow) || escrow.address || '';
+
+  const handleCopyAddress = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!fullAddress) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(fullAddress);
+      } else {
+        const el = document.createElement('textarea');
+        el.value = fullAddress;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+      setCopiedAddress(true);
+      setTimeout(() => setCopiedAddress(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy address:', err);
+    }
+  };
 
   return (
     <div 
@@ -63,9 +86,28 @@ export function DetailModal({
                 {hasClient2 && ` & ${escrow.client2FirstName} ${escrow.client2LastName}`}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-black mb-2 truncate max-w-[240px] sm:max-w-none" title={formatPropertyAddress(escrow)}>
-              {formatPropertyAddress(escrow)}
-            </h2>
+            <div className="flex items-center gap-2 mb-2">
+              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-black truncate max-w-[240px] sm:max-w-none" title={fullAddress}>
+                {fullAddress}
+              </h2>
+              <button
+                type="button"
+                onClick={handleCopyAddress}
+                className={`p-1.5 rounded-lg transition-all cursor-pointer shrink-0 flex items-center justify-center ${
+                  copiedAddress 
+                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
+                    : 'text-slate-400 hover:text-[#1B3A5C] hover:bg-slate-100'
+                }`}
+                title={copiedAddress ? 'Address copied to clipboard!' : 'Copy address'}
+                aria-label="Copy address"
+              >
+                {copiedAddress ? (
+                  <Check size={16} className="text-emerald-600 stroke-[2.5]" />
+                ) : (
+                  <Copy size={16} className="stroke-[2.2]" />
+                )}
+              </button>
+            </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <StatusBadge status={escrow.status} />
               {escrow.mlsId && (

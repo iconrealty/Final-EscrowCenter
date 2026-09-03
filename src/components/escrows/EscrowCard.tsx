@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, getApplicableContingencies, formatPropertyAddress } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
-import { CheckCircle2, Users, Phone, MessageSquare, Mail, User } from 'lucide-react';
+import { CheckCircle2, Users, Phone, MessageSquare, Mail, User, Copy, Check } from 'lucide-react';
 
 export function EscrowCard({ 
   escrow, 
@@ -27,6 +27,30 @@ export function EscrowCard({
   onOpenContacts?: () => void;
   onOpenDocuments?: () => void;
 }) {
+  const [copiedAddress, setCopiedAddress] = useState(false);
+  const fullAddress = formatPropertyAddress(escrow) || escrow.address || '';
+
+  const handleCopyAddress = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!fullAddress) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(fullAddress);
+      } else {
+        const el = document.createElement('textarea');
+        el.value = fullAddress;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+      setCopiedAddress(true);
+      setTimeout(() => setCopiedAddress(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy address:', err);
+    }
+  };
+
   const daysToCoe = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
   const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
   
@@ -166,9 +190,28 @@ export function EscrowCard({
               {escrow.clientFirstName || ''} {escrow.clientLastName || ''}
               {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
             </div>
-            <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#11253C] tracking-tight line-clamp-2 transition-colors" title={formatPropertyAddress(escrow)}>
-              {formatPropertyAddress(escrow)}
-            </h3>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#11253C] tracking-tight line-clamp-2 transition-colors" title={fullAddress}>
+                {fullAddress}
+              </h3>
+              <button
+                type="button"
+                onClick={handleCopyAddress}
+                className={`p-1 rounded-md transition-all cursor-pointer shrink-0 flex items-center justify-center ${
+                  copiedAddress 
+                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-2xs' 
+                    : 'text-slate-400 hover:text-[#1B3A5C] hover:bg-slate-100'
+                }`}
+                title={copiedAddress ? 'Address copied to clipboard!' : 'Copy address'}
+                aria-label="Copy address"
+              >
+                {copiedAddress ? (
+                  <Check size={14} className="text-emerald-600 stroke-[2.5]" />
+                ) : (
+                  <Copy size={14} className="stroke-[2.2]" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
