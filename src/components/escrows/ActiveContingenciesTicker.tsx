@@ -40,9 +40,17 @@ export function ActiveContingenciesTicker({
     return (
       <div className="w-full flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
-            Active Contingencies
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span 
+              className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded bg-emerald-600 text-white font-mono text-xs font-black leading-none"
+              title="0 active contingencies"
+            >
+              0
+            </span>
+            <span className="text-[10px] sm:text-[11px] font-bold text-[#1B3A5C] uppercase tracking-wider">
+              Active Contingencies
+            </span>
+          </div>
         </div>
         <div 
           onClick={(e) => {
@@ -70,6 +78,7 @@ export function ActiveContingenciesTicker({
   const daysLeft = currentItem ? getContingencyDaysLeft(escrow, currentItem.key) : null;
   const dueDate = currentItem ? getContingencyDueDate(escrow, currentItem.key) : null;
   const isUrgent = currentItem ? isContingencyUrgent(escrow, currentItem.key) : false;
+  const hasAnyUrgent = activeContingencies.some(c => isContingencyUrgent(escrow, c.key));
 
   const renderDaysText = () => {
     const expDateStr = dueDate ? format(dueDate, 'MMM d') : null;
@@ -120,18 +129,28 @@ export function ActiveContingenciesTicker({
       onMouseLeave={() => setIsPaused(false)}
       className="w-full flex flex-col gap-1.5"
     >
-      {/* Title Header matching Next Step */}
+      {/* Title Header with active count in front */}
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
-          Active Contingencies
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span 
+            className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded text-white font-mono text-xs font-black leading-none ${
+              hasAnyUrgent ? 'bg-rose-600' : 'bg-[#D97706]'
+            }`}
+            title={`${activeContingencies.length} active contingencies remaining`}
+          >
+            {activeContingencies.length}
+          </span>
+          <span className="text-[10px] sm:text-[11px] font-bold text-[#1B3A5C] uppercase tracking-wider">
+            Active Contingencies
+          </span>
+        </div>
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onUpdateTasks?.();
           }}
-          className="text-[10px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
+          className="text-[10px] sm:text-[11px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
         >
           {currentIndex + 1} of {activeContingencies.length} Active &rarr;
         </button>
