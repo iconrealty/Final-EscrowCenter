@@ -219,23 +219,23 @@ export function EscrowCard({
         {/* Pricing, Acceptance Date, COE, Commission Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 bg-slate-50/90 p-3.5 sm:p-4 rounded-xl border border-slate-200">
           <div>
-            <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-black font-black mb-1">Price</div>
+            <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#1B3A5C] font-black mb-1">Price</div>
             <div className="text-sm sm:text-base font-black text-[#16a34a] tracking-tight leading-none">{formatCurrency(escrow.price)}</div>
           </div>
           <div>
-            <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-black font-black mb-1" title="Acceptance Date">Accepted</div>
+            <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#1B3A5C] font-black mb-1" title="Acceptance Date">Accepted</div>
             <div className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight truncate">
               {formatDateDisplay(escrow.acceptanceDate)}
             </div>
           </div>
           <div>
-            <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-black font-black mb-1" title="Close of Escrow (COE)">COE</div>
+            <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#1B3A5C] font-black mb-1" title="Close of Escrow (COE)">COE</div>
             <div className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight truncate">
               {formatDateDisplay(escrow.coeDate)}
             </div>
           </div>
           <div>
-            <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-black font-black mb-1">Net Commission</div>
+            <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#1B3A5C] font-black mb-1">Net Commission</div>
             <div className="text-sm sm:text-base font-black text-[#1B3A5C] tracking-tight leading-none">{formatCurrency(escrow.netCommission)}</div>
           </div>
         </div>
