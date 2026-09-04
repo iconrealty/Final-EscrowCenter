@@ -83,21 +83,6 @@ export function MilestonesContingenciesModal({
                 style={{ width: `${totalTasksCount > 0 ? (completedTasks / totalTasksCount) * 100 : 0}%` }}
               />
             </div>
-            
-            <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-slate-200/60">
-              <div className="text-center">
-                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Milestones</div>
-                <div className="text-sm font-extrabold text-[#1B3A5C] font-mono mt-0.5">
-                  {completedMilestones} / {MILESTONES.length}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Contingencies</div>
-                <div className="text-sm font-extrabold text-[#1B3A5C] font-mono mt-0.5">
-                  {completedContingencies} / {applicableContingencies.length}
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Milestones Section */}
