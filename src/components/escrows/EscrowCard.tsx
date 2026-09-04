@@ -343,8 +343,8 @@ export function EscrowCard({
                 <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
                 <span className="text-xs font-bold text-[#1B3A5C] uppercase tracking-wider">Escrow Completion</span>
               </div>
-              <div className="flex items-center gap-1.5 font-mono text-sm sm:text-base">
-                <span className="font-extrabold text-slate-900">{completedTasks} / {totalTasksCount} Tasks</span>
+              <div className="flex items-center gap-1 font-mono text-xs sm:text-sm">
+                <span className="font-black text-slate-900">{completedTasks}/{totalTasksCount} Tasks</span>
                 <span className="font-black text-slate-900">
                   ({Math.round((completedTasks / (totalTasksCount || 1)) * 100)}%)
                 </span>
