@@ -272,48 +272,40 @@ export function EscrowCard({
                   e.stopPropagation();
                   onUpdateTasks();
                 }}
-                className="relative overflow-hidden bg-blue-50/70 border border-blue-200/90 hover:border-blue-400 rounded-xl shadow-xs transition-all cursor-pointer group/step select-none"
+                className="relative overflow-hidden bg-slate-100 border border-slate-300 hover:border-slate-400 rounded-xl transition-all cursor-pointer group/step select-none"
                 title={`Click to update milestone (${completedMilestones}/${MILESTONES.length} completed)`}
               >
-                {/* Background Unfilled Track (Base Layer) */}
+                {/* Base Layer: Unfilled area with dark text */}
                 <div className="flex items-center justify-between p-2.5">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-[#2563EB] shrink-0" />
-                    <span className="text-xs font-bold text-slate-800 truncate">
+                    <span className="w-2 h-2 rounded-full bg-[#1B3A5C] shrink-0" />
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                       {nextMilestone.label}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                    <span className="text-[10px] font-mono font-bold text-[#1D4ED8] bg-blue-100/90 border border-blue-200 px-2 py-0.5 rounded-md">
+                    <span className="text-xs sm:text-sm font-black text-slate-900 font-mono">
                       {completedMilestones}/{MILESTONES.length} ({milestonePct}%)
                     </span>
                   </div>
                 </div>
 
-                {/* Animated Filling Blue Bar (Clipped Foreground Layer) */}
+                {/* Filling Rich Blue Progress Bar Layer (clipped to milestone progress) */}
                 <div 
-                  className="absolute inset-0 bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] flex items-center justify-between p-2.5 transition-all duration-500 ease-out pointer-events-none"
+                  className="absolute inset-0 bg-[#3B82F6] flex items-center justify-between p-2.5 transition-all duration-500 ease-out pointer-events-none"
                   style={{ clipPath: `inset(0 ${Math.max(0, 100 - milestonePct)}% 0 0)` }}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-white shrink-0 shadow-2xs" />
-                    <span className="text-xs font-bold text-white truncate">
+                    <span className="w-2 h-2 rounded-full bg-white shrink-0" />
+                    <span className="text-xs sm:text-sm font-bold text-white truncate">
                       {nextMilestone.label}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                    <span className="text-[10px] font-mono font-bold text-white bg-white/20 border border-white/30 px-2 py-0.5 rounded-md shadow-2xs">
+                    <span className="text-xs sm:text-sm font-black text-white font-mono">
                       {completedMilestones}/{MILESTONES.length} ({milestonePct}%)
                     </span>
                   </div>
-                </div>
-
-                {/* Bottom subtle progress line indicator */}
-                <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-200/50">
-                  <div 
-                    className="h-full bg-blue-700 transition-all duration-500 ease-out" 
-                    style={{ width: `${milestonePct}%` }}
-                  />
                 </div>
               </div>
             ) : (
@@ -322,17 +314,17 @@ export function EscrowCard({
                   e.stopPropagation();
                   onUpdateTasks();
                 }}
-                className="flex items-center justify-between bg-emerald-600 text-white border border-emerald-700/80 p-2.5 rounded-xl shadow-xs hover:bg-emerald-700 transition-all cursor-pointer select-none"
+                className="flex items-center justify-between bg-emerald-600 text-white border border-emerald-700 p-2.5 rounded-xl hover:bg-emerald-700 transition-all cursor-pointer select-none"
                 title={`All ${MILESTONES.length} milestones completed! Click to view details.`}
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <CheckCircle2 size={16} className="text-white shrink-0" />
-                  <span className="text-xs font-bold text-white truncate">
+                  <span className="text-xs sm:text-sm font-bold text-white truncate">
                     All {MILESTONES.length} Milestones Completed / COE Ready
                   </span>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
-                  {completedMilestones} / {MILESTONES.length} Done
+                <span className="text-xs sm:text-sm font-black text-white shrink-0">
+                  {completedMilestones}/{MILESTONES.length} (100%)
                 </span>
               </div>
             )}
@@ -349,12 +341,12 @@ export function EscrowCard({
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
-                <span className="text-[11px] font-bold text-[#1B3A5C] uppercase tracking-wider">Escrow Completion</span>
+                <span className="text-xs font-bold text-[#1B3A5C] uppercase tracking-wider">Escrow Completion</span>
               </div>
-              <div className="flex items-center gap-2 font-mono text-xs">
-                <span className="font-extrabold text-[#1d1d1f]">{completedTasks} / {totalTasksCount} Tasks</span>
-                <span className="font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-1.5 py-0.5 rounded text-[10px]">
-                  {Math.round((completedTasks / (totalTasksCount || 1)) * 100)}%
+              <div className="flex items-center gap-1.5 font-mono text-sm sm:text-base">
+                <span className="font-extrabold text-slate-900">{completedTasks} / {totalTasksCount} Tasks</span>
+                <span className="font-black text-slate-900">
+                  ({Math.round((completedTasks / (totalTasksCount || 1)) * 100)}%)
                 </span>
               </div>
             </div>
