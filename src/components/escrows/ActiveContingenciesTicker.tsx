@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Escrow, getApplicableContingencies, getContingencyDaysLeft, getContingencyDueDate, isContingencyUrgent } from '../../types';
 import { CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'motion/react';
 
 export function ActiveContingenciesTicker({
   escrow,
@@ -15,7 +16,6 @@ export function ActiveContingenciesTicker({
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [animateKey, setAnimateKey] = useState(0);
 
   // Keep index within range if tasks change
   useEffect(() => {
@@ -24,14 +24,13 @@ export function ActiveContingenciesTicker({
     }
   }, [activeContingencies.length, currentIndex]);
 
-  // 3 second cycle through active contingencies
+  // Cycle through active contingencies at a relaxed pace (4.5s)
   useEffect(() => {
     if (activeContingencies.length <= 1 || isPaused) return;
 
     const interval = setInterval(() => {
       setCurrentIndex(prev => (prev + 1) % activeContingencies.length);
-      setAnimateKey(k => k + 1);
-    }, 3000);
+    }, 4500);
 
     return () => clearInterval(interval);
   }, [activeContingencies.length, isPaused]);
@@ -156,28 +155,42 @@ export function ActiveContingenciesTicker({
         </button>
       </div>
 
-      {/* Main Box matching Next Step layout */}
+      {/* Main Box matching Next Step layout with dial/roll transition */}
       <div 
         onClick={(e) => {
           e.stopPropagation();
           onUpdateTasks?.();
         }}
-        className={`w-full flex items-center justify-between gap-2.5 text-white border p-2.5 rounded-xl shadow-xs transition-all cursor-pointer group/step select-none overflow-hidden ${boxBgClass}`}
+        className={`w-full relative min-h-[42px] flex items-center text-white border p-2.5 rounded-xl shadow-xs transition-colors duration-500 cursor-pointer group/step select-none overflow-hidden ${boxBgClass}`}
         title={dueDate ? `${currentItem?.label} - Due: ${format(dueDate, 'EEE, MMM d, yyyy')} (${daysLeft}d left). Click to manage tasks.` : 'Active contingency. Click to manage tasks.'}
       >
-        <div key={animateKey} className="flex items-center gap-2 min-w-0 flex-1 animate-fadeIn overflow-hidden">
-          <span className="w-2 h-2 rounded-full bg-white shrink-0 shadow-2xs animate-pulse" />
-          <span className="text-[10px] font-mono font-bold bg-white/20 text-white px-1.5 py-0.5 rounded shrink-0">
-            {currentItem?.key}
-          </span>
-          <span className="text-xs font-bold text-white truncate min-w-0">
-            {currentItem?.label}
-          </span>
-        </div>
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={currentItem?.key || currentIndex}
+            initial={{ y: -36, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 36, opacity: 0 }}
+            transition={{ 
+              duration: 0.75, 
+              ease: [0.22, 1, 0.36, 1] 
+            }}
+            className="w-full flex items-center justify-between gap-2.5 min-w-0"
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+              <span className="w-2 h-2 rounded-full bg-white shrink-0 shadow-2xs animate-pulse" />
+              <span className="text-[10px] font-mono font-bold bg-white/20 text-white px-1.5 py-0.5 rounded shrink-0">
+                {currentItem?.key}
+              </span>
+              <span className="text-xs font-bold text-white truncate min-w-0">
+                {currentItem?.label}
+              </span>
+            </div>
 
-        <span className={`text-[10px] font-bold bg-white px-2.5 py-1 rounded-md shrink-0 shadow-2xs whitespace-nowrap flex items-center gap-1 ${badgeTextClass}`}>
-          {renderDaysText()}
-        </span>
+            <span className={`text-[10px] font-bold bg-white px-2.5 py-1 rounded-md shrink-0 shadow-2xs whitespace-nowrap flex items-center gap-1 ${badgeTextClass}`}>
+              {renderDaysText()}
+            </span>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
