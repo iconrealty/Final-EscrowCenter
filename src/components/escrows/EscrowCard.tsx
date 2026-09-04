@@ -57,6 +57,7 @@ export function EscrowCard({
   const applicableContingencies = getApplicableContingencies(escrow);
   const totalTasksCount = MILESTONES.length + applicableContingencies.length;
   const completedMilestones = MILESTONES.filter(t => escrow.tasks[t.key]).length;
+  const milestonePct = Math.round((completedMilestones / MILESTONES.length) * 100);
   const completedContingencies = applicableContingencies.filter(t => escrow.tasks[t.key]).length;
   const completedTasks = completedMilestones + completedContingencies;
 
@@ -271,18 +272,49 @@ export function EscrowCard({
                   e.stopPropagation();
                   onUpdateTasks();
                 }}
-                className="flex items-center justify-between bg-[#3B82F6] text-white border border-blue-600/80 p-2.5 rounded-xl shadow-xs hover:bg-[#2563EB] transition-all cursor-pointer group/step"
-                title="Click to update task status"
+                className="relative overflow-hidden bg-blue-50/70 border border-blue-200/90 hover:border-blue-400 rounded-xl shadow-xs transition-all cursor-pointer group/step select-none"
+                title={`Click to update milestone (${completedMilestones}/${MILESTONES.length} completed)`}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-2 h-2 rounded-full bg-white shrink-0 shadow-2xs" />
-                  <span className="text-xs font-bold text-white truncate">
-                    {nextMilestone.label}
-                  </span>
+                {/* Background Unfilled Track (Base Layer) */}
+                <div className="flex items-center justify-between p-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2 h-2 rounded-full bg-[#2563EB] shrink-0" />
+                    <span className="text-xs font-bold text-slate-800 truncate">
+                      {nextMilestone.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0 pl-2">
+                    <span className="text-[10px] font-mono font-bold text-[#1D4ED8] bg-blue-100/90 border border-blue-200 px-2 py-0.5 rounded-md">
+                      {completedMilestones}/{MILESTONES.length} ({milestonePct}%)
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[10px] font-bold text-[#3B82F6] bg-white px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
-                  Pending
-                </span>
+
+                {/* Animated Filling Blue Bar (Clipped Foreground Layer) */}
+                <div 
+                  className="absolute inset-0 bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] flex items-center justify-between p-2.5 transition-all duration-500 ease-out pointer-events-none"
+                  style={{ clipPath: `inset(0 ${Math.max(0, 100 - milestonePct)}% 0 0)` }}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2 h-2 rounded-full bg-white shrink-0 shadow-2xs" />
+                    <span className="text-xs font-bold text-white truncate">
+                      {nextMilestone.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0 pl-2">
+                    <span className="text-[10px] font-mono font-bold text-white bg-white/20 border border-white/30 px-2 py-0.5 rounded-md shadow-2xs">
+                      {completedMilestones}/{MILESTONES.length} ({milestonePct}%)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom subtle progress line indicator */}
+                <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-200/50">
+                  <div 
+                    className="h-full bg-blue-700 transition-all duration-500 ease-out" 
+                    style={{ width: `${milestonePct}%` }}
+                  />
+                </div>
               </div>
             ) : (
               <div 
@@ -328,32 +360,11 @@ export function EscrowCard({
             </div>
 
             {/* Primary Horizontal Progress Bar */}
-            <div className="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden mb-2.5">
+            <div className="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-[#1B3A5C] to-[#2B5A8C] rounded-full transition-all duration-500"
                 style={{ width: `${Math.round((completedTasks / (totalTasksCount || 1)) * 100)}%` }}
               />
-            </div>
-
-            {/* Breakdown Sub-Bar: Milestones */}
-            <div className="pt-2 border-t border-slate-200/60">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-slate-700 flex items-center gap-1 text-[10px] uppercase tracking-wider">
-                    <span className={`w-1.5 h-1.5 rounded-full ${completedMilestones === MILESTONES.length ? 'bg-emerald-600' : 'bg-[#3B82F6]'}`} />
-                    Milestones Progress
-                  </span>
-                  <span className={`font-mono font-bold text-[10px] ${completedMilestones === MILESTONES.length ? 'text-emerald-600 font-extrabold' : 'text-slate-600'}`}>
-                    {completedMilestones}/{MILESTONES.length} ({Math.round((completedMilestones / MILESTONES.length) * 100)}%)
-                  </span>
-                </div>
-                <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all duration-500 ${completedMilestones === MILESTONES.length ? 'bg-emerald-600' : 'bg-[#3B82F6]'}`}
-                    style={{ width: `${Math.round((completedMilestones / MILESTONES.length) * 100)}%` }}
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
