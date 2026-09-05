@@ -1,6 +1,5 @@
 import React from 'react';
 import { LayoutDashboard, Calendar, Gift } from 'lucide-react';
-import { motion } from 'motion/react';
 
 interface MobileFloatingNavProps {
   activeTab: string;
@@ -51,30 +50,21 @@ export function MobileFloatingNav({ activeTab, setActiveTab }: MobileFloatingNav
               className="relative flex-1 h-12 flex flex-col items-center justify-center transition-transform duration-150 cursor-pointer active:scale-95 bg-transparent border-0 outline-none"
             >
               {item.isMonogram ? (
-                <span className={`font-black text-[22px] tracking-tight leading-none font-sans flex items-baseline transition-opacity ${
-                  isActive ? 'text-[#1B3A5C] opacity-100 scale-105' : 'text-[#1B3A5C] opacity-50 hover:opacity-90'
+                <span className={`font-black text-[22px] tracking-tight leading-none font-sans flex items-baseline transition-all ${
+                  isActive ? 'text-[#1B3A5C] scale-110' : 'text-[#1B3A5C]/35 hover:text-[#1B3A5C]/75'
                 }`}>
                   S<span className="text-[#1B3A5C] text-2xl leading-none">.</span>
                 </span>
               ) : (
                 Icon && (
                   <Icon 
-                    size={22} 
-                    strokeWidth={2.5} 
-                    className={`transition-all text-[#1B3A5C] ${
-                      isActive ? 'opacity-100 scale-105' : 'opacity-50 hover:opacity-90'
+                    size={23} 
+                    strokeWidth={isActive ? 2.6 : 2} 
+                    className={`transition-all ${
+                      isActive ? 'text-[#1B3A5C] scale-110' : 'text-[#1B3A5C]/35 hover:text-[#1B3A5C]/75'
                     }`} 
                   />
                 )
-              )}
-
-              {/* Active indicator dot */}
-              {isActive && (
-                <motion.span 
-                  layoutId="mobileNavActiveDot"
-                  className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#1B3A5C]" 
-                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                />
               )}
             </button>
           );
