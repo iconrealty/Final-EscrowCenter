@@ -63,7 +63,7 @@ export function EscrowTableModal({
         const city = (e.city || '').toLowerCase();
         const zipCode = (e.zipCode || '').toLowerCase();
         const clientName = `${e.clientFirstName || ''} ${e.clientLastName || ''}`.toLowerCase();
-        const escrowNum = (e.escrowNumber || '').toLowerCase();
+        const clientPhone = (e.clientPhone || '').toLowerCase();
         const mlsId = (e.mlsId || '').toLowerCase();
         const escrowComp = (e.escrowCompany || '').toLowerCase();
         const titleComp = (e.titleCompany || '').toLowerCase();
@@ -76,7 +76,7 @@ export function EscrowTableModal({
           city.includes(query) ||
           zipCode.includes(query) ||
           clientName.includes(query) ||
-          escrowNum.includes(query) ||
+          clientPhone.includes(query) ||
           mlsId.includes(query) ||
           escrowComp.includes(query) ||
           titleComp.includes(query) ||
@@ -287,7 +287,7 @@ export function EscrowTableModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search address, client, escrow #..."
+              placeholder="Search address, client, phone, MLS ID..."
               className="w-full bg-slate-50 border border-[#e5e5ea] rounded-xl pl-9 pr-8 py-1.5 text-xs text-[#1d1d1f] placeholder-[#86868b] focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#1B3A5C]"
             />
             {search && (
@@ -345,8 +345,8 @@ export function EscrowTableModal({
               <thead className="bg-slate-100/90 text-slate-600 text-[11px] font-bold uppercase tracking-wider sticky top-0 z-10 border-b border-slate-200">
                 <tr>
                   <th className="py-2.5 px-3 w-[220px]">Address</th>
-                  <th className="py-2.5 px-3 w-[100px]">Escrow #</th>
                   <th className="py-2.5 px-3 w-[100px]">MLS ID</th>
+                  <th className="py-2.5 px-3 w-[130px]">Phone Number</th>
                   <th className="py-2.5 px-3 w-[160px]">Client Name</th>
                   <th className="py-2.5 px-3 w-[110px]">Status</th>
                   <th className="py-2.5 px-3 w-[100px]">Side</th>
@@ -379,17 +379,6 @@ export function EscrowTableModal({
                         />
                       </td>
 
-                      {/* Escrow # */}
-                      <td className="py-1.5 px-2">
-                        <input
-                          type="text"
-                          value={escrow.escrowNumber || ''}
-                          onChange={(e) => handleFieldChange(escrow.id, 'escrowNumber', e.target.value)}
-                          placeholder="Escrow #"
-                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono text-slate-600 text-xs transition-all outline-none"
-                        />
-                      </td>
-
                       {/* MLS ID */}
                       <td className="py-1.5 px-2">
                         <input
@@ -398,6 +387,17 @@ export function EscrowTableModal({
                           onChange={(e) => handleFieldChange(escrow.id, 'mlsId', e.target.value)}
                           placeholder="MLS ID"
                           className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono text-slate-600 text-xs transition-all outline-none"
+                        />
+                      </td>
+
+                      {/* Phone Number */}
+                      <td className="py-1.5 px-2">
+                        <input
+                          type="tel"
+                          value={escrow.clientPhone || ''}
+                          onChange={(e) => handleFieldChange(escrow.id, 'clientPhone', e.target.value)}
+                          placeholder="Phone #"
+                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-mono text-slate-700 text-xs transition-all outline-none"
                         />
                       </td>
 
