@@ -23,7 +23,6 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
   const { success: showSuccess, error: showError, warning: showWarning } = useToast();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showCsvDropdown, setShowCsvDropdown] = useState(false);
-  const [showMobileNav, setShowMobileNav] = useState(false);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -107,68 +106,6 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
           >
             Anniversaries
           </button>
-        </div>
-
-        {/* Mobile View Selector Dropdown */}
-        <div className="md:hidden relative">
-          <button
-            onClick={() => setShowMobileNav(!showMobileNav)}
-            className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-[#1B3A5C] px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-200/80 cursor-pointer"
-          >
-            <span>{activeTab === 'active' ? 'Home' : activeTab === 'summary' ? 'Summary' : activeTab === 'calendar' ? 'Production' : 'Anniversaries'}</span>
-            <ChevronDown size={14} className={`transition-transform duration-200 ${showMobileNav ? 'rotate-180' : ''}`} />
-          </button>
-
-          {showMobileNav && (
-            <>
-              <div 
-                className="fixed inset-0 z-40" 
-                onClick={() => setShowMobileNav(false)}
-              />
-              <div className="absolute left-0 mt-2 w-44 bg-white border border-[#e5e5ea] rounded-2xl shadow-xl py-2 z-50 animate-scale-up">
-                <button
-                  onClick={() => {
-                    setActiveTab('active');
-                    setShowMobileNav(false);
-                  }}
-                  className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${activeTab === 'active' ? 'bg-[#1B3A5C]/10 text-[#1B3A5C]' : 'text-slate-700 hover:bg-slate-50'}`}
-                >
-                  <span>Home (Escrows)</span>
-                  {activeTab === 'active' && <span className="w-1.5 h-1.5 rounded-full bg-[#1B3A5C]" />}
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('summary');
-                    setShowMobileNav(false);
-                  }}
-                  className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${activeTab === 'summary' ? 'bg-[#1B3A5C]/10 text-[#1B3A5C]' : 'text-slate-700 hover:bg-slate-50'}`}
-                >
-                  <span>Summary</span>
-                  {activeTab === 'summary' && <span className="w-1.5 h-1.5 rounded-full bg-[#1B3A5C]" />}
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('calendar');
-                    setShowMobileNav(false);
-                  }}
-                  className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${activeTab === 'calendar' ? 'bg-[#1B3A5C]/10 text-[#1B3A5C]' : 'text-slate-700 hover:bg-slate-50'}`}
-                >
-                  <span>Production</span>
-                  {activeTab === 'calendar' && <span className="w-1.5 h-1.5 rounded-full bg-[#1B3A5C]" />}
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('anniversaries');
-                    setShowMobileNav(false);
-                  }}
-                  className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${activeTab === 'anniversaries' ? 'bg-[#1B3A5C]/10 text-[#1B3A5C]' : 'text-slate-700 hover:bg-slate-50'}`}
-                >
-                  <span>Anniversaries</span>
-                  {activeTab === 'anniversaries' && <span className="w-1.5 h-1.5 rounded-full bg-[#1B3A5C]" />}
-                </button>
-              </div>
-            </>
-          )}
         </div>
       </div>
 

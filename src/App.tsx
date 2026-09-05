@@ -22,6 +22,7 @@ import { GoalsModal } from './components/modals/GoalsModal';
 import { ContactsModal } from './components/modals/ContactsModal';
 import { DocumentsModal } from './components/modals/DocumentsModal';
 import { EscrowTableModal } from './components/modals/EscrowTableModal';
+import { MobileFloatingNav } from './components/layout/MobileFloatingNav';
 
 import { useEscrows } from './hooks/useEscrows';
 import { useToast } from './context/ToastContext';
@@ -162,7 +163,7 @@ function App() {
     <div className="min-h-screen bg-slate-50 flex font-sans">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      <div className="flex-1 md:ml-[60px] flex flex-col min-h-screen pb-16 md:pb-0">
+      <div className="flex-1 md:ml-[60px] flex flex-col min-h-screen pb-24 md:pb-0">
         <TopNav 
           activeTab={activeTab} 
           setActiveTab={setActiveTab} 
@@ -419,33 +420,8 @@ function App() {
         />
       )}
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-[#e5e5ea] flex justify-around items-center z-50 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] pb-safe">
-        {[
-          { id: 'active', icon: Home, label: 'Home' },
-          { id: 'summary', icon: LayoutDashboard, label: 'Summary' },
-          { id: 'calendar', icon: Calendar, label: 'Production' },
-          { id: 'anniversaries', icon: Gift, label: 'Anniv.' },
-        ].map((item) => {
-          const isActive = activeTab === item.id;
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className="flex flex-col items-center justify-center gap-1 flex-1 max-w-[72px] sm:max-w-[80px] h-full transition-colors relative"
-            >
-              <Icon size={20} className={isActive ? "text-[#1B3A5C]" : "text-[#86868b]"} />
-              <span className={`text-[10px] font-bold ${isActive ? "text-[#1B3A5C]" : "text-[#86868b]"}`}>
-                {item.label}
-              </span>
-              {isActive && (
-                <div className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-[#1B3A5C] rounded-full" />
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* Floating Bottom Navigation Menu (Real App Style) */}
+      <MobileFloatingNav activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   );
 }

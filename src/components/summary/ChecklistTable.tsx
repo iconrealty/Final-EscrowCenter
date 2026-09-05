@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Escrow, ALL_TASKS } from '../../types';
+import { Escrow } from '../../types';
 import { getEscrowYear } from '../../utils/csvUtils';
-import { Trash2, Calendar, User, CheckCircle2, ChevronRight, ChevronDown, Users, Filter, Clock } from 'lucide-react';
+import { Trash2, Calendar, User, ChevronRight, Users, Clock, DollarSign } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { StatusBadge } from '../shared/StatusBadge';
 import { SummaryFilterContext } from './SalesSummary';
@@ -305,17 +305,19 @@ export function ChecklistTable({
             <div className="col-span-1 text-center">#</div>
             <div className="col-span-3">Address / Escrow #</div>
             <div className="col-span-2">Client</div>
-            <div className="col-span-2">COE Date</div>
-            <div className="col-span-2">Task Progress</div>
+            <div className="col-span-1">COE Date</div>
+            <div className="col-span-2">Lead Source</div>
+            <div className="col-span-1 text-right">Net Comm</div>
             <div className="col-span-1 text-center">Status</div>
             <div className="col-span-1 text-right">Action</div>
           </div>
 
           {/* List of Escrows */}
           {sortedEscrows.map((escrow, index) => {
-            const completed = ALL_TASKS.filter((t) => escrow.tasks[t.key]).length;
-            const totalTasks = ALL_TASKS.length;
-            const pct = Math.round((completed / totalTasks) * 100);
+            const formatCurrency = (val?: number) => {
+              if (val === undefined || val === null || isNaN(val)) return '$0';
+              return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+            };
             
             const formatItemDate = (dateStr?: string) => {
               if (!dateStr) return 'N/A';
@@ -389,23 +391,29 @@ export function ChecklistTable({
                 </div>
 
                 {/* COE Date Column */}
-                <div className="col-span-2 mt-1 md:mt-0 flex items-center gap-1.5 text-xs text-[#334155]">
+                <div className="col-span-1 mt-1 md:mt-0 flex items-center gap-1.5 text-xs text-[#334155]">
                   <Calendar size={13} className="text-[#86868b] shrink-0 md:hidden" />
-                  <span className="font-mono">{coeFormatted}</span>
+                  <span className="font-mono whitespace-nowrap">{coeFormatted}</span>
                 </div>
 
-                {/* Progress Bar Column */}
-                <div className="col-span-2 mt-3 md:mt-0 flex flex-col gap-1 w-full max-w-md md:max-w-none">
-                  <div className="flex justify-between text-[10px] font-bold text-[#86868b]">
-                    <span className="md:hidden uppercase tracking-wider">Progress</span>
-                    <span>{completed}/{totalTasks} Tasks ({pct}%)</span>
-                  </div>
-                  <div className="w-full bg-[#e5e5ea] h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-[#1B3A5C] h-full rounded-full transition-all duration-300"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
+                {/* Lead Source Column */}
+                <div className="col-span-2 mt-2 md:mt-0 flex items-center gap-1.5 text-xs text-[#334155] min-w-0">
+                  <span className="md:hidden text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Lead Source:</span>
+                  {escrow.leadSource ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold border border-slate-200/80 truncate" title={escrow.leadSource}>
+                      {escrow.leadSource}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 text-xs italic">-</span>
+                  )}
+                </div>
+
+                {/* Net Commission Column */}
+                <div className="col-span-1 mt-1 md:mt-0 flex items-center md:justify-end gap-1.5 text-xs">
+                  <span className="md:hidden text-[10px] font-bold text-[#86868b] uppercase tracking-wider">Net Comm:</span>
+                  <span className="font-extrabold text-[#16a34a] font-mono tracking-tight whitespace-nowrap">
+                    {formatCurrency(escrow.netCommission || 0)}
+                  </span>
                 </div>
 
                 {/* Status Column (Desktop only) */}
