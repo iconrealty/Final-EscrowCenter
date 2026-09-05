@@ -108,11 +108,11 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-2.5 sm:gap-5 w-full">
           {/* Goals & Performance title + Year */}
           <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
-            <span className="text-xs sm:text-[13px] font-black tracking-tight text-black flex items-center gap-1.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-900 flex items-center gap-1.5">
               <span>Goals &amp; Performance</span>
-              <span className="text-[#1B3A5C]">{actualYear}</span>
+              <span className="text-[#1B3A5C] font-normal">{actualYear}</span>
             </span>
-            <span className="text-[10px] text-slate-400 font-bold sm:hidden">Click to view</span>
+            <span className="text-[10px] text-slate-400 font-medium sm:hidden">Click to view</span>
           </div>
 
           <div className="h-4 w-px bg-slate-200 hidden sm:block shrink-0" />
@@ -121,10 +121,10 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
           <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:gap-7 w-full sm:w-auto">
             {/* Units Column / Group */}
             <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 text-center sm:text-left">
-              <span className="text-xs sm:text-[13px] font-black text-black uppercase tracking-wider hidden sm:inline">
+              <span className="text-xs sm:text-[13px] font-semibold text-slate-800 uppercase tracking-wider hidden sm:inline">
                 UNITS:
               </span>
-              <span className={`text-xs sm:text-[13px] font-black px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all w-full sm:w-auto text-center ${
+              <span className={`text-xs sm:text-[13px] font-bold px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all w-full sm:w-auto text-center ${
                 isUnitsOnTrack 
                   ? 'bg-[#15803d] text-white border border-[#166534]' 
                   : 'bg-[#b91c1c] text-white border border-[#991b1b]'
@@ -132,10 +132,10 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
                 {unitsStatusText}
               </span>
               <div className="flex items-center justify-center gap-1">
-                <span className="text-[11px] font-black text-black uppercase tracking-wider sm:hidden">
+                <span className="text-[11px] font-semibold text-slate-800 uppercase tracking-wider sm:hidden">
                   UNITS
                 </span>
-                <span className="text-[11px] sm:text-[13px] font-bold text-slate-800">
+                <span className="text-[11px] sm:text-[13px] font-medium text-slate-700">
                   ({closedYtd}/{goalTargetUnits})
                 </span>
               </div>
@@ -145,10 +145,10 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
 
             {/* Income Column / Group */}
             <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 text-center sm:text-left">
-              <span className="text-xs sm:text-[13px] font-black text-black uppercase tracking-wider hidden sm:inline">
+              <span className="text-xs sm:text-[13px] font-semibold text-slate-800 uppercase tracking-wider hidden sm:inline">
                 INCOME:
               </span>
-              <span className={`text-xs sm:text-[13px] font-black px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all w-full sm:w-auto text-center ${
+              <span className={`text-xs sm:text-[13px] font-bold px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all w-full sm:w-auto text-center ${
                 isIncomeOnTrack 
                   ? 'bg-[#15803d] text-white border border-[#166534]' 
                   : 'bg-[#b91c1c] text-white border border-[#991b1b]'
@@ -156,10 +156,10 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
                 {incomeStatusText}
               </span>
               <div className="flex items-center justify-center gap-1 max-w-full">
-                <span className="text-[11px] font-black text-black uppercase tracking-wider sm:hidden">
+                <span className="text-[11px] font-semibold text-slate-800 uppercase tracking-wider sm:hidden">
                   INCOME
                 </span>
-                <span className="text-[11px] sm:text-[13px] font-bold text-slate-800 truncate">
+                <span className="text-[11px] sm:text-[13px] font-medium text-slate-700 truncate">
                   ({formatCurrency(closedCommission)} / {formatCurrency(goalTargetIncome)})
                 </span>
               </div>
