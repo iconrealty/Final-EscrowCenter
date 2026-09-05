@@ -106,10 +106,11 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
         title="Click to view Goals & Performance Tracker"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-2.5 sm:gap-5 w-full">
-          {/* Year header */}
+          {/* Goals & Performance title + Year */}
           <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
-            <span className="text-xs font-black uppercase tracking-[1px] text-[#1B3A5C]">
-              {actualYear}
+            <span className="text-xs sm:text-[13px] font-black tracking-tight text-black flex items-center gap-1.5">
+              <span>Goals &amp; Performance</span>
+              <span className="text-[#1B3A5C]">{actualYear}</span>
             </span>
             <span className="text-[10px] text-slate-400 font-bold sm:hidden">Click to view</span>
           </div>
