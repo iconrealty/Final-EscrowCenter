@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Escrow, EscrowDocument, CONTINGENCIES, adjustWeekendToMonday, parseAddressComponents } from '../../types';
-import { X, FileText, CheckCircle2, Calculator, Sparkles, RefreshCw, Info, Paperclip } from 'lucide-react';
+import { X, FileText, CheckCircle2, Calculator, Sparkles, RefreshCw, Info, Paperclip, UserCheck, Home, Users, ArrowRight, Upload, AlertCircle } from 'lucide-react';
 import { addMonths, addDays, parseISO, format, differenceInCalendarDays } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { storage } from '../../lib/firebase';
@@ -35,6 +35,12 @@ export function AddEditModal({
   const [isDragging, setIsDragging] = useState(false);
   const [pendingDocs, setPendingDocs] = useState<EscrowDocument[]>([]);
   const [l9Enabled, setL9Enabled] = useState(() => Boolean(escrow?.contingencyDays?.['L9'] && Number(escrow?.contingencyDays?.['L9']) > 0));
+
+  // Step 1: Force representation selection for new escrows before or while importing MLS
+  const [setupCompleted, setSetupCompleted] = useState<boolean>(() => Boolean(escrow));
+  const [selectedRep, setSelectedRep] = useState<'Buyer' | 'Seller' | 'Dual' | null>(() => escrow?.representation || null);
+  const [showRepRequiredError, setShowRepRequiredError] = useState(false);
+  const [pendingFileToProcess, setPendingFileToProcess] = useState<File | null>(null);
 
   const [formData, setFormData] = useState(() => {
     return {
@@ -182,11 +188,13 @@ export function AddEditModal({
     return formattedInteger + decimalPart;
   };
 
-  const applyExtractedDocumentData = (data: any, sourceLabel: string) => {
+  const applyExtractedDocumentData = (data: any, sourceLabel: string, overrideRep?: 'Buyer' | 'Seller' | 'Dual') => {
     if (!data) {
       setScanError('Could not find listing details in the provided file. You can enter them manually below.');
       return;
     }
+
+    const repToUse = overrideRep || selectedRep || formData.representation || 'Buyer';
 
     const hasAnyField = Boolean(
       data.address || data.price || data.apn || data.agentName || 
@@ -219,6 +227,7 @@ export function AddEditModal({
 
       return {
         ...prev,
+        representation: repToUse,
         escrowNumber: data.escrowNumber || prev.escrowNumber,
         mlsId: data.mlsId || prev.mlsId,
         address: data.address || prev.address,
@@ -303,8 +312,45 @@ export function AddEditModal({
     });
   };
 
-  const handleProcessFile = async (file: File) => {
+  const handleSelectRepresentation = (rep: 'Buyer' | 'Seller' | 'Dual') => {
+    setSelectedRep(rep);
+    setFormData(prev => ({ ...prev, representation: rep }));
+    setShowRepRequiredError(false);
+
+    // If user dropped or selected a file before choosing representation, process it now!
+    if (pendingFileToProcess) {
+      const file = pendingFileToProcess;
+      setPendingFileToProcess(null);
+      setSetupCompleted(true);
+      handleProcessFile(file, rep);
+    }
+  };
+
+  const handleProceedManually = () => {
+    if (!selectedRep) {
+      setShowRepRequiredError(true);
+      return;
+    }
+    setFormData(prev => ({ ...prev, representation: selectedRep }));
+    setSetupCompleted(true);
+  };
+
+  const handleTriggerBrowse = () => {
+    if (!selectedRep) {
+      setShowRepRequiredError(true);
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
+  const handleProcessFile = async (file: File, overrideRep?: 'Buyer' | 'Seller' | 'Dual') => {
     if (!file) return;
+    const repToUse = overrideRep || selectedRep || formData.representation || 'Buyer';
+    setFormData(prev => ({ ...prev, representation: repToUse }));
+    setSelectedRep(repToUse);
+    setSetupCompleted(true);
+    setShowRepRequiredError(false);
+
     lastFileRef.current = file;
     setIsScanning(true);
     setScanError('');
@@ -323,8 +369,8 @@ export function AddEditModal({
           if (res && res.fullText && res.fullText.trim().length > 10) {
             // Check MLS patterns
             const mls = parseMlsText(res.fullText);
-            // Check RPA / contract patterns
-            const rpa = parseCaliforniaRpaText(res.fullText, res.pagesText, res.lines, formData.representation);
+            // Check RPA / contract patterns with repToUse
+            const rpa = parseCaliforniaRpaText(res.fullText, res.pagesText, res.lines, repToUse);
             
             // Merge both intelligently
             extractedData = {
@@ -351,7 +397,7 @@ export function AddEditModal({
         );
 
         if (hasValidClientData) {
-          applyExtractedDocumentData(extractedData, file.name);
+          applyExtractedDocumentData(extractedData, file.name, repToUse);
           return;
         }
 
@@ -364,9 +410,9 @@ export function AddEditModal({
           });
           reader.readAsDataURL(file);
           const dataUrl = await base64Promise;
-          const serverDoc = await parseFullEscrowRPA(dataUrl, file.type || 'application/pdf', file.name, formData.representation);
+          const serverDoc = await parseFullEscrowRPA(dataUrl, file.type || 'application/pdf', file.name, repToUse);
           if (serverDoc && (serverDoc.address || serverDoc.price || serverDoc.agentName || serverDoc.apn || serverDoc.clientLastName)) {
-            applyExtractedDocumentData(serverDoc, file.name);
+            applyExtractedDocumentData(serverDoc, file.name, repToUse);
             return;
           }
         } catch (serverErr: any) {
@@ -374,7 +420,7 @@ export function AddEditModal({
         }
 
         if (extractedData && (extractedData.address || extractedData.price || extractedData.apn || extractedData.mlsId || extractedData.agentName)) {
-          applyExtractedDocumentData(extractedData, file.name);
+          applyExtractedDocumentData(extractedData, file.name, repToUse);
           return;
         }
 
@@ -384,7 +430,7 @@ export function AddEditModal({
         const text = await file.text();
         const parsed = parseMlsText(text);
         if (parsed && (parsed.address || parsed.price || parsed.apn || parsed.mlsId || parsed.agentName)) {
-          applyExtractedDocumentData(parsed, file.name);
+          applyExtractedDocumentData(parsed, file.name, repToUse);
         } else {
           setScanError(`"${file.name}" was attached, but no MLS fields could be recognized in the text.`);
         }
@@ -409,7 +455,27 @@ export function AddEditModal({
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleProcessFile(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      if (!setupCompleted && !selectedRep) {
+        setPendingFileToProcess(file);
+        setShowRepRequiredError(true);
+      } else {
+        handleProcessFile(file, selectedRep || formData.representation);
+      }
+    }
+  };
+
+  const handleSetupDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (!selectedRep) {
+        setPendingFileToProcess(file);
+        setShowRepRequiredError(true);
+      } else {
+        handleProcessFile(file, selectedRep);
+      }
     }
   };
 
@@ -507,9 +573,17 @@ export function AddEditModal({
         notes: escrow.notes || '',
         contingencyDays: stringifiedDays
       });
+      setSetupCompleted(true);
+      setSelectedRep(escrow.representation || 'Buyer');
+      setShowRepRequiredError(false);
+      setPendingFileToProcess(null);
       setL9Enabled(Boolean(escrow.contingencyDays?.['L9'] && Number(escrow.contingencyDays?.['L9']) > 0));
       setPendingDocs([]);
     } else {
+      setSetupCompleted(false);
+      setSelectedRep(null);
+      setShowRepRequiredError(false);
+      setPendingFileToProcess(null);
       setL9Enabled(false);
       setPendingDocs([]);
       setFormData({
@@ -775,52 +849,210 @@ export function AddEditModal({
   return (
     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-3 pt-12 pb-6 sm:p-6 overflow-hidden">
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80dvh] sm:max-h-[88vh]">
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={e => {
+            const file = e.target.files?.[0];
+            if (file) {
+              if (!setupCompleted && !selectedRep) {
+                setPendingFileToProcess(file);
+                setShowRepRequiredError(true);
+              } else {
+                handleProcessFile(file, selectedRep || formData.representation);
+              }
+            }
+            e.target.value = '';
+          }} 
+          accept=".pdf,.txt,.csv" 
+          className="hidden" 
+        />
+
         <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e5e5ea] flex items-center justify-between bg-slate-50 shrink-0">
-          <h2 className="font-bold text-base sm:text-lg text-[#1d1d1f]">{escrow ? 'Edit Escrow' : 'New Escrow'}</h2>
+          <div className="flex items-center gap-2.5">
+            <h2 className="font-bold text-base sm:text-lg text-[#1d1d1f]">
+              {escrow ? 'Edit Escrow' : 'New Escrow'}
+            </h2>
+            {!escrow && setupCompleted && (
+              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                formData.representation === 'Seller' 
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                  : formData.representation === 'Dual'
+                    ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                    : 'bg-blue-50 text-blue-900 border-blue-200'
+              }`}>
+                Representing {formData.representation}
+              </span>
+            )}
+          </div>
           <button type="button" onClick={onClose} className="text-[#86868b] hover:text-[#1d1d1f] p-1 cursor-pointer"><X size={20} /></button>
         </div>
-        
-        <div className="p-6 overflow-y-auto flex-1">
-          {/* MLS Quick-Importer & Auto-Fill Banner */}
-          <div className="mb-5 bg-gradient-to-br from-slate-50 to-blue-50/40 border border-blue-200/60 rounded-2xl p-4 sm:p-5 shadow-2xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-blue-100">
-              {/* Representation Selector - Placed on the Left for High Visibility */}
-              <div className="flex items-center gap-1.5 bg-white border border-slate-300 p-1 rounded-xl shadow-xs self-start sm:self-auto">
-                <span className="text-xs font-bold text-slate-800 px-2">Representing:</span>
+
+        {/* If initial representation step not completed for new escrow, force representation choice & MLS choice */}
+        {!setupCompleted ? (
+          <div 
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleSetupDrop}
+            className="p-5 sm:p-7 overflow-y-auto flex-1 space-y-6"
+          >
+            {/* Pending File Notification */}
+            {pendingFileToProcess && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5 flex items-center gap-3 text-xs text-blue-950 shadow-2xs animate-in fade-in duration-200">
+                <FileText size={18} className="text-[#1B3A5C] shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm text-slate-900 truncate">Document ready: {pendingFileToProcess.name}</p>
+                  <p className="text-blue-800 text-xs mt-0.5">Select who you represent below (Buyer, Seller, or Dual) to continue.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Representation Required Alert */}
+            {showRepRequiredError && !pendingFileToProcess && (
+              <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 flex items-center gap-2.5 text-xs text-amber-950 shadow-2xs animate-in fade-in duration-200">
+                <AlertCircle size={18} className="text-amber-600 shrink-0" />
+                <span>Please select who you are representing (Buyer, Seller, or Dual) to proceed.</span>
+              </div>
+            )}
+
+            {/* Step 1: Who are you representing? */}
+            <div className="space-y-2.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+                1. Who are you representing?
+              </label>
+
+              <div className="grid grid-cols-3 gap-3">
+                {/* Buyer */}
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, representation: 'Buyer' }))}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    formData.representation === 'Buyer'
-                      ? 'bg-[#1B3A5C] text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
+                  onClick={() => handleSelectRepresentation('Buyer')}
+                  className={`py-3.5 px-4 rounded-xl border text-center font-bold text-sm transition-all duration-150 cursor-pointer ${
+                    selectedRep === 'Buyer'
+                      ? 'border-[#1B3A5C] bg-[#1B3A5C] text-white shadow-xs'
+                      : showRepRequiredError
+                        ? 'border-amber-300 bg-amber-50/40 text-slate-800 hover:border-slate-400'
+                        : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
                   Buyer
                 </button>
+
+                {/* Seller */}
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, representation: 'Seller' }))}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    formData.representation === 'Seller'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+                  onClick={() => handleSelectRepresentation('Seller')}
+                  className={`py-3.5 px-4 rounded-xl border text-center font-bold text-sm transition-all duration-150 cursor-pointer ${
+                    selectedRep === 'Seller'
+                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs'
+                      : showRepRequiredError
+                        ? 'border-amber-300 bg-amber-50/40 text-slate-800 hover:border-slate-400'
+                        : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
                   Seller
                 </button>
+
+                {/* Dual */}
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, representation: 'Dual' }))}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    formData.representation === 'Dual'
-                      ? 'bg-[#11253C] text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
+                  onClick={() => handleSelectRepresentation('Dual')}
+                  className={`py-3.5 px-4 rounded-xl border text-center font-bold text-sm transition-all duration-150 cursor-pointer ${
+                    selectedRep === 'Dual'
+                      ? 'border-indigo-600 bg-indigo-600 text-white shadow-xs'
+                      : showRepRequiredError
+                        ? 'border-amber-300 bg-amber-50/40 text-slate-800 hover:border-slate-400'
+                        : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
                   Dual
                 </button>
               </div>
+            </div>
+
+            {/* Step 2: MLS vs Manual */}
+            <div className="space-y-2.5 pt-3 border-t border-slate-200/80">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+                2. Are you adding an MLS sheet or entering manually?
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Option 1: Drop / Upload MLS */}
+                <div
+                  onClick={handleTriggerBrowse}
+                  className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all duration-150 flex items-center justify-center ${
+                    isDragging
+                      ? 'border-[#1B3A5C] bg-[#1B3A5C]/10 scale-[0.99]'
+                      : 'border-slate-300 hover:border-[#1B3A5C] bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="text-sm font-bold text-slate-900">
+                    Drop MLS Sheet <span className="text-[#1B3A5C] font-semibold underline">(or browse)</span>
+                  </span>
+                </div>
+
+                {/* Option 2: Enter Manually */}
+                <div
+                  onClick={handleProceedManually}
+                  className="border border-slate-200 rounded-xl p-4 text-center cursor-pointer transition-all duration-150 flex items-center justify-center bg-white hover:bg-slate-50 hover:border-slate-300"
+                >
+                  <span className="text-sm font-bold text-slate-900">
+                    Enter Details Manually
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 overflow-y-auto flex-1">
+            {/* MLS Quick-Importer & Auto-Fill Banner */}
+            <div className="mb-5 bg-gradient-to-br from-slate-50 to-blue-50/40 border border-blue-200/60 rounded-2xl p-4 sm:p-5 shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-blue-100">
+                {/* Representation Selector - Placed on the Left for High Visibility */}
+                <div className="flex items-center gap-1.5 bg-white border border-slate-300 p-1 rounded-xl shadow-xs self-start sm:self-auto">
+                  <span className="text-xs font-bold text-slate-800 px-2">Representing:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, representation: 'Buyer' }));
+                      setSelectedRep('Buyer');
+                    }}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      formData.representation === 'Buyer'
+                        ? 'bg-[#1B3A5C] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    Buyer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, representation: 'Seller' }));
+                      setSelectedRep('Seller');
+                    }}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      formData.representation === 'Seller'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+                    }`}
+                  >
+                    Seller
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, representation: 'Dual' }));
+                      setSelectedRep('Dual');
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      formData.representation === 'Dual'
+                        ? 'bg-[#11253C] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    Dual
+                  </button>
+                </div>
 
               {/* MLS Quick-Fill Label on the Right */}
               <div className="flex items-center gap-2">
@@ -1723,50 +1955,48 @@ export function AddEditModal({
 
               {/* Contingencies (L3–L8) with Compact Batch Setter */}
               <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3">
-                {/* Compact Set All Controller */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
-                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                {/* Controller: options directly next to the label with increased font sizes */}
+                <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap pb-2.5 border-b border-slate-100">
+                  <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
                     Set all L3 – L8:
                   </span>
                   
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="flex items-center bg-slate-50 border border-slate-300 rounded-lg px-2 py-0.5 shadow-2xs focus-within:border-[#1B3A5C] focus-within:bg-white">
-                      <input 
-                        type="number"
-                        min="0"
-                        max="365"
-                        value={commonL3ToL8Val}
-                        placeholder={isL3ToL8Synced ? '17' : 'Mix'}
-                        onChange={e => handleBatchL3ToL8(e.target.value)}
-                        className="w-10 text-center font-bold text-xs text-[#1B3A5C] bg-transparent focus:outline-none"
-                      />
-                      <span className="text-[10px] text-slate-400 select-none pr-0.5">d</span>
-                    </div>
+                  <div className="flex items-center bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 shadow-2xs focus-within:border-[#1B3A5C] focus-within:bg-white focus-within:ring-1 focus-within:ring-[#1B3A5C]">
+                    <input 
+                      type="number"
+                      min="0"
+                      max="365"
+                      value={commonL3ToL8Val}
+                      placeholder={isL3ToL8Synced ? '17' : 'Mix'}
+                      onChange={e => handleBatchL3ToL8(e.target.value)}
+                      className="w-11 text-center font-bold text-sm text-[#1B3A5C] bg-transparent focus:outline-none"
+                    />
+                    <span className="text-xs font-semibold text-slate-500 select-none pr-0.5">d</span>
+                  </div>
 
-                    <div className="flex items-center gap-1">
-                      {['7', '10', '14', '17', '21'].map(preset => {
-                        const isActive = isL3ToL8Synced && commonL3ToL8Val === preset;
-                        return (
-                          <button
-                            key={preset}
-                            type="button"
-                            onClick={() => handleBatchL3ToL8(preset)}
-                            className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
-                              isActive 
-                                ? 'bg-[#1B3A5C] text-white shadow-2xs' 
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60'
-                            }`}
-                          >
-                            {preset}d
-                          </button>
-                        );
-                      })}
-                    </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {['7', '10', '14', '17', '21'].map(preset => {
+                      const isActive = isL3ToL8Synced && commonL3ToL8Val === preset;
+                      return (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => handleBatchL3ToL8(preset)}
+                          className={`px-2.5 py-1 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                            isActive 
+                              ? 'bg-[#1B3A5C] text-white shadow-2xs' 
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200'
+                          }`}
+                        >
+                          {preset}d
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Individual L3-L8 items */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                   {['L3', 'L4', 'L5', 'L6', 'L7', 'L8'].map(key => {
                     const c = CONTINGENCIES.find(item => item.key === key) || { key, label: key };
                     const exp = getContingencyExpDate(formData.contingencyDays[key]);
@@ -1775,29 +2005,29 @@ export function AddEditModal({
                     return (
                       <div 
                         key={key} 
-                        className="flex items-center justify-between gap-1.5 bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-xl px-2.5 py-1.5 transition-all"
+                        className="flex items-center justify-between gap-2 bg-slate-50/80 border border-slate-200 hover:border-slate-300 rounded-xl px-3 py-2 transition-all"
                       >
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-xs font-semibold text-slate-800 truncate" title={`${c.key} - ${c.label}`}>
+                          <span className="text-xs sm:text-sm font-medium text-slate-800 truncate" title={`${c.key} - ${c.label}`}>
                             <span className="font-bold text-slate-900">{c.key}</span> {c.label}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           {exp && (
-                            <span className="text-[10px] font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-1.5 py-0.5 rounded-md">
+                            <span className="text-[11px] font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-2 py-0.5 rounded-md">
                               {exp}
                             </span>
                           )}
-                          <div className="flex items-center bg-white border border-slate-300 rounded-md px-1 py-0.5 shadow-2xs focus-within:border-[#1B3A5C]">
+                          <div className="flex items-center bg-white border border-slate-300 rounded-md px-1.5 py-1 shadow-2xs focus-within:border-[#1B3A5C]">
                             <input 
                               type="number" 
                               value={currentVal} 
                               onChange={e => handleDayChange(key, e.target.value)} 
-                              className="w-7 text-center font-bold text-xs text-slate-900 focus:outline-none bg-transparent" 
+                              className="w-8 text-center font-bold text-xs sm:text-sm text-slate-900 focus:outline-none bg-transparent" 
                               min="0"
                             />
-                            <span className="text-[9px] text-slate-400 select-none">d</span>
+                            <span className="text-[10px] text-slate-400 select-none">d</span>
                           </div>
                         </div>
                       </div>
@@ -1893,14 +2123,57 @@ export function AddEditModal({
             </div>
           </div>
         </div>
+        )}
 
-        <div className="px-6 py-4 border-t border-[#e5e5ea] bg-slate-50 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-bold border border-[#e5e5ea] text-[#86868b] hover:bg-slate-50">
-            Cancel
-          </button>
-          <button type="submit" className="px-4 py-2 rounded-xl text-sm font-bold bg-[#1B3A5C] hover:bg-[#11253C] text-white active:scale-95 shadow-sm transition-all">
-            Save Escrow
-          </button>
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-[#e5e5ea] bg-slate-50 flex items-center justify-between gap-3 shrink-0">
+          {!setupCompleted ? (
+            <>
+              <button 
+                type="button" 
+                onClick={onClose} 
+                className="px-4 py-2 rounded-xl text-sm font-bold border border-[#e5e5ea] text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                onClick={handleProceedManually}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-[#1B3A5C] hover:bg-[#11253C] text-white active:scale-95 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Continue to Escrow Form</span>
+                <ArrowRight size={16} />
+              </button>
+            </>
+          ) : (
+            <>
+              {!escrow ? (
+                <button
+                  type="button"
+                  onClick={() => setSetupCompleted(false)}
+                  className="text-xs font-semibold text-slate-500 hover:text-[#1B3A5C] underline cursor-pointer"
+                >
+                  ← Back to Setup
+                </button>
+              ) : (
+                <div />
+              )}
+              <div className="flex items-center gap-3 ml-auto">
+                <button 
+                  type="button" 
+                  onClick={onClose} 
+                  className="px-4 py-2 rounded-xl text-sm font-bold border border-[#e5e5ea] text-[#86868b] hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2 rounded-xl text-sm font-bold bg-[#1B3A5C] hover:bg-[#11253C] text-white active:scale-95 shadow-sm transition-all cursor-pointer"
+                >
+                  {escrow ? 'Save Escrow' : 'Create Escrow'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </form>
     </div>
