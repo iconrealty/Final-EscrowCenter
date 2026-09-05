@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Escrow, formatPropertyAddress } from '../../types';
-import { X, Phone, Mail, MessageSquare, Copy, Check, Users } from 'lucide-react';
-import { StatusBadge } from '../shared/StatusBadge';
+import { X, Phone, Mail, MessageSquare, Copy, Check } from 'lucide-react';
 
 interface ContactsModalProps {
   escrow: Escrow;
@@ -11,8 +10,8 @@ interface ContactsModalProps {
 interface ContactItem {
   id: string;
   role: string;
-  badgeBg: string;
-  badgeText: string;
+  badgeBg?: string;
+  badgeText?: string;
   name: string;
   company?: string;
   phone?: string;
@@ -195,26 +194,15 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       >
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-[#1B3A5C]/10 text-[#1B3A5C] flex items-center justify-center shrink-0">
-              <Users size={20} className="stroke-[2.2]" />
+          <div className="min-w-0">
+            <div className="mb-0.5">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1B3A5C]">
+                Transaction Contacts
+              </span>
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1B3A5C]">
-                  Transaction Contacts
-                </span>
-                {escrow.escrowNumber && (
-                  <span className="text-[10px] font-bold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded">
-                    #{escrow.escrowNumber}
-                  </span>
-                )}
-                <StatusBadge status={escrow.status} />
-              </div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 truncate tracking-tight">
-                {escrow.address}
-              </h2>
-            </div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 truncate tracking-tight">
+              {escrow.address}
+            </h2>
           </div>
           <div className="flex items-center gap-2 shrink-0 ml-2">
             <button
@@ -257,13 +245,10 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
                   className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-4"
                 >
                   <div>
-                    {/* Top Role Badge */}
-                    <div className="flex items-center justify-between mb-2">
+                    {/* Top Role Header */}
+                    <div className="mb-2">
                       <span className="text-xs font-extrabold text-slate-700 tracking-wide">
                         {contact.role}
-                      </span>
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${contact.badgeBg}`}>
-                        {contact.badgeText}
                       </span>
                     </div>
 
