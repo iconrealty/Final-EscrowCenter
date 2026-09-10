@@ -1,6 +1,5 @@
 import React from 'react';
 import { Escrow, formatPropertyAddress } from '../../types';
-import { StatusBadge } from '../shared/StatusBadge';
 import { parseISO, format } from 'date-fns';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
 import { useAuth } from '../../context/AuthContext';
@@ -18,7 +17,9 @@ interface DetailModalProps {
 }
 
 /**
- * Simple, clean read-only field with black uppercase titles and no icons or colors.
+ * Clean read-only field with distinct label-value contrast:
+ * - Labels: muted, tracked uppercase text (slate-500) so they don't blend with values
+ * - Values: rich black, bold text for instant readability
  */
 function InfoItem({
   label,
@@ -38,15 +39,17 @@ function InfoItem({
 
   return (
     <div className={`flex flex-col min-w-0 ${className}`}>
-      <span className="text-[11px] font-bold uppercase tracking-wider text-black mb-1 truncate">
+      {/* Title / Label: Distinct muted uppercase */}
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1 truncate">
         {label}
       </span>
 
+      {/* Content / Value: Deep black, clear hierarchy */}
       {hasValue ? (
         hrefType === 'tel' ? (
           <a
             href={`tel:${strVal}`}
-            className={`text-sm font-medium text-black hover:underline truncate ${valueClassName}`}
+            className={`text-sm font-semibold text-black hover:underline truncate ${valueClassName}`}
             title={`Call ${strVal}`}
           >
             {strVal}
@@ -54,13 +57,13 @@ function InfoItem({
         ) : hrefType === 'mailto' ? (
           <a
             href={`mailto:${strVal}`}
-            className={`text-sm font-medium text-black hover:underline truncate ${valueClassName}`}
+            className={`text-sm font-semibold text-black hover:underline truncate ${valueClassName}`}
             title={`Email ${strVal}`}
           >
             {strVal}
           </a>
         ) : (
-          <span className={`text-sm sm:text-base font-medium text-black truncate ${valueClassName}`} title={strVal}>
+          <span className={`text-sm sm:text-base font-bold text-black truncate ${valueClassName}`} title={strVal}>
             {strVal}
           </span>
         )
@@ -129,7 +132,7 @@ export function DetailModal({
                 const url = generateCognitoUrl(escrow, user);
                 window.open(url, '_blank');
               }} 
-              className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-slate-100 rounded-lg transition-colors cursor-pointer hidden sm:inline-block"
+              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700 hover:text-black hover:bg-slate-100 rounded-lg transition-colors cursor-pointer hidden sm:inline-block"
               title="Open Cognito Form"
             >
               Cognito Form
@@ -137,7 +140,7 @@ export function DetailModal({
             <button 
               type="button"
               onClick={onEdit} 
-              className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-black hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" 
+              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700 hover:text-black hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" 
               title="Edit Escrow"
             >
               Edit
@@ -145,7 +148,7 @@ export function DetailModal({
             <button 
               type="button"
               onClick={onDelete} 
-              className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
+              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
               title="Delete Escrow"
             >
               Delete
@@ -154,7 +157,7 @@ export function DetailModal({
             <button 
               type="button"
               onClick={onClose} 
-              className="px-2.5 py-1 text-sm font-bold text-black hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className="px-2.5 py-1 text-sm font-bold text-slate-500 hover:text-black hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
               title="Close"
               aria-label="Close"
             >
@@ -170,12 +173,13 @@ export function DetailModal({
           <div className="bg-white rounded-xl border border-slate-200 p-5">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-y-5 gap-x-6">
               
-              {/* Status */}
+              {/* Status: Plain text font, no pill */}
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-black block mb-1.5">
-                  STATUS
-                </span>
-                <StatusBadge status={escrow.status} />
+                <InfoItem 
+                  label="STATUS" 
+                  value={escrow.status || 'Open'} 
+                  valueClassName="font-bold text-sm sm:text-base"
+                />
               </div>
 
               {/* Sale Price */}
@@ -196,7 +200,7 @@ export function DetailModal({
                 />
               </div>
 
-              {/* Net Commission (without any formula) */}
+              {/* Net Commission */}
               <div>
                 <InfoItem 
                   label="NET COMMISSION" 
@@ -222,7 +226,7 @@ export function DetailModal({
                 />
               </div>
 
-              {/* COE Date (without any remaining countdown) */}
+              {/* COE Date */}
               <div>
                 <InfoItem 
                   label="COE DATE" 
@@ -394,7 +398,7 @@ export function DetailModal({
               />
 
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-black block mb-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block mb-1.5">
                   TRANSACTION NOTES
                 </span>
                 {escrow.notes ? (
