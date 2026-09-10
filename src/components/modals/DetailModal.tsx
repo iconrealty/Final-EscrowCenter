@@ -1,6 +1,7 @@
 import React from 'react';
 import { Escrow, formatPropertyAddress } from '../../types';
 import { parseISO, format } from 'date-fns';
+import { ExternalLink, Pencil, Trash2, X } from 'lucide-react';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
 import { useAuth } from '../../context/AuthContext';
 import { DocumentsSection } from './DocumentsSection';
@@ -125,43 +126,44 @@ export function DetailModal({
             {fullAddress}
           </h2>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button 
               type="button"
               onClick={() => {
                 const url = generateCognitoUrl(escrow, user);
                 window.open(url, '_blank');
               }} 
-              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700 hover:text-black hover:bg-slate-100 rounded-lg transition-colors cursor-pointer hidden sm:inline-block"
+              className="px-3 py-1.5 text-xs font-bold text-[#1B3A5C] bg-[#1B3A5C]/5 hover:bg-[#1B3A5C]/10 rounded-full transition-all cursor-pointer active:scale-95 flex items-center gap-1.5"
               title="Open Cognito Form"
             >
-              Cognito Form
+              <ExternalLink size={14} />
+              <span className="hidden sm:inline">Cognito Form</span>
             </button>
             <button 
               type="button"
               onClick={onEdit} 
-              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700 hover:text-black hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" 
+              className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all cursor-pointer active:scale-95" 
               title="Edit Escrow"
             >
-              Edit
+              <Pencil size={16} />
             </button>
             <button 
               type="button"
               onClick={onDelete} 
-              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
+              className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all cursor-pointer active:scale-95" 
               title="Delete Escrow"
             >
-              Delete
+              <Trash2 size={16} />
             </button>
-            <div className="w-px h-5 bg-slate-300 mx-1"></div>
+            <div className="w-px h-6 bg-slate-200 mx-1"></div>
             <button 
               type="button"
               onClick={onClose} 
-              className="px-2.5 py-1 text-sm font-bold text-slate-500 hover:text-black hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all cursor-pointer active:scale-95"
               title="Close"
               aria-label="Close"
             >
-              ✕
+              <X size={18} />
             </button>
           </div>
         </div>
