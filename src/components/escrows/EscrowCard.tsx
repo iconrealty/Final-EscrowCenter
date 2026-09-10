@@ -261,7 +261,7 @@ export function EscrowCard({
                   }}
                   className="text-[10px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
                 >
-                  Update Tasks &rarr;
+                  Click to update tasks &rarr;
                 </button>
               )}
             </div>
@@ -478,7 +478,7 @@ export function EscrowCard({
         })()}
 
         {/* Quick Access Buttons */}
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="mt-4 grid grid-cols-3 gap-2">
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -486,17 +486,7 @@ export function EscrowCard({
             }}
             className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
           >
-            <span>Client Updates</span>
-          </button>
-          <button 
-            id={`escrow-card-updates-btn-${escrow.id}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onUpdateTasks();
-            }}
-            className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
-          >
-            <span>Updates</span>
+            <span>Notifications</span>
           </button>
           <button 
             onClick={(e) => {
