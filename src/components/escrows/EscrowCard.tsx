@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, getApplicableContingencies, formatPropertyAddress, getZillowUrl } from '../../types';
+import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, getApplicableContingencies, formatPropertyAddress } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
-import { CheckCircle2, Users, Phone, MessageSquare, Mail, User, Copy, Check, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Users, Phone, MessageSquare, Mail, User, Copy, Check } from 'lucide-react';
 
 export function EscrowCard({ 
   escrow, 
@@ -146,20 +146,18 @@ export function EscrowCard({
       {/* Main Content Area */}
       <div className="p-5 flex-1 flex flex-col gap-4">
         {/* Address & Client Name with Days to Closing Box */}
-        <div onClick={onViewDetails} className="cursor-pointer group/address flex items-center gap-3.5">
+        <div className="flex items-center gap-3.5">
           {/* Days to Closing Big Number Box */}
           <div 
-            className={`w-[70px] sm:w-[78px] h-[70px] sm:h-[78px] shrink-0 border rounded-2xl p-2 flex flex-col justify-center items-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.02)] select-none hover:scale-[1.02] hover:shadow-md transition-all active:scale-[0.98] ${
+            className={`w-[70px] sm:w-[78px] h-[70px] sm:h-[78px] shrink-0 border rounded-2xl p-2 flex flex-col justify-center items-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.02)] select-none ${
               escrow.status === 'Closed'
                 ? 'bg-[#16a34a]/5 border-[#16a34a]/20 text-[#16a34a]'
                 : escrow.status === 'Cancelled'
                 ? 'bg-rose-50/50 border-rose-100 text-rose-500'
                 : daysToCoe < 0
                 ? 'bg-rose-50/50 border-rose-100 text-rose-600'
-                : daysToCoe <= 5
+                : daysToCoe <= 2
                 ? 'bg-red-100/60 border-red-200 text-red-700 animate-pulse'
-                : daysToCoe <= 14
-                ? 'bg-red-50/60 border-red-100 text-red-600'
                 : 'bg-[#1B3A5C]/5 border-[#1B3A5C]/15 text-[#1B3A5C]'
             }`}
             title="Days remaining to closing"
@@ -187,22 +185,14 @@ export function EscrowCard({
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] uppercase tracking-wider text-[#86868b] font-bold mb-1 group-hover/address:text-[#1B3A5C] transition-colors" title="Client Name">
+            <div className="text-[10px] uppercase tracking-wider text-[#86868b] font-bold mb-1" title="Client Name">
               {escrow.clientFirstName || ''} {escrow.clientLastName || ''}
               {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
             </div>
             <div className="flex items-center gap-1.5 min-w-0">
-              <a
-                href={getZillowUrl(fullAddress)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="font-bold text-base text-[#1B3A5C] hover:text-[#006AFF] hover:underline tracking-tight line-clamp-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 group/zillow"
-                title="Open on Zillow (tap to view property details)"
-              >
-                <span>{fullAddress}</span>
-                <ExternalLink size={13} className="text-slate-400 group-hover/zillow:text-[#006AFF] shrink-0 opacity-70 sm:opacity-0 sm:group-hover/address:opacity-100 transition-opacity" />
-              </a>
+              <h3 className="font-bold text-base text-[#1B3A5C] tracking-tight line-clamp-2" title={fullAddress}>
+                {fullAddress}
+              </h3>
               <button
                 type="button"
                 onClick={handleCopyAddress}

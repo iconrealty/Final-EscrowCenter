@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { X, Search, Edit3, Trash2, Calendar, Download, Building, Check, ExternalLink } from 'lucide-react';
-import { Escrow, getZillowUrl } from '../../types';
+import { X, Search, Edit3, Trash2, Calendar, Download, Building, Check } from 'lucide-react';
+import { Escrow } from '../../types';
 import { downloadEscrowsCsv, getEscrowYear } from '../../utils/csvUtils';
 import { calculateNetFromGross } from '../../utils/commissionUtils';
 
@@ -370,26 +370,13 @@ export function EscrowTableModal({
                     >
                       {/* Address */}
                       <td className="py-1.5 px-2">
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="text"
-                            value={escrow.address || ''}
-                            onChange={(e) => handleFieldChange(escrow.id, 'address', e.target.value)}
-                            placeholder="Street Address"
-                            className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-bold text-[#1d1d1f] text-xs transition-all outline-none"
-                          />
-                          {escrow.address && (
-                            <a
-                              href={getZillowUrl(escrow.address)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1 text-slate-400 hover:text-[#006AFF] hover:bg-blue-50 rounded transition-colors shrink-0"
-                              title="Open on Zillow"
-                            >
-                              <ExternalLink size={12} />
-                            </a>
-                          )}
-                        </div>
+                        <input
+                          type="text"
+                          value={escrow.address || ''}
+                          onChange={(e) => handleFieldChange(escrow.id, 'address', e.target.value)}
+                          placeholder="Street Address"
+                          className="w-full px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-[#1B3A5C] focus:bg-white focus:ring-1 focus:ring-[#1B3A5C] font-bold text-[#1d1d1f] text-xs transition-all outline-none"
+                        />
                       </td>
 
                       {/* MLS ID */}

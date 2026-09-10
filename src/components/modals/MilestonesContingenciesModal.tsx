@@ -17,7 +17,7 @@ export function MilestonesContingenciesModal({
   onUpdateTasks: (id: string, tasks: Record<string, boolean>) => void;
 }) {
   const daysToCoe = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
-  const isUrgent = daysToCoe <= 5 && escrow.status === 'Open';
+  const isUrgent = daysToCoe <= 2 && escrow.status === 'Open';
 
   const applicableContingencies = getApplicableContingencies(escrow);
   const totalTasksCount = MILESTONES.length + applicableContingencies.length;

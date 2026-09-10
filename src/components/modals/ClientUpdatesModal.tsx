@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Escrow, formatPropertyAddress, adjustWeekendToMonday, getZillowUrl } from '../../types';
-import { X, MessageSquare, Mail, Check, ChevronDown, Globe, CheckCheck, Copy, ExternalLink } from 'lucide-react';
+import { Escrow, formatPropertyAddress, adjustWeekendToMonday } from '../../types';
+import { X, MessageSquare, Mail, Check, ChevronDown, Globe, CheckCheck, Copy } from 'lucide-react';
 import { parseISO, format, addDays, differenceInCalendarDays } from 'date-fns';
 import { motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
@@ -591,16 +591,9 @@ export function ClientUpdatesModal({
         <div className="px-4 sm:px-6 py-3 border-b border-[#e5e5ea] flex justify-between items-center bg-slate-50 shrink-0">
           <div className="min-w-0 pr-2">
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 block">Notifications</span>
-            <a
-              href={getZillowUrl(escrow.address)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-extrabold text-sm sm:text-base text-slate-900 hover:text-[#006AFF] hover:underline truncate max-w-[200px] sm:max-w-none inline-flex items-center gap-1.5 group/zillow transition-colors"
-              title="Open on Zillow (tap to view property details)"
-            >
-              <span className="truncate">{escrow.address}</span>
-              <ExternalLink size={13} className="text-slate-400 group-hover/zillow:text-[#006AFF] shrink-0" />
-            </a>
+            <h2 className="font-extrabold text-sm sm:text-base text-slate-900 truncate max-w-[200px] sm:max-w-none" title={escrow.address}>
+              {escrow.address}
+            </h2>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {isAdminOrOwner && (
