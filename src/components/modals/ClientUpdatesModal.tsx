@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Escrow, formatPropertyAddress, adjustWeekendToMonday } from '../../types';
-import { X, MessageSquare, Mail, Check, ChevronDown, Globe, CheckCheck } from 'lucide-react';
+import { X, MessageSquare, Mail, Check, ChevronDown, Globe, CheckCheck, Copy } from 'lucide-react';
 import { parseISO, format, addDays, differenceInCalendarDays } from 'date-fns';
 import { motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
@@ -579,23 +579,23 @@ export function ClientUpdatesModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[120] flex items-center justify-center p-3 pt-12 pb-6 sm:p-6 overflow-hidden">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[120] flex items-center justify-center p-2 sm:p-4 overflow-hidden">
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        exit={{ opacity: 0, scale: 0.96 }}
         transition={{ duration: 0.15, ease: 'easeOut' }}
-        className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[92vh]"
+        className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col h-[94vh] sm:h-[88vh]"
       >
         {/* Header */}
-        <div className="px-5 sm:px-6 py-4 border-b border-[#e5e5ea] flex justify-between items-center bg-slate-50 shrink-0">
+        <div className="px-4 sm:px-6 py-3 border-b border-[#e5e5ea] flex justify-between items-center bg-slate-50 shrink-0">
           <div className="min-w-0 pr-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/60 block mb-0.5">Escrow Updates</span>
-            <h2 className="font-extrabold text-base sm:text-lg text-black truncate max-w-[220px] sm:max-w-none" title={escrow.address}>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 block">Notifications</span>
+            <h2 className="font-extrabold text-sm sm:text-base text-slate-900 truncate max-w-[200px] sm:max-w-none" title={escrow.address}>
               {escrow.address}
             </h2>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {isAdminOrOwner && (
               <button
                 onClick={handlePublishAsCompanyDefaults}
@@ -615,7 +615,7 @@ export function ClientUpdatesModal({
                   : 'bg-white border border-[#e5e5ea] hover:bg-slate-100 text-[#334155]'
               }`}
             >
-              {isEditingMaster ? 'Cancel Customizing' : 'Customize Templates'}
+              {isEditingMaster ? 'Done' : 'Customize'}
             </button>
             <button 
               onClick={onClose}
@@ -627,9 +627,9 @@ export function ClientUpdatesModal({
         </div>
 
         {/* Content */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-4">
+        <div className="p-3 sm:p-5 overflow-hidden flex-1 flex flex-col gap-2.5 min-h-0">
           {publishSuccess && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl text-xs font-semibold flex items-center gap-2.5 shadow-xs">
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 shadow-xs shrink-0">
               <CheckCheck size={18} className="text-emerald-600 shrink-0" />
               <span>{publishSuccess}</span>
             </div>
@@ -637,18 +637,18 @@ export function ClientUpdatesModal({
           {!isEditingMaster ? (
             <>
               {/* Template Selection Dropdown */}
-              <div className="relative w-full z-30">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                  <label className="text-[10px] font-extrabold uppercase tracking-widest text-black/60">
-                    Select Email / Update Template
+              <div className="relative w-full z-30 shrink-0">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                    Select Template
                   </label>
 
                   {/* Minimalist Segmented Pill: Buyer / Seller / All */}
-                  <div className="inline-flex self-start sm:self-auto bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-xs font-semibold">
+                  <div className="inline-flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-[11px] font-semibold">
                     <button
                       type="button"
                       onClick={() => handleSideFilterChange('buyer')}
-                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${
                         sideFilter === 'buyer'
                           ? 'bg-[#1B3A5C] text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
@@ -659,7 +659,7 @@ export function ClientUpdatesModal({
                     <button
                       type="button"
                       onClick={() => handleSideFilterChange('seller')}
-                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${
                         sideFilter === 'seller'
                           ? 'bg-[#1B3A5C] text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
@@ -670,7 +670,7 @@ export function ClientUpdatesModal({
                     <button
                       type="button"
                       onClick={() => handleSideFilterChange('all')}
-                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded-lg transition-all cursor-pointer ${
                         sideFilter === 'all'
                           ? 'bg-[#1B3A5C] text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
@@ -685,23 +685,23 @@ export function ClientUpdatesModal({
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-white border border-[#e5e5ea] hover:border-black/30 rounded-2xl text-sm font-bold text-black shadow-sm transition-all cursor-pointer select-none active:scale-[0.99]"
+                    className="w-full flex items-center justify-between px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 shadow-xs transition-all cursor-pointer select-none active:scale-[0.99]"
                   >
                     <span className="flex items-center gap-2 min-w-0">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
                       <span className="truncate">{selectedTemplate.label}</span>
                       {selectedTemplate.side === 'seller' && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/60 shrink-0">
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60 shrink-0">
                           Seller
                         </span>
                       )}
                       {selectedTemplate.side === 'buyer' && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200/60 shrink-0">
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200/60 shrink-0">
                           Buyer
                         </span>
                       )}
                     </span>
-                    <ChevronDown size={18} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isDropdownOpen && (
@@ -713,7 +713,7 @@ export function ClientUpdatesModal({
                       />
                       
                       {/* Floating dropdown options */}
-                      <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#e5e5ea] rounded-2xl shadow-xl overflow-hidden z-20 max-h-64 overflow-y-auto py-1.5 animate-in fade-in-50 slide-in-from-top-1">
+                      <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-20 max-h-56 overflow-y-auto py-1 animate-in fade-in-50 slide-in-from-top-1">
                         {filteredTemplates.map((t) => (
                           <button
                             key={t.id}
@@ -721,9 +721,9 @@ export function ClientUpdatesModal({
                               setSelectedTemplateId(t.id);
                               setIsDropdownOpen(false);
                             }}
-                            className={`w-full text-left px-4 py-3 text-xs sm:text-sm font-semibold transition-colors flex items-center justify-between cursor-pointer ${
+                            className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-colors flex items-center justify-between cursor-pointer ${
                               selectedTemplateId === t.id
-                                ? 'bg-slate-100 text-black font-extrabold'
+                                ? 'bg-slate-100 text-slate-900 font-extrabold'
                                 : 'text-slate-700 hover:bg-slate-50'
                             }`}
                           >
@@ -741,12 +741,12 @@ export function ClientUpdatesModal({
                               )}
                             </div>
                             {selectedTemplateId === t.id && (
-                              <Check size={16} className="text-black shrink-0" />
+                              <Check size={15} className="text-slate-900 shrink-0" />
                             )}
                           </button>
                         ))}
                         {filteredTemplates.length === 0 && (
-                          <div className="px-4 py-3 text-xs text-slate-400 italic">
+                          <div className="px-3.5 py-2 text-xs text-slate-400 italic">
                             No templates in this category
                           </div>
                         )}
@@ -756,156 +756,153 @@ export function ClientUpdatesModal({
                 </div>
               </div>
 
-              {/* Workspace */}
-              <div className="bg-slate-50 border border-[#e5e5ea] rounded-2xl p-4 flex flex-col gap-3">
-                {hasClient2 && !isEscrowOfficerTemplate && (
-                  <div className="flex justify-end items-center">
+              {/* Workspace - expands to fill the entire remaining vertical space */}
+              <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-3 sm:p-4 flex-1 flex flex-col gap-2 min-h-0 shadow-xs">
+                <div className="flex items-center justify-between shrink-0">
+                  <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                    <span>Message Body</span>
+                    <span className="text-[10px] font-normal text-slate-400 hidden sm:inline">(Live preview & edit)</span>
+                  </span>
+                  {hasClient2 && !isEscrowOfficerTemplate && (
                     <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-lg">
-                      2 Clients on File
+                      2 Clients
                     </span>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <textarea
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
-                  className="w-full bg-white border border-[#e5e5ea] rounded-xl p-3 text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed shadow-inner h-28 sm:h-44 min-h-[100px]"
+                  className="w-full flex-1 min-h-[160px] sm:min-h-[220px] bg-white border border-slate-200 hover:border-slate-300 focus:border-[#1B3A5C] focus:ring-2 focus:ring-[#1B3A5C]/10 rounded-xl p-3 text-xs sm:text-sm text-slate-800 focus:outline-none font-sans leading-relaxed resize-none overflow-y-auto"
+                  placeholder="Review or edit your message here..."
                 />
 
-                <div className="flex flex-col gap-3 pt-3 border-t border-[#e5e5ea] w-full">
-                  <div className="flex flex-col gap-0.5">
-                    {!isEscrowOfficerTemplate ? (
-                      <>
-                        {!escrow.clientPhone && !escrow.client2Phone && (
-                          <span className="text-[10px] text-[#ef4444] font-bold">⚠️ No client phone saved (add it in edit form)</span>
-                        )}
-                        {!escrow.clientEmail && !escrow.client2Email && (
-                          <span className="text-[10px] text-amber-600 font-bold">⚠️ No client email saved</span>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {!escrow.escrowPhone && (
-                          <span className="text-[10px] text-[#ef4444] font-bold">⚠️ No escrow officer phone saved</span>
-                        )}
-                        {!escrow.escrowEmail && (
-                          <span className="text-[10px] text-amber-600 font-bold">⚠️ No escrow officer email saved</span>
-                        )}
-                      </>
-                    )}
+                {/* Missing Contact Warning - compact one liner */}
+                {((!escrow.clientPhone && !escrow.client2Phone && !isEscrowOfficerTemplate) ||
+                  (!escrow.clientEmail && !escrow.client2Email && !isEscrowOfficerTemplate) ||
+                  (!escrow.escrowPhone && isEscrowOfficerTemplate) ||
+                  (!escrow.escrowEmail && isEscrowOfficerTemplate)) && (
+                  <div className="text-[10px] text-amber-700 font-medium px-2 py-1 bg-amber-50/80 border border-amber-200/60 rounded-lg shrink-0 flex items-center gap-1.5">
+                    <span>⚠️ Missing phone or email for direct send — use <strong>Copy</strong> to paste anywhere.</span>
                   </div>
+                )}
 
-                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
-                    <button
-                      onClick={handleCopy}
-                      className="px-3.5 py-2.5 sm:py-2 bg-white border border-[#e5e5ea] hover:bg-slate-50 text-[#334155] rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer text-center flex-1 sm:flex-initial"
+                {/* Sleek, Compact Action Bar (Uniform height, single row on mobile, refined aesthetics) */}
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-200/80 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="flex-1 h-9 px-3 bg-white hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                    title="Copy message to clipboard"
+                  >
+                    {copied ? <Check size={14} className="text-emerald-600 shrink-0" /> : <Copy size={14} className="text-slate-500 shrink-0" />}
+                    <span>{copied ? 'Copied!' : 'Copy'}</span>
+                  </button>
+
+                  {/* Text Buttons */}
+                  {isEscrowOfficerTemplate ? (
+                    <a
+                      href={`sms:${escrow.escrowPhone ? escrow.escrowPhone.replace(/\D/g, '') : ''}?body=${encodeURIComponent(editedText)}`}
+                      className={`flex-1 h-9 px-3 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 text-white ${
+                        escrow.escrowPhone ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-slate-200 text-slate-400 pointer-events-none'
+                      }`}
+                      title={escrow.escrowPhone ? `Text Officer (${escrow.escrowPhone})` : 'No escrow officer phone saved'}
                     >
-                      {copied ? 'Copied to Clipboard!' : 'Copy Message'}
-                    </button>
-
-                    {/* Text Buttons */}
-                    {isEscrowOfficerTemplate ? (
-                      <a
-                        href={`sms:${escrow.escrowPhone ? escrow.escrowPhone.replace(/\D/g, '') : ''}?body=${encodeURIComponent(editedText)}`}
-                        className={`px-3.5 py-2.5 sm:py-2 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
-                          escrow.escrowPhone ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
-                        }`}
-                      >
-                        <MessageSquare size={13} />
-                        <span>Text Officer</span>
-                      </a>
-                    ) : (
-                      <>
-                        {hasClient2 && escrow.client2Phone ? (
-                          <>
-                            <a
-                              href={`sms:${escrow.clientPhone ? escrow.clientPhone.replace(/\D/g, '') : ''}?body=${encodeURIComponent(editedText)}`}
-                              className={`px-3 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1 flex-1 sm:flex-initial ${
-                                escrow.clientPhone ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
-                              }`}
-                              title={escrow.clientPhone ? `Text ${escrow.clientFirstName || 'Client 1'} (${escrow.clientPhone})` : 'No phone'}
-                            >
-                              <MessageSquare size={12} />
-                              <span>Text {escrow.clientFirstName || 'Client 1'}</span>
-                            </a>
-                            <a
-                              href={`sms:${escrow.client2Phone.replace(/\D/g, '')}?body=${encodeURIComponent(editedText)}`}
-                              className="px-3 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 cursor-pointer flex-1 sm:flex-initial"
-                              title={`Text ${escrow.client2FirstName || 'Client 2'} (${escrow.client2Phone})`}
-                            >
-                              <MessageSquare size={12} />
-                              <span>Text {escrow.client2FirstName || 'Client 2'}</span>
-                            </a>
-                          </>
-                        ) : (
+                      <MessageSquare size={13} className="shrink-0" />
+                      <span>Text</span>
+                    </a>
+                  ) : (
+                    <>
+                      {hasClient2 && escrow.client2Phone ? (
+                        <div className="flex-1 flex items-center gap-1.5">
                           <a
                             href={`sms:${escrow.clientPhone ? escrow.clientPhone.replace(/\D/g, '') : ''}?body=${encodeURIComponent(editedText)}`}
-                            className={`px-3.5 py-2.5 sm:py-2 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
-                              escrow.clientPhone ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
+                            className={`flex-1 h-9 px-2 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1 text-white ${
+                              escrow.clientPhone ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-slate-200 text-slate-400 pointer-events-none'
                             }`}
+                            title={escrow.clientPhone ? `Text ${escrow.clientFirstName || 'Client 1'}` : 'No phone'}
                           >
-                            <MessageSquare size={13} />
-                            <span>Text Client</span>
+                            <MessageSquare size={12} className="shrink-0" />
+                            <span className="truncate">Text {escrow.clientFirstName ? escrow.clientFirstName.split(' ')[0] : '1'}</span>
                           </a>
-                        )}
-                      </>
-                    )}
+                          <a
+                            href={`sms:${escrow.client2Phone.replace(/\D/g, '')}?body=${encodeURIComponent(editedText)}`}
+                            className="flex-1 h-9 px-2 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
+                            title={`Text ${escrow.client2FirstName || 'Client 2'}`}
+                          >
+                            <MessageSquare size={12} className="shrink-0" />
+                            <span className="truncate">Text {escrow.client2FirstName ? escrow.client2FirstName.split(' ')[0] : '2'}</span>
+                          </a>
+                        </div>
+                      ) : (
+                        <a
+                          href={`sms:${escrow.clientPhone ? escrow.clientPhone.replace(/\D/g, '') : ''}?body=${encodeURIComponent(editedText)}`}
+                          className={`flex-1 h-9 px-3 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 text-white ${
+                            escrow.clientPhone ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-slate-200 text-slate-400 pointer-events-none'
+                          }`}
+                          title={escrow.clientPhone ? `Text Client (${escrow.clientPhone})` : 'No client phone saved'}
+                        >
+                          <MessageSquare size={13} className="shrink-0" />
+                          <span>Text</span>
+                        </a>
+                      )}
+                    </>
+                  )}
 
-                    {/* Email Button */}
-                    <a
-                      href={`mailto:${recipientEmail || ''}?subject=${encodeURIComponent(getPopulatedSubject(selectedTemplate.subject))}&body=${encodeURIComponent(editedText)}`}
-                      className={`px-3.5 py-2.5 sm:py-2 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
-                        recipientEmail ? 'bg-[#1B3A5C] hover:bg-[#11253C] cursor-pointer' : 'bg-gray-200 pointer-events-none opacity-50 cursor-not-allowed text-[#86868b]'
-                      }`}
-                      title={recipientEmail ? `Email ${recipientName}` : 'No email saved'}
-                    >
-                      <Mail size={13} />
-                      <span>{isEscrowOfficerTemplate ? 'Email Officer' : (hasClient2 ? 'Email Both Clients' : 'Email Client')}</span>
-                    </a>
-                  </div>
+                  {/* Email Button */}
+                  <a
+                    href={`mailto:${recipientEmail || ''}?subject=${encodeURIComponent(getPopulatedSubject(selectedTemplate.subject))}&body=${encodeURIComponent(editedText)}`}
+                    className={`flex-1 h-9 px-3 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 text-white ${
+                      recipientEmail ? 'bg-[#1B3A5C] hover:bg-[#11253C] cursor-pointer' : 'bg-slate-200 text-slate-400 pointer-events-none'
+                    }`}
+                    title={recipientEmail ? `Email ${recipientName}` : 'No email address saved'}
+                  >
+                    <Mail size={13} className="shrink-0" />
+                    <span>Email</span>
+                  </a>
                 </div>
               </div>
             </>
           ) : (
-            <div className="bg-slate-50 border border-[#e5e5ea] rounded-2xl p-4 flex flex-col gap-4">
-              <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="text-xs font-bold text-black">
-                    Editing template phrasing: <span className="text-slate-800 font-extrabold">{selectedTemplate.label}</span>
+            <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-3 sm:p-4 flex-1 flex flex-col gap-2.5 min-h-0 shadow-xs">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-2 shrink-0">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <h4 className="text-xs font-bold text-slate-800 truncate">
+                    Editing: <span className="text-[#1B3A5C] font-extrabold">{selectedTemplate.label}</span>
                   </h4>
                   {selectedTemplate.side === 'seller' && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60">
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60 shrink-0">
                       Seller
                     </span>
                   )}
                   {selectedTemplate.side === 'buyer' && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200/60">
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200/60 shrink-0">
                       Buyer
                     </span>
                   )}
                 </div>
                 <button
                   onClick={handleResetTemplate}
-                  className="text-[10px] text-slate-500 hover:text-slate-800 underline font-bold cursor-pointer"
+                  className="text-[10px] text-slate-500 hover:text-slate-800 underline font-bold cursor-pointer shrink-0"
                 >
                   Restore Defaults
                 </button>
               </div>
 
               {/* Subject Field */}
-              <div>
+              <div className="shrink-0">
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-[10px] uppercase font-extrabold text-[#334155] tracking-wider">Subject Template</label>
+                  <label className="text-[10px] uppercase font-extrabold text-slate-600 tracking-wider">Subject Line</label>
                   <div className="flex gap-1">
                     <button 
                       onClick={() => insertPlaceholder('[Address]', 'subject')}
-                      className="text-[8px] bg-white border border-[#e5e5ea] rounded px-1.5 py-0.5 font-mono text-[#1B3A5C] hover:bg-slate-100 font-bold cursor-pointer"
+                      className="text-[9px] bg-white border border-slate-200 hover:border-slate-300 rounded px-1.5 py-0.5 font-mono text-[#1B3A5C] hover:bg-slate-50 font-bold cursor-pointer"
                     >
                       + [Address]
                     </button>
                     <button 
                       onClick={() => insertPlaceholder('[COE]', 'subject')}
-                      className="text-[8px] bg-white border border-[#e5e5ea] rounded px-1.5 py-0.5 font-mono text-[#1B3A5C] hover:bg-slate-100 font-bold cursor-pointer"
+                      className="text-[9px] bg-white border border-slate-200 hover:border-slate-300 rounded px-1.5 py-0.5 font-mono text-[#1B3A5C] hover:bg-slate-50 font-bold cursor-pointer"
                     >
                       + [COE]
                     </button>
@@ -916,43 +913,43 @@ export function ClientUpdatesModal({
                   type="text"
                   value={masterSubject}
                   onChange={(e) => setMasterSubject(e.target.value)}
-                  className="w-full bg-white border border-[#e5e5ea] rounded-xl px-3 py-2 text-xs font-bold text-[#1B3A5C] focus:outline-none focus:border-[#1B3A5C]"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-[#1B3A5C] focus:outline-none focus:border-[#1B3A5C]"
                   placeholder="Escrow Opened - [Address]"
                 />
               </div>
 
-              {/* Text Body Field */}
-              <div>
-                <div className="flex flex-col gap-1.5 mb-2">
-                  <label className="text-[10px] uppercase font-extrabold text-[#334155] tracking-wider">Message Body Template</label>
+              {/* Text Body Field - Expands vertically */}
+              <div className="flex-1 flex flex-col min-h-0 gap-1.5">
+                <div className="flex flex-col gap-1 shrink-0">
+                  <label className="text-[10px] uppercase font-extrabold text-slate-600 tracking-wider">Message Template Body</label>
                   
-                  {/* Placeholder Buttons */}
-                  <div className="flex flex-wrap gap-1 bg-white p-2 rounded-xl border border-[#e5e5ea]">
-                    <span className="text-[8px] font-bold text-[#86868b] uppercase tracking-wider self-center mr-1">Insert placeholders:</span>
+                  {/* Horizontally scrollable chip bar so it doesn't crowd out the editor on mobile */}
+                  <div className="flex items-center gap-1 overflow-x-auto py-1 px-1.5 bg-white border border-slate-200 rounded-xl max-w-full">
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-0.5">Insert:</span>
                     {[
-                      { tag: '[EscrowDays]', label: 'Escrow Days (e.g. 30)' },
-                      { tag: '[COE]', label: 'Closing Date (COE)' },
-                      { tag: '[AcceptanceDate]', label: 'Acceptance Date' },
-                      { tag: '[ClientName]', label: 'Client(s) Full Name' },
-                      { tag: '[ClientFirstName]', label: 'Client 1 First Name' },
-                      { tag: '[ClientLastName]', label: 'Client 1 Last Name' },
-                      { tag: '[ClientPhone]', label: 'Client 1 Phone' },
-                      { tag: '[ClientEmail]', label: 'Client 1 Email' },
+                      { tag: '[EscrowDays]', label: 'Days' },
+                      { tag: '[COE]', label: 'COE' },
+                      { tag: '[AcceptanceDate]', label: 'Acceptance' },
+                      { tag: '[ClientName]', label: 'Client Name' },
+                      { tag: '[ClientFirstName]', label: 'First Name' },
+                      { tag: '[ClientLastName]', label: 'Last Name' },
+                      { tag: '[ClientPhone]', label: 'Phone' },
+                      { tag: '[ClientEmail]', label: 'Email' },
                       { tag: '[Client2Name]', label: 'Client 2 Name' },
                       { tag: '[Client2Phone]', label: 'Client 2 Phone' },
                       { tag: '[Client2Email]', label: 'Client 2 Email' },
-                      { tag: '[Buyer2Block]', label: 'Buyer 2 Block' },
-                      { tag: '[Seller2Block]', label: 'Seller 2 Block' },
-                      { tag: '[Client2Block]', label: 'Client 2 Details Block' },
-                      { tag: '[LenderName]', label: 'Lender Name' },
+                      { tag: '[Buyer2Block]', label: 'Buyer 2' },
+                      { tag: '[Seller2Block]', label: 'Seller 2' },
+                      { tag: '[Client2Block]', label: 'Client 2 Block' },
+                      { tag: '[LenderName]', label: 'Lender' },
                       { tag: '[LenderPhone]', label: 'Lender Phone' },
                       { tag: '[LenderEmail]', label: 'Lender Email' },
-                      { tag: '[LenderBlock]', label: 'Lender Details Block' },
-                      { tag: '[Address]', label: 'Property Address' },
-                      { tag: '[Price]', label: 'Sale Price' },
-                      { tag: '[AgentName]', label: 'Agent Name' },
+                      { tag: '[LenderBlock]', label: 'Lender Block' },
+                      { tag: '[Address]', label: 'Address' },
+                      { tag: '[Price]', label: 'Price' },
+                      { tag: '[AgentName]', label: 'Agent' },
                       { tag: '[EscrowOfficer]', label: 'Escrow Officer' },
-                      { tag: '[EscrowCompany]', label: 'Escrow Company' },
+                      { tag: '[EscrowCompany]', label: 'Escrow Co' },
                       { tag: '[Collaborator]', label: 'Collaborator' },
                       { tag: '[EscrowEmail]', label: 'Escrow Email' },
                       { tag: '[EscrowPhone]', label: 'Escrow Phone' },
@@ -964,7 +961,7 @@ export function ClientUpdatesModal({
                         key={p.tag}
                         type="button"
                         onClick={() => insertPlaceholder(p.tag, 'text')}
-                        className="text-[9px] bg-slate-50 hover:bg-slate-100 border border-[#e5e5ea] rounded-lg px-2 py-1 font-bold text-[#1B3A5C] active:scale-95 transition-all flex items-center gap-0.5 cursor-pointer"
+                        className="text-[9px] bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2 py-0.5 font-bold text-[#1B3A5C] active:scale-95 transition-all shrink-0 cursor-pointer"
                         title={`Insert ${p.tag}`}
                       >
                         + <span className="font-mono">{p.tag}</span>
@@ -977,16 +974,13 @@ export function ClientUpdatesModal({
                   ref={textTextAreaRef}
                   value={masterText}
                   onChange={(e) => setMasterText(e.target.value)}
-                  className="w-full bg-white border border-[#e5e5ea] rounded-xl p-3 text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed h-24 sm:h-36 min-h-[80px]"
+                  className="w-full flex-1 min-h-[140px] sm:min-h-[180px] bg-white border border-slate-200 rounded-xl p-3 text-xs sm:text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed resize-none overflow-y-auto"
                   placeholder="Type your template body text here..."
                 />
-                <p className="text-[10px] text-[#86868b] mt-1.5 leading-normal">
-                  <strong>Brackets Guide:</strong> When viewing an escrow, placeholders like <code>[EscrowDays]</code>, <code>[COE]</code>, <code>[ClientName]</code>, <code>[Client2Block]</code>, <code>[LenderName]</code>, or <code>[Address]</code> will automatically fill with real info.
-                </p>
               </div>
 
-              {/* Save & Cancel */}
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2 border-t border-[#e5e5ea] w-full">
+              {/* Save & Cancel Actions */}
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 shrink-0 w-full">
                 <div>
                   {isAdminOrOwner && (
                     <button
@@ -1001,16 +995,16 @@ export function ClientUpdatesModal({
                     </button>
                   )}
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-end">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsEditingMaster(false)}
-                    className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-white border border-[#e5e5ea] hover:bg-slate-100 text-[#334155] rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm cursor-pointer text-center"
+                    className="px-3.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSaveMaster}
-                    className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-[#1B3A5C] hover:bg-[#11253C] text-white rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer text-center"
+                    className="px-4 py-1.5 bg-[#1B3A5C] hover:bg-[#11253C] text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
                   >
                     Save Changes
                   </button>
