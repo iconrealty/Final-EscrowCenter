@@ -273,3 +273,27 @@ export function parseAddressComponents(rawAddress?: string): { address: string; 
   }
 }
 
+/**
+ * Formats an escrow address into a direct Zillow property/search URL.
+ * Example: https://www.zillow.com/homes/123-Main-St,-Los-Angeles,-CA-90001_rb/
+ */
+export function getZillowUrl(rawAddress?: string | { address?: string; city?: string; zipCode?: string }): string {
+  if (!rawAddress) return 'https://www.zillow.com';
+  
+  let addrStr = '';
+  if (typeof rawAddress === 'string') {
+    addrStr = rawAddress.trim();
+  } else {
+    addrStr = formatPropertyAddress(rawAddress as any) || rawAddress.address || '';
+  }
+
+  if (!addrStr || !addrStr.trim()) return 'https://www.zillow.com';
+
+  // Format the address with dashes for spaces to match Zillow's search/homes format
+  const formatted = addrStr
+    .trim()
+    .replace(/\s+/g, '-');
+
+  return `https://www.zillow.com/homes/${encodeURIComponent(formatted)}_rb/`;
+}
+

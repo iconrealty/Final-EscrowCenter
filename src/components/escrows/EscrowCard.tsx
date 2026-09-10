@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, getApplicableContingencies, formatPropertyAddress } from '../../types';
+import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, getApplicableContingencies, formatPropertyAddress, getZillowUrl } from '../../types';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
-import { CheckCircle2, Users, Phone, MessageSquare, Mail, User, Copy, Check } from 'lucide-react';
+import { CheckCircle2, Users, Phone, MessageSquare, Mail, User, Copy, Check, ExternalLink } from 'lucide-react';
 
 export function EscrowCard({ 
   escrow, 
@@ -192,9 +192,17 @@ export function EscrowCard({
               {(escrow.client2FirstName?.trim() || escrow.client2LastName?.trim()) && ` & ${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`}
             </div>
             <div className="flex items-center gap-1.5 min-w-0">
-              <h3 className="font-bold text-base text-[#1B3A5C] group-hover/address:text-[#11253C] tracking-tight line-clamp-2 transition-colors" title={fullAddress}>
-                {fullAddress}
-              </h3>
+              <a
+                href={getZillowUrl(fullAddress)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="font-bold text-base text-[#1B3A5C] hover:text-[#006AFF] hover:underline tracking-tight line-clamp-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 group/zillow"
+                title="Open on Zillow (tap to view property details)"
+              >
+                <span>{fullAddress}</span>
+                <ExternalLink size={13} className="text-slate-400 group-hover/zillow:text-[#006AFF] shrink-0 opacity-70 sm:opacity-0 sm:group-hover/address:opacity-100 transition-opacity" />
+              </a>
               <button
                 type="button"
                 onClick={handleCopyAddress}

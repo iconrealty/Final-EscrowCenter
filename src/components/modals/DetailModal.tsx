@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Escrow, CONTINGENCIES, getContingencyDaysLeft, getContingencyDueDate, formatPropertyAddress } from '../../types';
+import { Escrow, CONTINGENCIES, getContingencyDaysLeft, getContingencyDueDate, formatPropertyAddress, getZillowUrl } from '../../types';
 import { X, Pencil, Trash2, ExternalLink, Check, Calculator, Copy } from 'lucide-react';
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
@@ -87,9 +87,16 @@ export function DetailModal({
               </span>
             </div>
             <div className="flex items-center gap-2 mb-2">
-              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-black truncate max-w-[240px] sm:max-w-none" title={fullAddress}>
-                {fullAddress}
-              </h2>
+              <a
+                href={getZillowUrl(fullAddress)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xl sm:text-2xl font-semibold tracking-tight text-black hover:text-[#006AFF] hover:underline truncate max-w-[240px] sm:max-w-none inline-flex items-center gap-1.5 group/zillow transition-colors"
+                title="Open on Zillow (tap to view property details)"
+              >
+                <span className="truncate">{fullAddress}</span>
+                <ExternalLink size={16} className="text-slate-400 group-hover/zillow:text-[#006AFF] shrink-0" />
+              </a>
               <button
                 type="button"
                 onClick={handleCopyAddress}
