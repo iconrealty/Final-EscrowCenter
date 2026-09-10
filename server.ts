@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -56,6 +57,44 @@ async function startServer() {
       aiAvailable: !!process.env.GEMINI_API_KEY,
       timestamp: new Date().toISOString(),
     });
+  });
+
+  // Global Default Email/SMS Templates Endpoints
+  app.get("/api/templates/defaults", (_req, res) => {
+    try {
+      const filePath = path.join(process.cwd(), "src", "data", "defaultTemplates.json");
+      if (fs.existsSync(filePath)) {
+        const data = fs.readFileSync(filePath, "utf-8");
+        return res.json({ success: true, templates: JSON.parse(data) });
+      }
+      return res.json({ success: true, templates: [] });
+    } catch (err: any) {
+      console.error("Error reading default templates:", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.post("/api/templates/defaults", (req, res) => {
+    try {
+      const { templates, userEmail } = req.body;
+      if (!Array.isArray(templates) || templates.length === 0) {
+        return res.status(400).json({ success: false, error: "Invalid templates array" });
+      }
+
+      const dirPath = path.join(process.cwd(), "src", "data");
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+
+      const filePath = path.join(dirPath, "defaultTemplates.json");
+      fs.writeFileSync(filePath, JSON.stringify(templates, null, 2), "utf-8");
+      console.log(`[Templates] Updated global default templates from ${userEmail || 'unknown'}. Total: ${templates.length}`);
+
+      return res.json({ success: true, count: templates.length, message: "Default templates updated successfully" });
+    } catch (err: any) {
+      console.error("Error saving default templates:", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
   });
 
   // AI RPA & Contract Scanner Endpoint

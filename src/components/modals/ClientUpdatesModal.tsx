@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Escrow, formatPropertyAddress, adjustWeekendToMonday } from '../../types';
-import { X, MessageSquare, Mail, Check, ChevronDown } from 'lucide-react';
+import { X, MessageSquare, Mail, Check, ChevronDown, Globe, CheckCheck } from 'lucide-react';
 import { parseISO, format, addDays, differenceInCalendarDays } from 'date-fns';
 import { motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { DEFAULT_TEMPLATES, EmailTemplate, TemplateSide } from '../../data/defaultTemplates';
+
+export type { TemplateSide, EmailTemplate };
 
 const OLD_FIRST_ESCROW_V1 = 'Hi [Esrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the buyer and Transaction Coordinator information.\n\nBuyers\nName: [Buyer Name]\nEmail: [Buyer Email]\nPhone: [Buyer Phone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!';
 
@@ -19,116 +22,7 @@ const OLD_LISTING_OPEN_V2 = 'Hi [Escrow Officer],\n\nPlease open escrow for our 
 
 const OLD_LISTING_OPEN_V3 = 'Hi [Escrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Seller2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!';
 
-export type TemplateSide = 'buyer' | 'seller' | 'both';
-
-export interface EmailTemplate {
-  id: string;
-  label: string;
-  subject: string;
-  text: string;
-  side: TemplateSide;
-}
-
-const TEMPLATES: EmailTemplate[] = [
-  {
-    id: 'first_escrow_email',
-    label: 'First Escrow Email (Buyer)',
-    subject: 'First Escrow Email - [Address]',
-    text: 'Hi [Escrow Officer],\n\nWhile my Transaction Coordinator uploads the remaining documents to our platform, below is the escrow term, buyer, lender, and Transaction Coordinator information.\n\nEscrow Length: [EscrowDays] Days\nEstimated Closing Date (COE): [COE]\n\nBuyers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Buyer2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!',
-    side: 'buyer'
-  },
-  {
-    id: 'request_open_escrow_listing',
-    label: 'Request to Open Escrow (Listing side)',
-    subject: 'Request to Open Escrow: [Address]',
-    text: 'Hi [Escrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nEscrow Length: [EscrowDays] Days\nEstimated Closing Date (COE): [COE]\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Seller2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!',
-    side: 'seller'
-  },
-  {
-    id: 'opening',
-    label: 'Escrow Opened (Buyer)',
-    subject: 'Escrow Opened: [Address]',
-    text: 'Hi [ClientName], Escrow has officially been opened 🎉\nTarget Closing Date: [COE] ([EscrowDays] Days Escrow)\n\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nLENDER:\n\nLender: [LenderName]\nLender email: [LenderEmail]\nLender phone number: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nEscrow will be sending you wire instructions shortly for the initial deposit (3%). Please follow the instructions carefully. If you have any questions at any time, I’m always available.\n\nInspection: I’m coordinating the inspection, tentatively for Wednesday afternoon. I’ll confirm availability and keep you posted.',
-    side: 'buyer'
-  },
-  {
-    id: 'opening_listing',
-    label: 'Escrow Opened (Listing)',
-    subject: 'Escrow Opened: [Address]',
-    text: 'Hi [ClientName], Escrow has officially been opened 🎉\nTarget Closing Date: [COE] ([EscrowDays] Days Escrow)\n\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nWe will be coordinating the next steps with the buyer\'s side. If you have any questions at any time, I’m always available.',
-    side: 'seller'
-  },
-  {
-    id: 'inspection_day',
-    label: 'Schedule Inspection',
-    subject: 'Schedule Inspection - [Address]',
-    text: 'Hi [ClientFirstName],\n\nThe inspection usually takes about 1.5 hours, and I recommend that you be present for at least the last 30 minutes so the inspector can walk you through the main findings. \nAt the same time, we’ll be conducting our initial visual home inspection.',
-    side: 'buyer'
-  },
-  {
-    id: 'emd',
-    label: 'EMD Received by Escrow',
-    subject: 'EMD Received - [Address]',
-    text: 'Hi [ClientName], this is to confirm that your Earnest Money Deposit (EMD) has been successfully received by [EscrowOfficer]. That is another major milestone complete! I will keep you posted on the next steps. - [AgentName]',
-    side: 'both'
-  },
-  {
-    id: 'insurance',
-    label: 'Get Insurance (Buyer)',
-    subject: 'Home Insurance Quotes - [Address]',
-    text: 'Hi [ClientName],\n\nNow its time to get quotes on Home insurance, you can try first with your actual insurance company if you need any additional quotes please let me know. - [AgentName]',
-    side: 'buyer'
-  },
-  {
-    id: 'appraisal',
-    label: 'Appraisal Completed',
-    subject: 'Appraisal Completed - [Address]',
-    text: 'Hi [ClientName], fantastic news! The property appraisal for [Address] has been completed and it came in at value! We are in great shape to move forward. - [AgentName]',
-    side: 'both'
-  },
-  {
-    id: 'disclosures',
-    label: 'Disclosures Reviewed (Buyer)',
-    subject: 'Disclosures Completed - [Address]',
-    text: 'Hi [ClientName], we have successfully completed the review and signature of all seller disclosures for [Address]. Thank you for your prompt responses! - [AgentName]',
-    side: 'buyer'
-  },
-  {
-    id: 'loan_approval',
-    label: 'Signing Appointment',
-    subject: 'Signing Appointment - [Address]',
-    text: 'Hi [ClientName], congratulations! Your lender ([LenderName]) has issued the Final Loan Approval! This is a major milestone and means we are almost at the finish line. Next up will be signing our final loan documents. - [AgentName]',
-    side: 'buyer'
-  },
-  {
-    id: 'contingencies',
-    label: 'Contingencies Removal',
-    subject: 'Contingencies Removal - [Address]',
-    text: 'Hi [ClientName], we have officially removed the contingencies for your escrow on [Address]! This is a huge milestone that secures our position and brings us one step closer to closing on [COE]. - [AgentName]',
-    side: 'both'
-  },
-  {
-    id: 'signing',
-    label: 'Signed Docs sent to lender',
-    subject: 'Signed Docs Sent to Lender - [Address]',
-    text: 'Hi [ClientName], great job signing the final escrow and loan documents today! We are now waiting on the final lender review, funding, and recording. - [AgentName]',
-    side: 'buyer'
-  },
-  {
-    id: 'funds',
-    label: 'Final Funds Wired',
-    subject: 'Final Wire Received - [Address]',
-    text: 'Hi [ClientName], the escrow company has confirmed receipt of your final wire deposit. Everything is set on your side for recording. - [AgentName]',
-    side: 'buyer'
-  },
-  {
-    id: 'closing',
-    label: 'Transaction Closed',
-    subject: 'Congratulations! Escrow Closed - [Address]',
-    text: 'Hi [ClientName], IT IS OFFICIAL! Our transaction has recorded and escrow is officially CLOSED on [Address]! Congratulations on your home! It has been an absolute pleasure working with you. - [AgentName]',
-    side: 'both'
-  }
-];
+const TEMPLATES: EmailTemplate[] = DEFAULT_TEMPLATES;
 
 const upgradeTemplateIfNeeded = (t: EmailTemplate, custom?: { id: string; text?: string; subject?: string }): EmailTemplate => {
   if (!custom || !custom.text) return t;
@@ -178,15 +72,20 @@ export function ClientUpdatesModal({
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   const { user } = useAuth();
+  const isAdminOrOwner = !user?.email || user?.email === 'paulmuner@gmail.com';
   
+  const [baseDefaults, setBaseDefaults] = useState<EmailTemplate[]>(DEFAULT_TEMPLATES);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
+
   // Initialize templates state
-  const [templates, setTemplates] = useState(() => {
+  const [templates, setTemplates] = useState<EmailTemplate[]>(() => {
     const saved = localStorage.getItem('escrow_custom_templates');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return TEMPLATES.map(t => {
+          return DEFAULT_TEMPLATES.map(t => {
             const custom = parsed.find((p: any) => p.id === t.id);
             return upgradeTemplateIfNeeded(t, custom);
           });
@@ -195,8 +94,24 @@ export function ClientUpdatesModal({
         console.error("Failed to parse local templates", e);
       }
     }
-    return TEMPLATES;
+    return DEFAULT_TEMPLATES;
   });
+
+  // Fetch latest global defaults from server on mount
+  useEffect(() => {
+    fetch('/api/templates/defaults')
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.templates) && data.templates.length > 0) {
+          setBaseDefaults(data.templates);
+          const saved = localStorage.getItem('escrow_custom_templates');
+          if (!saved) {
+            setTemplates(data.templates);
+          }
+        }
+      })
+      .catch(err => console.warn('Could not fetch server template defaults:', err));
+  }, []);
 
   // Load centralized templates from Firestore
   useEffect(() => {
@@ -208,13 +123,22 @@ export function ClientUpdatesModal({
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data().customTemplates) {
           const cloudTemplates = docSnap.data().customTemplates;
-          if (Array.isArray(cloudTemplates)) {
-            const merged = TEMPLATES.map(t => {
+          if (Array.isArray(cloudTemplates) && cloudTemplates.length > 0) {
+            const merged = baseDefaults.map(t => {
               const custom = cloudTemplates.find((p: any) => p.id === t.id);
               return upgradeTemplateIfNeeded(t, custom);
             });
             setTemplates(merged);
             localStorage.setItem('escrow_custom_templates', JSON.stringify(merged));
+
+            // If this is paulmuner@gmail.com, automatically sync their custom templates to server defaults
+            if (user.email === 'paulmuner@gmail.com') {
+              fetch('/api/templates/defaults', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ templates: merged, userEmail: user.email })
+              }).catch(e => console.warn('Auto-sync defaults error:', e));
+            }
           }
         }
       } catch (err) {
@@ -223,7 +147,7 @@ export function ClientUpdatesModal({
     };
 
     loadCloudTemplates();
-  }, [user]);
+  }, [user, baseDefaults]);
 
   // Initial template: default to 'first_escrow_email' (Buyer)
   const defaultTemplateId = 'first_escrow_email';
@@ -562,13 +486,48 @@ export function ClientUpdatesModal({
       } catch (err) {
         console.error("Error saving centralized templates to Firestore:", err);
       }
+
+      // If paulmuner@gmail.com, automatically propagate as company defaults for all agents
+      if (user.email === 'paulmuner@gmail.com') {
+        try {
+          await fetch('/api/templates/defaults', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ templates: updated, userEmail: user.email })
+          });
+          setBaseDefaults(updated);
+        } catch (e) {
+          console.warn('Error saving global defaults:', e);
+        }
+      }
     }
 
     setIsEditingMaster(false);
   };
 
+  const handlePublishAsCompanyDefaults = async () => {
+    setIsPublishing(true);
+    try {
+      const res = await fetch('/api/templates/defaults', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templates, userEmail: user?.email || 'paulmuner@gmail.com' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBaseDefaults(templates);
+        setPublishSuccess('All your customized messages are now set as the company default for all agents!');
+        setTimeout(() => setPublishSuccess(null), 5000);
+      }
+    } catch (err) {
+      console.error('Failed to set company defaults:', err);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const handleResetTemplate = async () => {
-    const original = TEMPLATES.find(t => t.id === selectedTemplateId);
+    const original = baseDefaults.find(t => t.id === selectedTemplateId) || DEFAULT_TEMPLATES.find(t => t.id === selectedTemplateId);
     if (original) {
       setMasterSubject(original.subject);
       setMasterText(original.text);
@@ -637,6 +596,17 @@ export function ClientUpdatesModal({
             </h2>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {isAdminOrOwner && (
+              <button
+                onClick={handlePublishAsCompanyDefaults}
+                disabled={isPublishing}
+                className="px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                title="Set your current customized templates as the default for all agents who have not customized their own"
+              >
+                <Globe size={13} />
+                <span>{isPublishing ? 'Publishing...' : 'Set as Default for All Agents'}</span>
+              </button>
+            )}
             <button
               onClick={() => setIsEditingMaster(!isEditingMaster)}
               className={`px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center transition-all cursor-pointer ${
@@ -658,6 +628,12 @@ export function ClientUpdatesModal({
 
         {/* Content */}
         <div className="p-5 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-4">
+          {publishSuccess && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl text-xs font-semibold flex items-center gap-2.5 shadow-xs">
+              <CheckCheck size={18} className="text-emerald-600 shrink-0" />
+              <span>{publishSuccess}</span>
+            </div>
+          )}
           {!isEditingMaster ? (
             <>
               {/* Template Selection Dropdown */}
@@ -1010,19 +986,35 @@ export function ClientUpdatesModal({
               </div>
 
               {/* Save & Cancel */}
-              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 border-t border-[#e5e5ea] w-full">
-                <button
-                  onClick={() => setIsEditingMaster(false)}
-                  className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-white border border-[#e5e5ea] hover:bg-slate-100 text-[#334155] rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm cursor-pointer text-center"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveMaster}
-                  className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-[#1B3A5C] hover:bg-[#11253C] text-white rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer text-center"
-                >
-                  Save Changes
-                </button>
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2 border-t border-[#e5e5ea] w-full">
+                <div>
+                  {isAdminOrOwner && (
+                    <button
+                      type="button"
+                      onClick={handlePublishAsCompanyDefaults}
+                      disabled={isPublishing}
+                      className="w-full sm:w-auto px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer text-center flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      title="Set all current messages as the company default for agents who have not made modifications"
+                    >
+                      <Globe size={13} />
+                      <span>{isPublishing ? 'Publishing...' : 'Set All as Default for All Agents'}</span>
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-end">
+                  <button
+                    onClick={() => setIsEditingMaster(false)}
+                    className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-white border border-[#e5e5ea] hover:bg-slate-100 text-[#334155] rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm cursor-pointer text-center"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveMaster}
+                    className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-[#1B3A5C] hover:bg-[#11253C] text-white rounded-xl text-sm sm:text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer text-center"
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </div>
           )}
