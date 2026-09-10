@@ -600,11 +600,11 @@ export function ClientUpdatesModal({
               <button
                 onClick={handlePublishAsCompanyDefaults}
                 disabled={isPublishing}
-                className="px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer shadow-xs disabled:opacity-50"
-                title="Set your current customized templates as the default for all agents who have not customized their own"
+                className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center shrink-0"
+                title="Publish all your customized messages as the system default for all agents"
+                aria-label="Publish all messages as company default"
               >
-                <Globe size={13} />
-                <span>{isPublishing ? 'Publishing...' : 'Set as Default for All Agents'}</span>
+                <Globe size={15} className={isPublishing ? 'animate-spin' : ''} />
               </button>
             )}
             <button
@@ -993,11 +993,11 @@ export function ClientUpdatesModal({
                       type="button"
                       onClick={handlePublishAsCompanyDefaults}
                       disabled={isPublishing}
-                      className="w-full sm:w-auto px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer text-center flex items-center justify-center gap-1.5 disabled:opacity-50"
-                      title="Set all current messages as the company default for agents who have not made modifications"
+                      className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all shadow-xs active:scale-95 cursor-pointer flex items-center justify-center disabled:opacity-50"
+                      title="Publish all your customized messages as the system default for all agents"
+                      aria-label="Publish all messages as company default"
                     >
-                      <Globe size={13} />
-                      <span>{isPublishing ? 'Publishing...' : 'Set All as Default for All Agents'}</span>
+                      <Globe size={15} className={isPublishing ? 'animate-spin' : ''} />
                     </button>
                   )}
                 </div>
