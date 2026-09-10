@@ -1,6 +1,6 @@
 import React from 'react';
 import { Escrow, MILESTONES, CONTINGENCIES, getApplicableContingencies, isContingencyUrgent, getContingencyDaysLeft, getContingencyDueDate, ALL_TASKS } from '../../types';
-import { X, Check } from 'lucide-react';
+import { X } from 'lucide-react';
 import { MilestoneChip } from '../escrows/MilestoneChip';
 import { ContingencyChip } from '../escrows/ContingencyChip';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
@@ -95,7 +95,7 @@ export function MilestonesContingenciesModal({
                 <span className="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-3 py-0.5 rounded-full font-mono shadow-2xs">
                   {completedMilestones} of {MILESTONES.length} Completed
                 </span>
-                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">• Click pill to toggle status</span>
+                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">(Click pill to toggle status)</span>
               </div>
               {hasIncompleteMilestones && (
                 <div className="sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 mt-2.5 sm:mt-0">
@@ -142,7 +142,7 @@ export function MilestonesContingenciesModal({
                 <span className="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-3 py-0.5 rounded-full font-mono shadow-2xs">
                   {completedContingencies} of {applicableContingencies.length} Removed
                 </span>
-                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">• Click pill to toggle status</span>
+                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">(Click pill to toggle status)</span>
               </div>
               {hasIncompleteContingencies && (
                 <div className="sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 mt-2.5 sm:mt-0">

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Check, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const MILESTONE_DESCRIPTIONS: Record<string, string> = {
   'BRBC': 'Buyer Representation Agreement',
@@ -69,21 +68,19 @@ export function MilestoneChip({
 
   if (isDone) {
     statusBadgeContent = (
-      <span className="text-xs font-bold bg-white/15 text-emerald-300 px-2.5 py-1 rounded-lg shrink-0 flex items-center gap-1.5 whitespace-nowrap shadow-2xs">
-        <Check size={13} strokeWidth={3} className="text-emerald-300" />
+      <span className="text-xs font-bold bg-white/15 text-emerald-300 px-2.5 py-1 rounded-lg shrink-0 flex items-center whitespace-nowrap shadow-2xs">
         <span>Completed</span>
       </span>
     );
   } else if (isOverdue) {
     statusBadgeContent = (
-      <span className="text-xs font-bold bg-white border border-rose-200 text-rose-700 px-2.5 py-1 rounded-lg shrink-0 flex items-center gap-1.5 whitespace-nowrap shadow-2xs">
-        <AlertCircle size={13} className="text-rose-600 shrink-0" />
+      <span className="text-xs font-bold bg-white border border-rose-200 text-rose-700 px-2.5 py-1 rounded-lg shrink-0 flex items-center whitespace-nowrap shadow-2xs">
         <span className="font-extrabold text-rose-600">Pending</span>
       </span>
     );
   } else {
     statusBadgeContent = (
-      <span className="text-xs font-bold bg-slate-100 border border-slate-200/70 text-slate-600 px-2.5 py-1 rounded-lg shrink-0 flex items-center gap-1.5 whitespace-nowrap">
+      <span className="text-xs font-bold bg-slate-100 border border-slate-200/70 text-slate-600 px-2.5 py-1 rounded-lg shrink-0 flex items-center whitespace-nowrap">
         <span>Pending</span>
       </span>
     );
@@ -94,13 +91,6 @@ export function MilestoneChip({
   const content = (
     <>
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        {isDone ? (
-          <CheckCircle2 size={16} className="text-emerald-300 shrink-0" />
-        ) : isOverdue ? (
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
-        ) : (
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0" />
-        )}
         <span className={keyBadgeClasses}>{displayKey}</span>
         <span className={labelClasses} title={displayTitle}>{displayTitle}</span>
       </div>

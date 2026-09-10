@@ -1,6 +1,5 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Check, CheckCircle2 } from 'lucide-react';
 
 export function ContingencyChip({ 
   taskKey,
@@ -65,10 +64,9 @@ export function ContingencyChip({
 
   if (isDone) {
     statusBadgeContent = (
-      <span className="text-xs font-bold bg-white/15 text-emerald-300 px-2.5 py-1 rounded-lg shrink-0 flex items-center gap-1.5 whitespace-nowrap shadow-2xs">
-        <Check size={13} strokeWidth={3} className="text-emerald-300" />
+      <span className="text-xs font-bold bg-white/15 text-emerald-300 px-2.5 py-1 rounded-lg shrink-0 flex items-center whitespace-nowrap shadow-2xs">
         <span>Removed</span>
-        {expDateStr && <span className="text-white/70 font-normal text-[11px]">({expDateStr})</span>}
+        {expDateStr && <span className="text-white/70 font-normal text-[11px] ml-1">({expDateStr})</span>}
       </span>
     );
   } else if (isUrgent) {
@@ -116,15 +114,6 @@ export function ContingencyChip({
   const content = (
     <>
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        {isDone ? (
-          <CheckCircle2 size={16} className="text-emerald-300 shrink-0" />
-        ) : isUrgent ? (
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
-        ) : isApproaching ? (
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-        ) : (
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0" />
-        )}
         <span className={keyBadgeClasses}>{taskKey}</span>
         <span className={labelClasses}>{label}</span>
       </div>
