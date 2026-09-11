@@ -50,7 +50,7 @@ function ContactCard({
 }: ContactCardProps) {
   const hasInfo = Boolean(name?.trim() || phone?.trim() || email?.trim() || company?.trim());
   const cleanPhone = phone ? phone.replace(/[^0-9+]/g, '') : '';
-  const isSectionCopied = copiedKey === fieldPrefix;
+  const isSectionCopied = copiedKey === fieldPrefix || copiedKey === roleTitle;
 
   const mailtoUrl = email?.trim()
     ? `mailto:${email.trim()}${emailSubject ? `?subject=${encodeURIComponent(emailSubject)}` : ''}`
@@ -70,7 +70,11 @@ function ContactCard({
   }
 
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3.5 sm:p-5 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors">
+    <div className={`bg-white rounded-xl sm:rounded-2xl border p-3.5 sm:p-5 flex flex-col justify-between shadow-xs transition-all duration-200 ${
+      isSectionCopied
+        ? 'border-emerald-500 ring-2 ring-emerald-500/20'
+        : 'border-slate-200 hover:border-slate-300'
+    }`}>
       <div>
         {/* 1. Title */}
         <div className="flex items-center justify-between mb-0.5 sm:mb-1">
@@ -145,12 +149,16 @@ function ContactCard({
                     e.stopPropagation();
                     onCopy(phone.trim(), `${fieldPrefix}-phone`);
                   }}
-                  className="p-1.5 sm:p-2 hover:text-slate-950 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                  className={`p-1.5 sm:p-2 rounded-lg transition-all active:scale-95 cursor-pointer ${
+                    copiedKey === `${fieldPrefix}-phone`
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'hover:text-slate-950 hover:bg-white text-slate-600'
+                  }`}
                   title="Copy Phone"
                   aria-label="Copy Phone"
                 >
                   {copiedKey === `${fieldPrefix}-phone` ? (
-                    <Check size={18} className="text-emerald-600 stroke-[2.5]" />
+                    <Check size={18} className="text-white stroke-[2.5]" />
                   ) : (
                     <Copy size={18} />
                   )}
@@ -195,12 +203,16 @@ function ContactCard({
                     e.stopPropagation();
                     onCopy(email.trim(), `${fieldPrefix}-email`);
                   }}
-                  className="p-1.5 sm:p-2 hover:text-slate-950 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                  className={`p-1.5 sm:p-2 rounded-lg transition-all active:scale-95 cursor-pointer ${
+                    copiedKey === `${fieldPrefix}-email`
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'hover:text-slate-950 hover:bg-white text-slate-600'
+                  }`}
                   title="Copy Email"
                   aria-label="Copy Email"
                 >
                   {copiedKey === `${fieldPrefix}-email` ? (
-                    <Check size={18} className="text-emerald-600 stroke-[2.5]" />
+                    <Check size={18} className="text-white stroke-[2.5]" />
                   ) : (
                     <Copy size={18} />
                   )}
@@ -216,7 +228,7 @@ function ContactCard({
         <button
           type="button"
           onClick={onCopySection}
-          className={`w-full sm:w-auto px-3 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-bold rounded-xl transition-all shadow-xs active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`w-full sm:w-auto px-3 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-bold rounded-full transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer ${
             isSectionCopied
               ? 'bg-emerald-600 text-white'
               : 'bg-[#1B3A5C] hover:bg-[#152e4a] text-white'
@@ -230,8 +242,7 @@ function ContactCard({
             </>
           ) : (
             <>
-              <Copy size={12} className="sm:hidden" />
-              <Copy size={13} className="hidden sm:block" />
+              <Copy size={13} />
               <span>Copy Contact</span>
             </>
           )}
