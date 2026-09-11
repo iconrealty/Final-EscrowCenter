@@ -42,8 +42,8 @@ function InfoItem({
 
   return (
     <div className={`flex flex-col min-w-0 ${className}`}>
-      {/* Title / Label: Distinct muted uppercase */}
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1 truncate">
+      {/* Title / Label: Distinct dark blue uppercase */}
+      <span className="text-[11px] font-bold uppercase tracking-wider text-[#1B3A5C] mb-1 truncate">
         {label}
       </span>
 
@@ -124,7 +124,7 @@ export function DetailModal({
         
         {/* Simple Header: Address and basic text actions */}
         <div id="detail-modal-header" className="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-black truncate pr-4" title={fullAddress}>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1B3A5C] truncate pr-4" title={fullAddress}>
             {fullAddress}
           </h2>
 
@@ -244,7 +244,7 @@ export function DetailModal({
 
           {/* Property & Escrow Terms */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-black pb-3 mb-4 border-b border-slate-200">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C] pb-3 mb-4 border-b border-slate-200">
               PROPERTY & ESCROW TERMS
             </h3>
 
@@ -269,7 +269,7 @@ export function DetailModal({
             
             {/* Primary Client (Client 1) */}
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-black pb-3 mb-4 border-b border-slate-200">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C] pb-3 mb-4 border-b border-slate-200">
                 PRIMARY CLIENT
               </h3>
 
@@ -299,7 +299,7 @@ export function DetailModal({
 
             {/* Secondary Client (Client 2) */}
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-black pb-3 mb-4 border-b border-slate-200">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C] pb-3 mb-4 border-b border-slate-200">
                 SECONDARY CLIENT
               </h3>
 
@@ -335,7 +335,7 @@ export function DetailModal({
 
             {/* Other Agent */}
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-black pb-3 mb-4 border-b border-slate-200">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C] pb-3 mb-4 border-b border-slate-200">
                 OTHER AGENT
               </h3>
 
@@ -349,7 +349,7 @@ export function DetailModal({
 
             {/* Lender */}
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-black pb-3 mb-4 border-b border-slate-200">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C] pb-3 mb-4 border-b border-slate-200">
                 LENDER
               </h3>
 
@@ -363,7 +363,7 @@ export function DetailModal({
 
             {/* Escrow */}
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-black pb-3 mb-4 border-b border-slate-200">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C] pb-3 mb-4 border-b border-slate-200">
                 ESCROW
               </h3>
 
@@ -377,7 +377,7 @@ export function DetailModal({
 
             {/* Title */}
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-black pb-3 mb-4 border-b border-slate-200">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C] pb-3 mb-4 border-b border-slate-200">
                 TITLE
               </h3>
 
@@ -393,7 +393,7 @@ export function DetailModal({
 
           {/* Collaborator & Notes */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-black pb-3 mb-4 border-b border-slate-200">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C] pb-3 mb-4 border-b border-slate-200">
               COLLABORATOR & NOTES
             </h3>
 
@@ -404,7 +404,7 @@ export function DetailModal({
               />
 
               <div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block mb-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#1B3A5C] block mb-1.5">
                   TRANSACTION NOTES
                 </span>
                 {escrow.notes ? (
@@ -420,7 +420,7 @@ export function DetailModal({
 
           {/* Documents Section */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-black pb-3 mb-4 border-b border-slate-200">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C] pb-3 mb-4 border-b border-slate-200">
               DOCUMENTS & ATTACHMENTS
             </h3>
             <DocumentsSection 

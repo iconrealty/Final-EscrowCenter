@@ -82,7 +82,7 @@ function ContactCard({
             {roleTitle}
           </span>
           {extraInfo?.value && (
-            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+            <span className="text-[10px] sm:text-[11px] font-bold text-[#1B3A5C] bg-[#1B3A5C]/10 px-2 py-0.5 rounded">
               {extraInfo.label}: {extraInfo.value}
             </span>
           )}
@@ -95,8 +95,8 @@ function ContactCard({
 
         {/* 3. Then the Company */}
         {company?.trim() ? (
-          <p className="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5 mb-2 sm:mb-2.5 flex items-center gap-1.5 truncate">
-            {companyLabel && <span className="text-slate-400 font-medium">{companyLabel}:</span>}
+          <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5 mb-2 sm:mb-2.5 flex items-center gap-1.5 truncate">
+            {companyLabel && <span className="text-[#1B3A5C] font-bold">{companyLabel}:</span>}
             <span className="truncate">{company.trim()}</span>
           </p>
         ) : (
