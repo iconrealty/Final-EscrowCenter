@@ -579,19 +579,19 @@ export function ClientUpdatesModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[120] flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[120] flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden">
       <motion.div 
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
         transition={{ duration: 0.15, ease: 'easeOut' }}
-        className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col h-[94vh] sm:h-[88vh]"
+        className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl shadow-2xl overflow-hidden flex flex-col h-[78vh] sm:h-[84vh] max-h-[760px]"
       >
         {/* Header */}
-        <div className="px-4 sm:px-6 py-3 border-b border-[#e5e5ea] flex justify-between items-center bg-slate-50 shrink-0">
+        <div className="px-4 sm:px-6 py-2.5 sm:py-3.5 border-b border-[#e5e5ea] flex justify-between items-center bg-slate-50 shrink-0">
           <div className="min-w-0 pr-2">
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 block">Notifications</span>
-            <h2 className="font-extrabold text-sm sm:text-base text-slate-900 truncate max-w-[200px] sm:max-w-none" title={escrow.address}>
+            <h2 className="font-extrabold text-xs sm:text-base text-slate-900 truncate max-w-[170px] sm:max-w-none" title={escrow.address}>
               {escrow.address}
             </h2>
           </div>
@@ -773,7 +773,7 @@ export function ClientUpdatesModal({
                 <textarea
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
-                  className="w-full flex-1 min-h-[160px] sm:min-h-[220px] bg-white border border-slate-200 hover:border-slate-300 focus:border-[#1B3A5C] focus:ring-2 focus:ring-[#1B3A5C]/10 rounded-xl p-3 text-xs sm:text-sm text-slate-800 focus:outline-none font-sans leading-relaxed resize-none overflow-y-auto"
+                  className="w-full flex-1 min-h-[110px] sm:min-h-[220px] bg-white border border-slate-200 hover:border-slate-300 focus:border-[#1B3A5C] focus:ring-2 focus:ring-[#1B3A5C]/10 rounded-xl p-3 text-xs sm:text-sm text-slate-800 focus:outline-none font-sans leading-relaxed resize-none overflow-y-auto"
                   placeholder="Review or edit your message here..."
                 />
 
@@ -974,7 +974,7 @@ export function ClientUpdatesModal({
                   ref={textTextAreaRef}
                   value={masterText}
                   onChange={(e) => setMasterText(e.target.value)}
-                  className="w-full flex-1 min-h-[140px] sm:min-h-[180px] bg-white border border-slate-200 rounded-xl p-3 text-xs sm:text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed resize-none overflow-y-auto"
+                  className="w-full flex-1 min-h-[110px] sm:min-h-[180px] bg-white border border-slate-200 rounded-xl p-3 text-xs sm:text-sm focus:outline-none focus:border-[#1B3A5C] font-sans leading-relaxed resize-none overflow-y-auto"
                   placeholder="Type your template body text here..."
                 />
               </div>
