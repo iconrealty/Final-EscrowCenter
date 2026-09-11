@@ -26,12 +26,14 @@ function InfoItem({
   label,
   value,
   hrefType,
+  emailSubject,
   className = '',
   valueClassName = '',
 }: {
   label: string;
   value?: string | number | null;
   hrefType?: 'tel' | 'mailto';
+  emailSubject?: string;
   className?: string;
   valueClassName?: string;
 }) {
@@ -57,9 +59,9 @@ function InfoItem({
           </a>
         ) : hrefType === 'mailto' ? (
           <a
-            href={`mailto:${strVal}`}
+            href={`mailto:${strVal}${emailSubject ? `?subject=${encodeURIComponent(emailSubject)}` : ''}`}
             className={`text-sm font-semibold text-black hover:underline truncate ${valueClassName}`}
-            title={`Email ${strVal}`}
+            title={`Email ${strVal}${emailSubject ? ` - Subject: ${emailSubject}` : ''}`}
           >
             {strVal}
           </a>
@@ -290,6 +292,7 @@ export function DetailModal({
                   label="EMAIL" 
                   value={escrow.clientEmail} 
                   hrefType="mailto" 
+                  emailSubject={fullAddress}
                 />
               </div>
             </div>
@@ -320,6 +323,7 @@ export function DetailModal({
                     label="EMAIL" 
                     value={escrow.client2Email} 
                     hrefType="mailto" 
+                    emailSubject={fullAddress}
                   />
                 </div>
               ) : (
@@ -339,7 +343,7 @@ export function DetailModal({
                 <InfoItem label="AGENT NAME" value={escrow.agentName} valueClassName="font-bold" />
                 <InfoItem label="BROKERAGE" value={escrow.cooperatingBrokerage} />
                 <InfoItem label="PHONE" value={escrow.agentPhone} hrefType="tel" />
-                <InfoItem label="EMAIL" value={escrow.agentEmail} hrefType="mailto" />
+                <InfoItem label="EMAIL" value={escrow.agentEmail} hrefType="mailto" emailSubject={fullAddress} />
               </div>
             </div>
 
@@ -353,7 +357,7 @@ export function DetailModal({
                 <InfoItem label="COMPANY" value={escrow.lenderCompany} valueClassName="font-bold" />
                 <InfoItem label="LOAN OFFICER" value={escrow.lenderName} />
                 <InfoItem label="PHONE" value={escrow.lenderPhone} hrefType="tel" />
-                <InfoItem label="EMAIL" value={escrow.lenderEmail} hrefType="mailto" />
+                <InfoItem label="EMAIL" value={escrow.lenderEmail} hrefType="mailto" emailSubject={fullAddress} />
               </div>
             </div>
 
@@ -367,7 +371,7 @@ export function DetailModal({
                 <InfoItem label="ESCROW COMPANY" value={escrow.escrowCompany} valueClassName="font-bold" />
                 <InfoItem label="OFFICER NAME" value={escrow.escrowOfficer} />
                 <InfoItem label="PHONE" value={escrow.escrowPhone} hrefType="tel" />
-                <InfoItem label="EMAIL" value={escrow.escrowEmail} hrefType="mailto" />
+                <InfoItem label="EMAIL" value={escrow.escrowEmail} hrefType="mailto" emailSubject={fullAddress} />
               </div>
             </div>
 
@@ -381,7 +385,7 @@ export function DetailModal({
                 <InfoItem label="TITLE COMPANY" value={escrow.titleCompany} valueClassName="font-bold" />
                 <InfoItem label="OFFICER NAME" value={escrow.titleOfficer} />
                 <InfoItem label="PHONE" value={escrow.titlePhone} hrefType="tel" />
-                <InfoItem label="EMAIL" value={escrow.titleEmail} hrefType="mailto" />
+                <InfoItem label="EMAIL" value={escrow.titleEmail} hrefType="mailto" emailSubject={fullAddress} />
               </div>
             </div>
 

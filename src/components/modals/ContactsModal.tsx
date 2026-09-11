@@ -15,6 +15,7 @@ interface ContactCardProps {
   companyLabel?: string;
   phone?: string;
   email?: string;
+  emailSubject?: string;
   extraInfo?: { label: string; value?: string };
   fieldPrefix: string;
   copiedKey: string | null;
@@ -29,7 +30,7 @@ interface ContactCardProps {
  * 2. Name: Prominent bold contact name
  * 3. Company: Subtitle with company / brokerage
  * 4. Below: Phone row with Call, Text, and Copy options
- * 5. Below: Email row with Email and Copy options
+ * 5. Below: Email row with Email and Copy options (Subject pre-populated with property address)
  * 6. Card Bottom: Action to copy contact details
  */
 function ContactCard({
@@ -39,6 +40,7 @@ function ContactCard({
   companyLabel,
   phone,
   email,
+  emailSubject,
   extraInfo,
   fieldPrefix,
   copiedKey,
@@ -50,11 +52,15 @@ function ContactCard({
   const cleanPhone = phone ? phone.replace(/[^0-9+]/g, '') : '';
   const isSectionCopied = copiedKey === fieldPrefix;
 
+  const mailtoUrl = email?.trim()
+    ? `mailto:${email.trim()}${emailSubject ? `?subject=${encodeURIComponent(emailSubject)}` : ''}`
+    : '';
+
   if (!hasInfo && emptyStateText) {
     return (
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3.5 sm:p-5 flex flex-col justify-center shadow-xs min-h-[110px]">
         <div>
-          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#1B3A5C] block mb-0.5">
             {roleTitle}
           </span>
           <p className="text-xs sm:text-sm text-slate-400 py-1">{emptyStateText}</p>
@@ -68,7 +74,7 @@ function ContactCard({
       <div>
         {/* 1. Title */}
         <div className="flex items-center justify-between mb-0.5 sm:mb-1">
-          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#1B3A5C]">
             {roleTitle}
           </span>
           {extraInfo?.value && (
@@ -79,7 +85,7 @@ function ContactCard({
         </div>
 
         {/* 2. Then the Name */}
-        <h3 className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight leading-snug">
+        <h3 className="text-sm sm:text-lg font-bold text-[#1B3A5C] tracking-tight leading-snug">
           {name?.trim() || '—'}
         </h3>
 
@@ -161,9 +167,9 @@ function ContactCard({
               <div className="min-w-0 flex-1">
                 {email?.trim() ? (
                   <a
-                    href={`mailto:${email.trim()}`}
+                    href={mailtoUrl}
                     className="text-xs sm:text-sm font-semibold text-slate-900 hover:text-blue-600 hover:underline truncate block leading-snug"
-                    title={`Email ${email}`}
+                    title={`Email ${email}${emailSubject ? ` - Subject: ${emailSubject}` : ''}`}
                   >
                     {email.trim()}
                   </a>
@@ -176,9 +182,9 @@ function ContactCard({
             {email?.trim() && (
               <div className="flex items-center gap-1 shrink-0 text-slate-600">
                 <a
-                  href={`mailto:${email.trim()}`}
+                  href={mailtoUrl}
                   className="p-1.5 sm:p-2 hover:text-slate-950 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                  title="Email"
+                  title={`Email ${email}${emailSubject ? ` - Subject: ${emailSubject}` : ''}`}
                   aria-label="Email"
                 >
                   <Mail size={18} />
@@ -400,6 +406,8 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
     handleCopy(sections.join('\n\n---\n\n'), 'all-contacts');
   };
 
+  const propertyAddress = formatPropertyAddress(escrow) || escrow.address || addressParts.street || '';
+
   const primaryClientCard = (
     <ContactCard
       roleTitle="PRIMARY CLIENT"
@@ -407,6 +415,7 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       company={escrow.clientBirthday ? `Birthday: ${formatDateDisplay(escrow.clientBirthday)}` : undefined}
       phone={escrow.clientPhone}
       email={escrow.clientEmail}
+      emailSubject={propertyAddress}
       fieldPrefix="c1"
       copiedKey={copiedField}
       onCopy={handleCopy}
@@ -428,6 +437,7 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       company={escrow.client2Birthday ? `Birthday: ${formatDateDisplay(escrow.client2Birthday)}` : undefined}
       phone={escrow.client2Phone}
       email={escrow.client2Email}
+      emailSubject={propertyAddress}
       fieldPrefix="c2"
       copiedKey={copiedField}
       onCopy={handleCopy}
@@ -451,6 +461,7 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       companyLabel="Brokerage"
       phone={escrow.agentPhone}
       email={escrow.agentEmail}
+      emailSubject={propertyAddress}
       fieldPrefix="agent"
       copiedKey={copiedField}
       onCopy={handleCopy}
@@ -473,6 +484,7 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       companyLabel="Company"
       phone={escrow.lenderPhone}
       email={escrow.lenderEmail}
+      emailSubject={propertyAddress}
       fieldPrefix="lender"
       copiedKey={copiedField}
       onCopy={handleCopy}
@@ -495,6 +507,7 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       companyLabel="Escrow Co"
       phone={escrow.escrowPhone}
       email={escrow.escrowEmail}
+      emailSubject={propertyAddress}
       fieldPrefix="escrow"
       copiedKey={copiedField}
       onCopy={handleCopy}
@@ -517,6 +530,7 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
       companyLabel="Title Co"
       phone={escrow.titlePhone}
       email={escrow.titleEmail}
+      emailSubject={propertyAddress}
       fieldPrefix="title"
       copiedKey={copiedField}
       onCopy={handleCopy}
@@ -548,10 +562,10 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
         {/* Header with 2-line Address and Quick Copy */}
         <div id="contacts-modal-header" className="px-4 sm:px-6 py-2.5 sm:py-3.5 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
           <div className="min-w-0 pr-2 sm:pr-3">
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-black block mb-0.5">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#1B3A5C] block mb-0.5">
               Transaction Contacts
             </span>
-            <h2 className="text-sm sm:text-lg font-bold tracking-tight text-black leading-tight truncate max-w-[170px] xs:max-w-[240px] sm:max-w-none" title={addressParts.street}>
+            <h2 className="text-sm sm:text-lg font-bold tracking-tight text-[#1B3A5C] leading-tight truncate max-w-[170px] xs:max-w-[240px] sm:max-w-none" title={addressParts.street}>
               {addressParts.street}
             </h2>
             {addressParts.cityZip ? (
