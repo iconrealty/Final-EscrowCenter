@@ -52,9 +52,9 @@ function ContactCard({
 
   if (!hasInfo && emptyStateText) {
     return (
-      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col justify-center shadow-xs min-h-[140px]">
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3.5 sm:p-5 flex flex-col justify-center shadow-xs min-h-[110px]">
         <div>
-          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
             {roleTitle}
           </span>
           <p className="text-xs sm:text-sm text-slate-400 py-1">{emptyStateText}</p>
@@ -64,46 +64,43 @@ function ContactCard({
   }
 
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors">
+    <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3.5 sm:p-5 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors">
       <div>
         {/* 1. Title */}
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-0.5 sm:mb-1">
           <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
             {roleTitle}
           </span>
           {extraInfo?.value && (
-            <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
               {extraInfo.label}: {extraInfo.value}
             </span>
           )}
         </div>
 
         {/* 2. Then the Name */}
-        <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-snug">
+        <h3 className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight leading-snug">
           {name?.trim() || '—'}
         </h3>
 
         {/* 3. Then the Company */}
         {company?.trim() ? (
-          <p className="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5 mb-2.5 flex items-center gap-1.5 truncate">
+          <p className="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5 mb-2 sm:mb-2.5 flex items-center gap-1.5 truncate">
             {companyLabel && <span className="text-slate-400 font-medium">{companyLabel}:</span>}
             <span className="truncate">{company.trim()}</span>
           </p>
         ) : (
-          <div className="mb-2" />
+          <div className="mb-1.5 sm:mb-2" />
         )}
 
         {/* 4. Below: Phone & Email */}
-        <div className="space-y-2 pt-2.5 border-t border-slate-100">
-          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 transition-colors">
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 shrink-0">
+        <div className="space-y-1.5 sm:space-y-2 pt-2 sm:pt-2.5 border-t border-slate-100">
+          <div className="flex items-center justify-between gap-2 p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-slate-50 hover:bg-slate-100/80 transition-colors">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
                 <Phone size={13} />
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block leading-tight">
-                  Phone
-                </span>
                 {phone?.trim() ? (
                   <a
                     href={`tel:${cleanPhone}`}
@@ -113,28 +110,28 @@ function ContactCard({
                     {phone.trim()}
                   </a>
                 ) : (
-                  <span className="text-xs text-slate-300 select-none">—</span>
+                  <span className="text-xs text-slate-400 select-none">—</span>
                 )}
               </div>
             </div>
 
             {phone?.trim() && (
-              <div className="flex items-center gap-0.5 shrink-0 text-slate-500">
+              <div className="flex items-center gap-1 shrink-0 text-slate-600">
                 <a
                   href={`tel:${cleanPhone}`}
-                  className="p-1 hover:text-slate-900 hover:bg-white rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 hover:text-slate-950 hover:bg-white rounded-lg transition-colors cursor-pointer"
                   title="Call"
                   aria-label="Call"
                 >
-                  <Phone size={13} />
+                  <Phone size={18} />
                 </a>
                 <a
                   href={`sms:${cleanPhone}`}
-                  className="p-1 hover:text-slate-900 hover:bg-white rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 hover:text-slate-950 hover:bg-white rounded-lg transition-colors cursor-pointer"
                   title="Text"
                   aria-label="Text"
                 >
-                  <MessageSquare size={13} />
+                  <MessageSquare size={18} />
                 </a>
                 <button
                   type="button"
@@ -142,29 +139,26 @@ function ContactCard({
                     e.stopPropagation();
                     onCopy(phone.trim(), `${fieldPrefix}-phone`);
                   }}
-                  className="p-1 hover:text-slate-900 hover:bg-white rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 hover:text-slate-950 hover:bg-white rounded-lg transition-colors cursor-pointer"
                   title="Copy Phone"
                   aria-label="Copy Phone"
                 >
                   {copiedKey === `${fieldPrefix}-phone` ? (
-                    <Check size={13} className="text-emerald-600 stroke-[2.5]" />
+                    <Check size={18} className="text-emerald-600 stroke-[2.5]" />
                   ) : (
-                    <Copy size={13} />
+                    <Copy size={18} />
                   )}
                 </button>
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 transition-colors">
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 shrink-0">
+          <div className="flex items-center justify-between gap-2 p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-slate-50 hover:bg-slate-100/80 transition-colors">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
                 <Mail size={13} />
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block leading-tight">
-                  Email
-                </span>
                 {email?.trim() ? (
                   <a
                     href={`mailto:${email.trim()}`}
@@ -174,20 +168,20 @@ function ContactCard({
                     {email.trim()}
                   </a>
                 ) : (
-                  <span className="text-xs text-slate-300 select-none">—</span>
+                  <span className="text-xs text-slate-400 select-none">—</span>
                 )}
               </div>
             </div>
 
             {email?.trim() && (
-              <div className="flex items-center gap-0.5 shrink-0 text-slate-500">
+              <div className="flex items-center gap-1 shrink-0 text-slate-600">
                 <a
                   href={`mailto:${email.trim()}`}
-                  className="p-1 hover:text-slate-900 hover:bg-white rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 hover:text-slate-950 hover:bg-white rounded-lg transition-colors cursor-pointer"
                   title="Email"
                   aria-label="Email"
                 >
-                  <Mail size={13} />
+                  <Mail size={18} />
                 </a>
                 <button
                   type="button"
@@ -195,14 +189,14 @@ function ContactCard({
                     e.stopPropagation();
                     onCopy(email.trim(), `${fieldPrefix}-email`);
                   }}
-                  className="p-1 hover:text-slate-900 hover:bg-white rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 hover:text-slate-950 hover:bg-white rounded-lg transition-colors cursor-pointer"
                   title="Copy Email"
                   aria-label="Copy Email"
                 >
                   {copiedKey === `${fieldPrefix}-email` ? (
-                    <Check size={13} className="text-emerald-600 stroke-[2.5]" />
+                    <Check size={18} className="text-emerald-600 stroke-[2.5]" />
                   ) : (
-                    <Copy size={13} />
+                    <Copy size={18} />
                   )}
                 </button>
               </div>
@@ -212,11 +206,11 @@ function ContactCard({
       </div>
 
       {/* 6. Card bottom: Copy Contact Information action */}
-      <div className="mt-3.5 pt-2.5 border-t border-slate-100 flex items-center justify-end">
+      <div className="mt-3 sm:mt-3.5 pt-2 sm:pt-2.5 border-t border-slate-100 flex items-center justify-end">
         <button
           type="button"
           onClick={onCopySection}
-          className={`w-full sm:w-auto px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all shadow-xs active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`w-full sm:w-auto px-3 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-bold rounded-xl transition-all shadow-xs active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer ${
             isSectionCopied
               ? 'bg-emerald-600 text-white'
               : 'bg-[#1B3A5C] hover:bg-[#152e4a] text-white'
@@ -226,12 +220,13 @@ function ContactCard({
           {isSectionCopied ? (
             <>
               <Check size={13} className="text-white stroke-[2.5]" />
-              <span>Copied Contact Information</span>
+              <span>Copied Contact</span>
             </>
           ) : (
             <>
-              <Copy size={13} />
-              <span>Copy Contact Information</span>
+              <Copy size={12} className="sm:hidden" />
+              <Copy size={13} className="hidden sm:block" />
+              <span>Copy Contact</span>
             </>
           )}
         </button>
@@ -541,36 +536,36 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
   return (
     <div 
       id="contacts-modal-overlay" 
-      className="fixed inset-0 bg-black/60 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 overflow-hidden backdrop-blur-sm"
+      className="fixed inset-0 bg-black/60 z-[110] flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden backdrop-blur-sm"
       onClick={onClose}
     >
       <div 
         id="contacts-modal-container" 
-        className="bg-white rounded-t-[2rem] sm:rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[94dvh] sm:max-h-[90vh] border-t sm:border border-slate-300"
+        className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-lg md:max-w-3xl lg:max-w-5xl shadow-2xl overflow-hidden flex flex-col h-[78vh] sm:h-[84vh] max-h-[760px] border border-slate-200"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Header with 2-line Address and Quick Copy */}
-        <div id="contacts-modal-header" className="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
-          <div className="min-w-0 pr-3">
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+        <div id="contacts-modal-header" className="px-4 sm:px-6 py-2.5 sm:py-3.5 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
+          <div className="min-w-0 pr-2 sm:pr-3">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-black block mb-0.5">
               Transaction Contacts
             </span>
-            <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 leading-tight truncate" title={addressParts.street}>
+            <h2 className="text-sm sm:text-lg font-bold tracking-tight text-black leading-tight truncate max-w-[170px] xs:max-w-[240px] sm:max-w-none" title={addressParts.street}>
               {addressParts.street}
             </h2>
             {addressParts.cityZip ? (
-              <p className="text-xs sm:text-sm font-medium text-slate-500 leading-tight mt-0.5 truncate" title={addressParts.cityZip}>
+              <p className="text-[11px] sm:text-sm font-medium text-slate-600 leading-tight mt-0.5 truncate max-w-[170px] xs:max-w-[240px] sm:max-w-none" title={addressParts.cityZip}>
                 {addressParts.cityZip}
               </p>
             ) : null}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button 
               type="button"
               onClick={handleCopyAllContacts}
-              className={`px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-bold rounded-full transition-all shadow-xs active:scale-95 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs font-bold rounded-full transition-all shadow-xs active:scale-95 flex items-center gap-1.5 cursor-pointer ${
                 isAllCopied
                   ? 'bg-emerald-600 text-white'
                   : 'bg-[#1B3A5C] hover:bg-[#152e4a] text-white'
@@ -579,32 +574,32 @@ export function ContactsModal({ escrow, onClose }: ContactsModalProps) {
             >
               {isAllCopied ? (
                 <>
-                  <Check size={14} className="text-white stroke-[2.5]" />
-                  <span>Copied All Contacts</span>
+                  <Check size={13} className="text-white stroke-[2.5]" />
+                  <span>Copied All</span>
                 </>
               ) : (
                 <>
-                  <Copy size={14} />
-                  <span>Copy All Contacts</span>
+                  <Copy size={13} />
+                  <span>Copy All</span>
                 </>
               )}
             </button>
-            <div className="w-px h-6 bg-slate-200 mx-0.5 sm:mx-1"></div>
+            <div className="w-px h-5 sm:h-6 bg-slate-200 mx-0.5"></div>
             <button 
               type="button"
               onClick={onClose} 
-              className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all cursor-pointer active:scale-95"
+              className="p-1.5 sm:p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all cursor-pointer active:scale-95"
               title="Close"
               aria-label="Close"
             >
-              <X size={18} />
+              <X size={17} />
             </button>
           </div>
         </div>
         
         {/* Scrollable Body: Space-efficient grid without tab menu */}
-        <div id="contacts-modal-body" className="p-4 sm:p-5 overflow-y-auto flex-1 bg-slate-50">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+        <div id="contacts-modal-body" className="p-3 sm:p-5 overflow-y-auto flex-1 bg-slate-50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {primaryClientCard}
             {hasClient2 ? secondaryClientCard : null}
             {agentCard}
