@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Escrow, ALL_TASKS } from '../types';
+import { Escrow, ALL_TASKS, areAllTasksCompleted } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import { cleanEmail } from '../utils/contactParser';
@@ -94,6 +94,9 @@ export function useEscrows() {
           }
           e.clientBirthday = sanitizeBday(e.clientBirthday, e.acceptanceDate, e.coeDate);
           e.client2Birthday = sanitizeBday(e.client2Birthday, e.acceptanceDate, e.coeDate);
+          if (e.status === 'Open' && areAllTasksCompleted(e)) {
+            e.status = 'Closed';
+          }
           return e;
         });
 
@@ -132,7 +135,7 @@ export function useEscrows() {
           return str;
         };
 
-        loadedEscrows.push({
+        const escrowItem = {
           id: doc.id,
           ...data,
           agentEmail: cleanEmail(data.agentEmail),
@@ -144,7 +147,15 @@ export function useEscrows() {
           clientBirthday: sanitizeBday(data.clientBirthday, data.acceptanceDate, data.coeDate),
           client2Birthday: sanitizeBday(data.client2Birthday, data.acceptanceDate, data.coeDate),
           tasks
-        } as Escrow);
+        } as Escrow;
+
+        if (escrowItem.status === 'Open' && areAllTasksCompleted(escrowItem)) {
+          escrowItem.status = 'Closed';
+          // Persist the transition to Firestore
+          updateDoc(doc.ref, { status: 'Closed', lastUpdated: new Date().toISOString() }).catch(() => {});
+        }
+
+        loadedEscrows.push(escrowItem);
       });
 
       // Sort in-memory safely by lastUpdated desc to avoid any Firestore index constraints
@@ -219,9 +230,8 @@ export function useEscrows() {
         if (escrowToUpdate) {
           const updated = { ...escrowToUpdate, ...sanitizedData, lastUpdated: new Date().toISOString() };
           
-          // Auto-close logic
-          const allTasksDone = updated.tasks && ALL_TASKS.length > 0 && ALL_TASKS.every((t) => updated.tasks[t.key]);
-          if (allTasksDone && updated.status !== 'Cancelled') {
+          // Auto-close logic: check if all milestones and applicable contingencies are completed
+          if (areAllTasksCompleted(updated) && updated.status !== 'Cancelled') {
             updated.status = 'Closed';
           }
           // Optimistically update local state so changes reflect immediately
@@ -237,9 +247,8 @@ export function useEscrows() {
           if (escrow.id === id) {
             const updated = { ...escrow, ...sanitizedData, lastUpdated: new Date().toISOString() };
             
-            // Auto-close logic
-            const allTasksDone = updated.tasks && ALL_TASKS.length > 0 && ALL_TASKS.every((t) => updated.tasks[t.key]);
-            if (allTasksDone && updated.status !== 'Cancelled') {
+            // Auto-close logic: check if all milestones and applicable contingencies are completed
+            if (areAllTasksCompleted(updated) && updated.status !== 'Cancelled') {
               updated.status = 'Closed';
             }
             
@@ -311,12 +320,13 @@ export function useEscrows() {
             lastUpdated: new Date().toISOString(),
           };
           
-          // Auto-close logic
-          const allTasksDone = ALL_TASKS.every((t) => updated.tasks[t.key]);
-          if (allTasksDone && updated.status !== 'Cancelled') {
+          // Auto-close logic: check if all milestones and applicable contingencies are completed
+          if (areAllTasksCompleted(updated) && updated.status !== 'Cancelled') {
             updated.status = 'Closed';
           }
 
+          // Optimistically update local state so changes reflect immediately
+          setEscrows((prev) => prev.map((e) => (e.id === escrowId ? updated : e)));
           await setDoc(escrowDocRef, sanitizeForFirestore(updated));
         }
       } catch (error) {
@@ -333,9 +343,8 @@ export function useEscrows() {
               lastUpdated: new Date().toISOString(),
             };
             
-            // Auto-close logic
-            const allTasksDone = ALL_TASKS.every((t) => updated.tasks[t.key]);
-            if (allTasksDone && updated.status !== 'Cancelled') {
+            // Auto-close logic: check if all milestones and applicable contingencies are completed
+            if (areAllTasksCompleted(updated) && updated.status !== 'Cancelled') {
               updated.status = 'Closed';
             }
             

@@ -131,6 +131,14 @@ export function getApplicableContingencies(escrow: Escrow) {
   return CONTINGENCIES.filter(c => isContingencyActive(escrow, c.key));
 }
 
+export function areAllTasksCompleted(escrow: Escrow): boolean {
+  if (!escrow.tasks) return false;
+  const allMilestonesDone = MILESTONES.every((m) => Boolean(escrow.tasks[m.key]));
+  const applicableContingencies = getApplicableContingencies(escrow);
+  const allContingenciesDone = applicableContingencies.every((c) => Boolean(escrow.tasks[c.key]));
+  return allMilestonesDone && allContingenciesDone;
+}
+
 export function adjustWeekendToMonday(date: Date): Date {
   const day = date.getDay(); // 0 = Sunday, 6 = Saturday
   if (day === 6) {

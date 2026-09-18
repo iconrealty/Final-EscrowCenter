@@ -1,5 +1,5 @@
 import React from 'react';
-import { Escrow, ALL_TASKS, MILESTONES, CONTINGENCIES } from '../../types';
+import { Escrow, MILESTONES, getApplicableContingencies } from '../../types';
 import { Avatar } from '../shared/Avatar';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 
@@ -21,14 +21,15 @@ export function COETimeline({ escrows, onSelectEscrow }: { escrows: Escrow[], on
           const days = differenceInCalendarDays(parseISO(String(escrow.coeDate || new Date().toISOString())), new Date());
           const isUrgent = days <= 5 && escrow.status === 'Open';
           const isClosed = escrow.status !== 'Open';
-          const completed = ALL_TASKS.filter(t => escrow.tasks[t.key]).length;
-          const pct = Math.round((completed / 21) * 100);
           
+          const applicableContingencies = getApplicableContingencies(escrow);
+          const totalTasksCount = MILESTONES.length + applicableContingencies.length;
           const completedMilestones = MILESTONES.filter(t => escrow.tasks[t.key]).length;
-          const pctMilestones = Math.round((completedMilestones / 12) * 100);
-          
-          const completedContingencies = CONTINGENCIES.filter(t => escrow.tasks[t.key]).length;
-          const pctContingencies = Math.round((completedContingencies / 9) * 100);
+          const pctMilestones = Math.round((completedMilestones / (MILESTONES.length || 1)) * 100);
+          const completedContingencies = applicableContingencies.filter(t => escrow.tasks[t.key]).length;
+          const pctContingencies = Math.round((completedContingencies / (applicableContingencies.length || 1)) * 100);
+          const completed = completedMilestones + completedContingencies;
+          const pct = Math.round((completed / (totalTasksCount || 1)) * 100);
 
           let daysPill = (
             <div className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-50 text-[#86868b] border border-[#e5e5ea]">
