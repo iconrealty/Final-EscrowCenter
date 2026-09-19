@@ -60,14 +60,33 @@ if (!Object.hasOwn) {
   };
 }
 
-// 6. structuredClone fallback
-if (typeof globalThis.structuredClone !== 'function') {
+// 6. structuredClone fallback and Safari DataCloneError safe-wrapper
+const nativeStructuredClone = typeof globalThis !== 'undefined' ? globalThis.structuredClone : undefined;
+if (typeof nativeStructuredClone !== 'function') {
   globalThis.structuredClone = function <T>(obj: T): T {
     if (obj === undefined) return undefined as any;
     try {
       return JSON.parse(JSON.stringify(obj));
     } catch {
       return obj;
+    }
+  };
+} else {
+  // Wrap native structuredClone: Safari WebKit throws DataCloneError if { transfer } is passed or if typed arrays are transferred
+  globalThis.structuredClone = function <T>(val: T, options?: any): T {
+    try {
+      return nativeStructuredClone(val, options);
+    } catch {
+      try {
+        // Retry without transfer options for Safari compatibility
+        return nativeStructuredClone(val);
+      } catch {
+        try {
+          return JSON.parse(JSON.stringify(val));
+        } catch {
+          return val;
+        }
+      }
     }
   };
 }
@@ -82,6 +101,13 @@ if (typeof (Promise as any).withResolvers !== 'function') {
       reject = rej;
     });
     return { promise, resolve, reject };
+  };
+}
+
+// 7b. Promise.try (Safari < 18.2, required by modern pdfjs-dist v6 worker)
+if (typeof (Promise as any).try !== 'function') {
+  (Promise as any).try = function (fn: (...args: any[]) => any, ...args: any[]) {
+    return new Promise((resolve) => resolve(fn(...args)));
   };
 }
 

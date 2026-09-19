@@ -97,6 +97,185 @@ async function startServer() {
     }
   });
 
+// Server-Side Pure PDF Text & Metadata Extractor (100% Offline / No AI tokens required)
+async function extractServerPdfData(base64Data: string, fileName?: string, userRole?: string): Promise<any> {
+  try {
+    const { PDFDocument, PDFRawStream, PDFStream, decodePDFRawStream, PDFRef, PDFArray } = await import("pdf-lib");
+    const buffer = Buffer.from(base64Data, "base64");
+    const pdfDoc = await PDFDocument.load(buffer, { ignoreEncryption: true, parseSpeed: 1000 });
+    const textParts: string[] = [];
+
+    const pageCount = pdfDoc.getPageCount();
+    for (let i = 0; i < pageCount; i++) {
+      try {
+        const page = pdfDoc.getPage(i);
+        const contents = page.node.Contents();
+        const refs = contents instanceof PDFArray ? contents.asArray() : (contents ? [contents] : []);
+        for (const ref of refs) {
+          const stream = ref instanceof PDFRef ? pdfDoc.context.lookup(ref) : ref;
+          if (stream instanceof PDFRawStream || stream instanceof PDFStream) {
+            try {
+              const decoded = decodePDFRawStream(stream as any).decode();
+              textParts.push(new TextDecoder("latin1").decode(decoded));
+            } catch {}
+          }
+        }
+      } catch {}
+    }
+
+    if (textParts.length === 0) {
+      const objects = pdfDoc.context.enumerateIndirectObjects();
+      for (const [, obj] of objects) {
+        if (obj instanceof PDFRawStream || obj instanceof PDFStream) {
+          try {
+            const decoded = decodePDFRawStream(obj as any).decode();
+            textParts.push(new TextDecoder("latin1").decode(decoded));
+          } catch {}
+        }
+      }
+    }
+
+    const fullStreamText = textParts.join("\n");
+    const lines: string[] = [];
+    const tokenRegex = /(?:\[((?:[^\]\\]|\\.)*)\]\s*TJ)|(?:\(((?:[^)\\]|\\.)*)\)\s*(?:Tj|\x27|\x22))|(?:<([0-9A-Fa-f\s]+)>\s*(?:Tj|\x27|\x22))|(\bT\*|\bET|\bBT|\bTd|\bTD|\bTm|\bTj)/g;
+    let match: RegExpExecArray | null;
+    let currentLine: string[] = [];
+
+    while ((match = tokenRegex.exec(fullStreamText)) !== null) {
+      if (match[1] !== undefined) {
+        const tjContent = match[1];
+        const subRegex = /\(((?:[^)\\]|\\.)*)\)|<([0-9A-Fa-f\s]+)>/g;
+        let sub: RegExpExecArray | null;
+        let partStr = "";
+        while ((sub = subRegex.exec(tjContent)) !== null) {
+          if (sub[1] !== undefined) {
+            partStr += sub[1]
+              .replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+              .replace(/\\([nrtbf()\\])/g, "$1");
+          } else if (sub[2] !== undefined) {
+            const clean = sub[2].replace(/\s+/g, "");
+            for (let k = 0; k < clean.length; k += 2) {
+              const b = parseInt(clean.substring(k, k + 2), 16);
+              if (!isNaN(b) && b > 0) partStr += String.fromCharCode(b);
+            }
+          }
+        }
+        if (partStr.trim()) currentLine.push(partStr.trim());
+      } else if (match[2] !== undefined) {
+        const s = match[2]
+          .replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+          .replace(/\\([nrtbf()\\])/g, "$1");
+        if (s.trim()) currentLine.push(s.trim());
+      } else if (match[3] !== undefined) {
+        const clean = match[3].replace(/\s+/g, "");
+        let s = "";
+        for (let k = 0; k < clean.length; k += 2) {
+          const b = parseInt(clean.substring(k, k + 2), 16);
+          if (!isNaN(b) && b > 0) s += String.fromCharCode(b);
+        }
+        if (s.trim()) currentLine.push(s.trim());
+      } else if (match[4] !== undefined) {
+        const op = match[4];
+        if (op === "T*" || op === "ET" || op === "TD" || op === "Td") {
+          if (currentLine.length > 0) {
+            lines.push(currentLine.join(" ").trim());
+            currentLine = [];
+          }
+        }
+      }
+    }
+    if (currentLine.length > 0) {
+      lines.push(currentLine.join(" ").trim());
+    }
+
+    try {
+      const form = pdfDoc.getForm();
+      for (const f of form.getFields()) {
+        const name = f.getName();
+        if ("getText" in f && typeof (f as any).getText === "function") {
+          const val = (f as any).getText();
+          if (val && val.trim()) lines.push(`${name}: ${val.trim()}`);
+        }
+      }
+    } catch {}
+
+    const text = lines.join("\n");
+    const combined = `${text}\n${fileName || ""}`;
+
+    const res: any = {
+      representation: userRole || "Buyer",
+      status: "Open",
+    };
+
+    // APN / Parcel #
+    const apnMatch = combined.match(/(?:PARCEL\s*#|PARCEL\s*ID|PARCEL\s*NUMBER|APN\s*#|APN)[\s:#=-]*([0-9A-Za-z\-_/]{4,28})/i);
+    if (apnMatch && !/^(page|form|paragraph|ca|none|pending)$/i.test(apnMatch[1])) {
+      res.apn = apnMatch[1].trim();
+    }
+
+    // MLS ID
+    const mlsMatch = combined.match(/(?:MLS\s*(?:#|ID|NUMBER|NO\.?)|LISTING\s*(?:#|ID|NUMBER|NO\.?))[\s:#=-]*([A-Za-z0-9\-_]{4,20})/i) || combined.match(/\b([A-Z]{2}\d{7,10})\b/);
+    if (mlsMatch && !/^(page|form|paragraph|none|pending)$/i.test(mlsMatch[1])) {
+      res.mlsId = mlsMatch[1].trim();
+    }
+
+    // Price
+    const priceMatch = combined.match(/(?:LIST\s*PRICE|LP\b|SALE\s*PRICE|PURCHASE\s*PRICE|CONTRACT\s*PRICE)[^\d]*([\d,]+(?:\.\d{2})?)/i) || combined.match(/\$\s*([\d,]{5,}(?:\.\d{2})?)/);
+    if (priceMatch) {
+      const num = parseFloat(priceMatch[1].replace(/,/g, ""));
+      if (num >= 40000 && num <= 100000000) res.price = num;
+    }
+
+    // Address & City & Zip
+    for (const l of lines) {
+      const cleaned = l.replace(/^(?:Property\s*Address|Address|Property\s*Location)\s*[:#=-]\s*/i, "");
+      const addrMatch = cleaned.match(/(?:Cross\s*Property\s*|360\s*Property\s*View\s*)?([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?),\s*(?:CA|California)\s*([0-9]{5})/i) ||
+        cleaned.match(/([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+?),\s*([A-Za-z\s.'-]+?)\s+([0-9]{5})/i);
+      if (addrMatch) {
+        res.address = addrMatch[1].trim();
+        res.city = addrMatch[2].trim();
+        res.zipCode = addrMatch[3].trim();
+        break;
+      }
+    }
+
+    // Fallback address from filename e.g. "MLS 23301 Ridge Route .pdf"
+    if (!res.address && fileName) {
+      const fnClean = fileName.replace(/^(?:MLS\s*|RPA\s*)/i, "").replace(/\.pdf$/i, "").trim();
+      const fnMatch = fnClean.match(/^([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+)/);
+      if (fnMatch) {
+        res.address = fnMatch[1].trim();
+      }
+    }
+
+    // Listing Agent
+    const laMatch = combined.match(/(?:LA\b|LISTING\s*AGENT|AGENT\s*NAME)\s*:\s*(?:\([^\)]+\)\s*)?([A-Za-z\s.'-]{3,35})/i);
+    if (laMatch) {
+      let name = laMatch[1].replace(/\b(?:LA|STATE|LIC|DRE|CalDRE|CELL|PHONE|EMAIL|LO)\b.*$/i, "").trim();
+      name = name.replace(/^[\s,.:;()\-]+/, "").replace(/[\s,.:;()\-]+$/, "").trim();
+      if (name.length >= 3 && !/^(la|cola|lo|dre|state|lic|phone|none)$/i.test(name)) {
+        res.agentName = name;
+        res.listingAgentName = name;
+      }
+    }
+
+    // Listing Brokerage
+    const loMatch = combined.match(/(?:LO\b|LISTING\s*OFFICE|BROKERAGE)\s*:\s*([A-Za-z0-9\s.,&'-]{3,45})/i);
+    if (loMatch) {
+      let brok = loMatch[1].replace(/\b(?:LO|STATE|LIC|DRE|CalDRE|PHONE|CELL)\b.*$/i, "").trim();
+      if (brok.length >= 3) {
+        res.cooperatingBrokerage = brok;
+        res.listingBrokerage = brok;
+      }
+    }
+
+    return res;
+  } catch (e) {
+    console.warn("Server PDF extraction error:", e);
+    return null;
+  }
+}
+
   // AI RPA & Contract Scanner Endpoint
   app.post("/api/scan-rpa", async (req, res) => {
     try {
@@ -136,6 +315,20 @@ async function startServer() {
 
       const ai = getGenAI();
       if (!ai) {
+        // Fallback to local server-side PDF text parser (Zero AI cost, instant)
+        try {
+          const serverExtracted = await extractServerPdfData(base64Clean, fileName, body?.userRole);
+          if (serverExtracted && (serverExtracted.address || serverExtracted.price || serverExtracted.mlsId || serverExtracted.apn || serverExtracted.agentName)) {
+            return res.json({
+              success: true,
+              data: serverExtracted,
+              source: "server-pdf-engine",
+            });
+          }
+        } catch (serverErr) {
+          console.warn("Server PDF parser fallback notice:", serverErr);
+        }
+
         return res.status(422).json({
           success: false,
           error:
@@ -341,6 +534,20 @@ Output format: Return all dates formatted as YYYY-MM-DD. Return clean strings an
           }
           console.warn(`Model ${modelName} encountered error:`, lastErrorMessage);
         }
+      }
+
+      // If Gemini models encountered an error or exhausted quota, run offline server-side PDF extraction fallback
+      try {
+        const serverExtracted = await extractServerPdfData(base64Clean, fileName, body?.userRole);
+        if (serverExtracted && (serverExtracted.address || serverExtracted.price || serverExtracted.mlsId || serverExtracted.apn || serverExtracted.agentName)) {
+          return res.json({
+            success: true,
+            data: serverExtracted,
+            source: "server-pdf-engine",
+          });
+        }
+      } catch (serverErr) {
+        console.warn("Server PDF fallback scan notice:", serverErr);
       }
 
       let userFriendlyError = "Could not extract valid transaction fields from the document.";

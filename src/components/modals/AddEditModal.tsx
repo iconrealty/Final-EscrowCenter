@@ -366,9 +366,10 @@ export function AddEditModal({
         // Step 1: Client-Side instant extraction (100% in-browser, no token cost)
         try {
           const res = await extractPdfPagesText(file);
-          if (res && res.fullText && res.fullText.trim().length > 10) {
+          if (res && ((res.fullText && res.fullText.trim().length > 5) || (res.lines && res.lines.length > 0))) {
+            const combinedText = `${res.fullText || ''}\n${file.name ? `File: ${file.name}` : ''}`;
             // Check MLS patterns
-            const mls = parseMlsText(res.fullText);
+            const mls = parseMlsText(combinedText);
             // Check RPA / contract patterns with repToUse
             const rpa = parseCaliforniaRpaText(res.fullText, res.pagesText, res.lines, repToUse);
             
@@ -392,6 +393,18 @@ export function AddEditModal({
           console.warn('Client-side PDF extraction notice:', clientErr);
         }
 
+        // Check if filename contains recognizable street address (e.g. "MLS 23301 Ridge Route .pdf")
+        if (!extractedData?.address && file.name) {
+          const cleanName = file.name.replace(/^(?:MLS|RPA|ESCROW)\s*[-_:]*\s*/i, '').replace(/\.pdf$/i, '').trim();
+          const addrMatch = cleanName.match(/^([0-9]{1,6}\s+[A-Za-z0-9\s.,#\-_/]+)/);
+          if (addrMatch && addrMatch[1] && addrMatch[1].trim().length >= 5) {
+            extractedData = {
+              ...extractedData,
+              address: addrMatch[1].trim(),
+            };
+          }
+        }
+
         const hasValidClientData = extractedData && (
           extractedData.address || extractedData.price || extractedData.apn || extractedData.mlsId || extractedData.agentName || extractedData.listingAgentName || extractedData.clientFirstName || extractedData.clientLastName
         );
@@ -411,7 +424,7 @@ export function AddEditModal({
           reader.readAsDataURL(file);
           const dataUrl = await base64Promise;
           const serverDoc = await parseFullEscrowRPA(dataUrl, file.type || 'application/pdf', file.name, repToUse);
-          if (serverDoc && (serverDoc.address || serverDoc.price || serverDoc.agentName || serverDoc.apn || serverDoc.clientLastName)) {
+          if (serverDoc && (serverDoc.address || serverDoc.price || serverDoc.agentName || serverDoc.apn || serverDoc.mlsId || serverDoc.clientLastName)) {
             applyExtractedDocumentData(serverDoc, file.name, repToUse);
             return;
           }

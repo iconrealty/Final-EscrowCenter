@@ -3,7 +3,7 @@ import { adjustWeekendToMonday, parseAddressComponents } from '../types';
 import { addDays, format, parseISO } from 'date-fns';
 import { calculateNetFromGross } from './commissionUtils';
 
-// Polyfill Promise.withResolvers for Safari / WebKit environments
+// Polyfills and Safari / WebKit environment guards
 if (typeof (Promise as any).withResolvers !== 'function') {
   (Promise as any).withResolvers = function <T>() {
     let resolve!: (value: T | PromiseLike<T>) => void;
@@ -13,6 +13,32 @@ if (typeof (Promise as any).withResolvers !== 'function') {
       reject = rej;
     });
     return { promise, resolve, reject };
+  };
+}
+
+if (typeof (Promise as any).try !== 'function') {
+  (Promise as any).try = function (fn: (...args: any[]) => any, ...args: any[]) {
+    return new Promise((resolve) => resolve(fn(...args)));
+  };
+}
+
+// Wrap structuredClone to catch Safari WebKit DataCloneError on { transfer }
+const nativeClone = typeof globalThis !== 'undefined' ? globalThis.structuredClone : undefined;
+if (typeof nativeClone === 'function') {
+  globalThis.structuredClone = function <T>(val: T, options?: any): T {
+    try {
+      return nativeClone(val, options);
+    } catch {
+      try {
+        return nativeClone(val);
+      } catch {
+        try {
+          return JSON.parse(JSON.stringify(val));
+        } catch {
+          return val;
+        }
+      }
+    }
   };
 }
 
@@ -117,6 +143,7 @@ function parseRawStreamText(streamText: string): string[] {
 
 /**
  * Secondary Pure-JS PDF Stream Extractor using pdf-lib (100% in-memory)
+ * Operates without Web Workers, bypassing any Safari / WebKit sandbox or CORS limits.
  */
 async function extractTextWithPdfLib(arrayBuffer: ArrayBuffer): Promise<{
   fullText: string;
@@ -124,29 +151,82 @@ async function extractTextWithPdfLib(arrayBuffer: ArrayBuffer): Promise<{
   lines: string[];
 }> {
   try {
-    const { PDFDocument, PDFRawStream, PDFStream, decodePDFRawStream } = await import('pdf-lib');
-    const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true, parseSpeed: 1000 });
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+      return { fullText: '', pagesText: [], lines: [] };
+    }
+    const { PDFDocument, PDFRawStream, PDFStream, decodePDFRawStream, PDFRef, PDFArray } = await import('pdf-lib');
+    const pdfDoc = await PDFDocument.load(arrayBuffer.slice(0), { ignoreEncryption: true, parseSpeed: 1000 });
     const allLines: string[] = [];
     const pagesText: string[] = [];
 
-    const objects = pdfDoc.context.enumerateIndirectObjects();
-    for (const [, obj] of objects) {
-      if (obj instanceof PDFRawStream || obj instanceof PDFStream) {
-        try {
-          const decoded = decodePDFRawStream(obj as any).decode();
-          const raw = new TextDecoder('latin1').decode(decoded);
-          const extracted = parseRawStreamText(raw);
-          if (extracted.length > 0) {
-            allLines.push(...extracted);
-            pagesText.push(extracted.join('\n'));
+    // 1. Extract page-by-page from page content streams in visual order
+    const pageCount = pdfDoc.getPageCount();
+    for (let i = 0; i < pageCount; i++) {
+      try {
+        const page = pdfDoc.getPage(i);
+        const contents = page.node.Contents();
+        const refs = contents instanceof PDFArray ? contents.asArray() : (contents ? [contents] : []);
+        const pageLines: string[] = [];
+
+        for (const ref of refs) {
+          const stream = ref instanceof PDFRef ? pdfDoc.context.lookup(ref) : ref;
+          if (stream instanceof PDFRawStream || stream instanceof PDFStream) {
+            try {
+              const decoded = decodePDFRawStream(stream as any).decode();
+              const raw = new TextDecoder('latin1').decode(decoded);
+              const extracted = parseRawStreamText(raw);
+              if (extracted.length > 0) {
+                pageLines.push(...extracted);
+              }
+            } catch {}
           }
-        } catch {}
+        }
+
+        if (pageLines.length > 0) {
+          pagesText.push(pageLines.join('\n'));
+          allLines.push(...pageLines);
+        }
+      } catch {}
+    }
+
+    // 2. Fallback: If page streams didn't yield text, enumerate all indirect stream objects
+    if (allLines.length === 0) {
+      const objects = pdfDoc.context.enumerateIndirectObjects();
+      for (const [, obj] of objects) {
+        if (obj instanceof PDFRawStream || obj instanceof PDFStream) {
+          try {
+            const decoded = decodePDFRawStream(obj as any).decode();
+            const raw = new TextDecoder('latin1').decode(decoded);
+            const extracted = parseRawStreamText(raw);
+            if (extracted.length > 0) {
+              allLines.push(...extracted);
+              pagesText.push(extracted.join('\n'));
+            }
+          } catch {}
+        }
       }
     }
 
+    // 3. Extract AcroForm interactive form values if present
+    try {
+      const form = pdfDoc.getForm();
+      const fields = form.getFields();
+      for (const field of fields) {
+        const name = field.getName();
+        let val: string | undefined;
+        if ('getText' in field && typeof (field as any).getText === 'function') {
+          val = (field as any).getText();
+        }
+        if (val && val.trim()) {
+          allLines.push(`${name}: ${val.trim()}`);
+        }
+      }
+    } catch {}
+
+    const fullText = pagesText.length > 0 ? pagesText.join('\n\n') : allLines.join('\n');
     return {
-      fullText: allLines.join('\n'),
-      pagesText: pagesText.length > 0 ? pagesText : [allLines.join('\n')],
+      fullText,
+      pagesText: pagesText.length > 0 ? pagesText : [fullText],
       lines: allLines,
     };
   } catch (err) {
@@ -175,8 +255,9 @@ export async function extractPdfPagesText(file: File): Promise<{
 
   // Method 1: PDF.js with in-memory main thread worker
   try {
+    // Crucial for Safari WebKit: pass a sliced buffer so arrayBuffer is NEVER detached if structuredClone transfers it
     const loadingTask = pdfjsLib.getDocument({
-      data: new Uint8Array(arrayBuffer),
+      data: new Uint8Array(arrayBuffer.slice(0)),
       useSystemFonts: true,
       disableFontFace: true,
     });
