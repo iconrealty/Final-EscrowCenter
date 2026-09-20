@@ -101,9 +101,9 @@ export function StockMarketGoalsBar({
   ];
 
   return (
-    /* Matches the full width of the escrow card UI on mobile, and expands to middle of 4th tab on desktop */
+    /* Matches the full width of the 2 wide tabs above and the escrow tab below */
     <div 
-      className="w-full sm:w-[calc(87.5%+4.5px)] max-w-full min-w-0 bg-white hover:bg-slate-50 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden transition-all flex items-center h-12 select-none group cursor-pointer relative shrink-0"
+      className="w-full max-w-full min-w-0 bg-white hover:bg-slate-50 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden transition-all flex items-center h-12 select-none group cursor-pointer relative shrink-0"
       data-ticker="true"
       onClick={onOpenGoals}
       title="Hover to pause in place • Click to open Goals & Performance Tracker"

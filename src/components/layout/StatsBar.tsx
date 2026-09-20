@@ -92,8 +92,8 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
   return (
     <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-b border-[#e5e5ea] overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-3 min-w-0 w-full overflow-hidden">
-        {/* Metric Cards Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* Metric Cards Row: 2 tabs per row for wide, comfortable layout */}
+        <div className="grid grid-cols-2 2xl:grid-cols-4 gap-3">
           {/* Closed Commission Card */}
           <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
             <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
