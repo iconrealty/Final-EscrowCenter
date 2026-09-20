@@ -200,29 +200,27 @@ function App() {
               />
               
               {filteredEscrows.length > 0 ? (
-                <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 xl:gap-8 w-full min-w-0">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                   {filteredEscrows.map((escrow, index) => (
-                    <div key={escrow.id} className="w-full max-w-full min-w-0">
-                      <EscrowCard 
-                        escrow={escrow}
-                        index={index}
-                        onToggleTask={toggleTask}
-                        onEdit={() => {
-                          setEditingEscrow(escrow);
-                          setIsAddEditOpen(true);
-                        }}
-                        onViewDetails={() => setDetailEscrow(escrow)}
-                        onSendUpdate={() => setClientUpdateEscrow(escrow)}
-                        onUpdateTasks={() => setUpdateTasksEscrow(escrow)}
-                        onOpenContacts={() => setContactsEscrow(escrow)}
-                        onOpenDocuments={() => setDocumentsEscrow(escrow)}
-                      />
-                    </div>
-
+                    <EscrowCard 
+                      key={escrow.id} 
+                      escrow={escrow}
+                      index={index}
+                      onToggleTask={toggleTask}
+                      onEdit={() => {
+                        setEditingEscrow(escrow);
+                        setIsAddEditOpen(true);
+                      }}
+                      onViewDetails={() => setDetailEscrow(escrow)}
+                      onSendUpdate={() => setClientUpdateEscrow(escrow)}
+                      onUpdateTasks={() => setUpdateTasksEscrow(escrow)}
+                      onOpenContacts={() => setContactsEscrow(escrow)}
+                      onOpenDocuments={() => setDocumentsEscrow(escrow)}
+                    />
                   ))}
                 </div>
               ) : (
-                <div className="bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl p-12 text-center w-full max-w-full min-w-0">
+                <div className="bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl p-12 text-center">
                   <h3 className="text-[#1d1d1f] font-bold text-lg mb-2">No escrows found</h3>
                   <p className="text-[#86868b] mb-6">Create a new escrow to get started.</p>
                   <button
