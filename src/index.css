@@ -45,3 +45,23 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 38s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover,
+.group:hover .animate-marquee,
+[data-ticker]:hover .animate-marquee {
+  animation-play-state: paused !important;
+}

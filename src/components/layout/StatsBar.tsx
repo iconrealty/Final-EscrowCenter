@@ -2,6 +2,7 @@ import React from 'react';
 import { Escrow } from '../../types';
 import { useGoals } from '../../hooks/useGoals';
 import { getEscrowYear } from '../../utils/csvUtils';
+import { StockMarketGoalsBar } from './StockMarketGoalsBar';
 
 interface StatsBarProps {
   escrows: Escrow[];
@@ -24,6 +25,13 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
   const closedCommission = actualYearClosedEscrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);
   const pendingCommission = openEscrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);
   const closedYtd = actualYearClosedEscrows.length;
+
+  // Calculate Total GCI (Gross Commission Income) for closed escrows in the actual year
+  const totalGci = actualYearClosedEscrows.reduce((sum, e) => {
+    if (e.grossCommission !== undefined && e.grossCommission !== null) return sum + Number(e.grossCommission);
+    if (e.price && e.commissionPercent) return sum + (Number(e.price) * Number(e.commissionPercent)) / 100;
+    return sum + (Number(e.netCommission) || 0);
+  }, 0);
 
   const goalTargetIncome = storedGoals.targetCommission || 150000;
   const goalTargetUnits = storedGoals.targetDeals || 12;
@@ -51,122 +59,106 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
   const isUnitsOnTrack = isUnitsAchieved || closedYtd >= expectedUnitsPace || projectedTotalUnits >= expectedUnitsPace;
   const unitsStatusText = isUnitsOnTrack ? 'ON TRACK' : 'OFF TRACK';
 
+  // Agent Performance Analytics calculations:
+  const remainingCommissionNeeded = Math.max(0, goalTargetIncome - closedCommission);
+  const remainingUnitsNeeded = Math.max(0, goalTargetUnits - closedYtd);
+  const daysRemaining = Math.max(0, 365 - daysPassed);
+
+  const currentMonthIndex = now.getMonth();
+  const monthsRemaining = Math.max(1, 12 - currentMonthIndex);
+  const monthlyUnitsNeeded = remainingUnitsNeeded / monthsRemaining;
+  const monthlyIncomeNeeded = remainingCommissionNeeded / monthsRemaining;
+
+  // Average Price Point logic matching GoalsModal:
+  const closedVolume = actualYearClosedEscrows.reduce((sum, e) => sum + (e.price || 0), 0);
+  const closedAvgPricePoint = closedYtd > 0 ? (closedVolume / closedYtd) : 0;
+  const targetNetCommPerUnit = goalTargetUnits > 0 ? (goalTargetIncome / goalTargetUnits) : 0;
+
+  const allEscrowsVolume = escrows.reduce((sum, e) => sum + (e.price || 0), 0);
+  const allEscrowsCommission = escrows.reduce((sum, e) => sum + (e.netCommission || 0), 0);
+  const effectiveCommRate = closedVolume > 0 && closedCommission > 0
+    ? (closedCommission / closedVolume)
+    : (allEscrowsVolume > 0 && allEscrowsCommission > 0 ? (allEscrowsCommission / allEscrowsVolume) : 0.025);
+
+  const targetAvgPricePoint = effectiveCommRate > 0 && targetNetCommPerUnit > 0
+    ? Math.round(targetNetCommPerUnit / effectiveCommRate)
+    : 0;
+
+  const avgPricePoint = targetAvgPricePoint > 0 ? targetAvgPricePoint : (closedAvgPricePoint > 0 ? closedAvgPricePoint : 0);
+
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   return (
-    <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-b border-[#e5e5ea] space-y-3">
-      {/* Metric Cards Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {/* Closed Commission Card */}
-        <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
-          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
-            Net Closed ({actualYear})
+    <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-b border-[#e5e5ea] overflow-x-hidden">
+      <div className="max-w-7xl mx-auto space-y-3 min-w-0 w-full overflow-hidden">
+        {/* Metric Cards Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Closed Commission Card */}
+          <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
+            <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
+              Net Closed ({actualYear})
+            </div>
+            <div className="text-lg sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none truncate w-full">
+              {formatCurrency(closedCommission)}
+            </div>
           </div>
-          <div className="text-lg sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none truncate w-full">
-            {formatCurrency(closedCommission)}
+
+          {/* Pending Commission Card */}
+          <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
+            <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
+              Net Pending
+            </div>
+            <div className="text-lg sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none truncate w-full">
+              {formatCurrency(pendingCommission)}
+            </div>
+          </div>
+
+          {/* Open Escrows */}
+          <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
+            <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
+              Open Escrows
+            </div>
+            <div className="text-xl sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none">
+              {openCount}
+            </div>
+          </div>
+
+          {/* Closed Escrows */}
+          <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
+            <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
+              Closed Escrows
+            </div>
+            <div className="text-xl sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none">
+              {closedYtd}
+            </div>
           </div>
         </div>
 
-        {/* Pending Commission Card */}
-        <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
-          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
-            Net Pending
-          </div>
-          <div className="text-lg sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none truncate w-full">
-            {formatCurrency(pendingCommission)}
-          </div>
-        </div>
-
-        {/* Open Escrows */}
-        <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
-          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
-            Open Escrows
-          </div>
-          <div className="text-xl sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none">
-            {openCount}
-          </div>
-        </div>
-
-        {/* Closed Escrows */}
-        <div className="h-[74px] sm:h-[80px] bg-white border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] rounded-2xl px-3 sm:px-4 flex flex-col items-center justify-center min-w-0 text-center transition-all hover:border-[#cbd5e1]">
-          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.8px] text-black mb-1 truncate w-full">
-            Closed Escrows
-          </div>
-          <div className="text-xl sm:text-2xl xl:text-[25px] font-black text-[#0f172a] tracking-tight leading-none">
-            {closedYtd}
-          </div>
+        {/* Goals Bar Below the Cards styled like a Financial Stock Ticker Tape */}
+        <div className="flex items-center">
+          <StockMarketGoalsBar 
+            onOpenGoals={onOpenGoals}
+            actualYear={actualYear}
+            isUnitsOnTrack={isUnitsOnTrack}
+            unitsStatusText={unitsStatusText}
+            closedYtd={closedYtd}
+            goalTargetUnits={goalTargetUnits}
+            isIncomeOnTrack={isIncomeOnTrack}
+            incomeStatusText={incomeStatusText}
+            closedCommission={closedCommission}
+            goalTargetIncome={goalTargetIncome}
+            remainingUnitsNeeded={remainingUnitsNeeded}
+            remainingCommissionNeeded={remainingCommissionNeeded}
+            monthlyUnitsNeeded={monthlyUnitsNeeded}
+            monthlyIncomeNeeded={monthlyIncomeNeeded}
+            avgPricePoint={avgPricePoint}
+            daysRemaining={daysRemaining}
+            totalGci={totalGci}
+            formatCurrency={formatCurrency}
+          />
         </div>
       </div>
-
-      {/* Long Goals Bar Below the Cards */}
-      <button
-        onClick={onOpenGoals}
-        className="w-full bg-white hover:bg-slate-100/80 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl px-4 py-3 cursor-pointer group transition-all text-left"
-        title="Click to view Goals & Performance Tracker"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-start gap-2.5 sm:gap-5 w-full">
-          {/* Goals & Performance title + Year */}
-          <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
-            <span className="text-xs sm:text-[13px] font-medium text-slate-900 flex items-center gap-1.5">
-              <span>Goals &amp; Performance</span>
-              <span className="text-[#1B3A5C] font-normal">{actualYear}</span>
-            </span>
-            <span className="text-[10px] text-slate-400 font-medium sm:hidden">Click to view</span>
-          </div>
-
-          <div className="h-4 w-px bg-slate-200 hidden sm:block shrink-0" />
-
-          {/* Goals Pills & Info - Side-by-side on mobile, horizontal row on desktop */}
-          <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:gap-7 w-full sm:w-auto">
-            {/* Units Column / Group */}
-            <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 text-center sm:text-left">
-              <span className="text-xs sm:text-[13px] font-semibold text-slate-800 uppercase tracking-wider hidden sm:inline">
-                UNITS:
-              </span>
-              <span className={`text-xs sm:text-[13px] font-bold px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all w-full sm:w-auto text-center ${
-                isUnitsOnTrack 
-                  ? 'bg-[#15803d] text-white border border-[#166534]' 
-                  : 'bg-[#b91c1c] text-white border border-[#991b1b]'
-              }`}>
-                {unitsStatusText}
-              </span>
-              <div className="flex items-center justify-center gap-1">
-                <span className="text-[11px] font-semibold text-slate-800 uppercase tracking-wider sm:hidden">
-                  UNITS
-                </span>
-                <span className="text-[11px] sm:text-[13px] font-medium text-slate-700">
-                  ({closedYtd}/{goalTargetUnits})
-                </span>
-              </div>
-            </div>
-
-            <div className="h-5 w-px bg-slate-300 hidden sm:block shrink-0" />
-
-            {/* Income Column / Group */}
-            <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 text-center sm:text-left">
-              <span className="text-xs sm:text-[13px] font-semibold text-slate-800 uppercase tracking-wider hidden sm:inline">
-                INCOME:
-              </span>
-              <span className={`text-xs sm:text-[13px] font-bold px-3.5 py-1 rounded-lg tracking-wider shadow-xs transition-all w-full sm:w-auto text-center ${
-                isIncomeOnTrack 
-                  ? 'bg-[#15803d] text-white border border-[#166534]' 
-                  : 'bg-[#b91c1c] text-white border border-[#991b1b]'
-              }`}>
-                {incomeStatusText}
-              </span>
-              <div className="flex items-center justify-center gap-1 max-w-full">
-                <span className="text-[11px] font-semibold text-slate-800 uppercase tracking-wider sm:hidden">
-                  INCOME
-                </span>
-                <span className="text-[11px] sm:text-[13px] font-medium text-slate-700 truncate">
-                  ({formatCurrency(closedCommission)} / {formatCurrency(goalTargetIncome)})
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </button>
     </div>
   );
 }
