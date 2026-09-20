@@ -112,10 +112,10 @@ export function EscrowCard({
       };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col relative overflow-hidden group/card">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col relative overflow-hidden group/card w-full max-w-full min-w-0">
       {/* Top Part Inside Tab: Escrow Number, Representation Badge, Status */}
-      <div className={`px-3.5 sm:px-4 py-2.5 sm:py-3 flex flex-wrap sm:flex-nowrap justify-between items-center gap-2 ${headerStyle.bg}`}>
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap shrink-0">
+      <div className={`px-3.5 sm:px-4 py-2.5 sm:py-3 flex flex-wrap justify-between items-center gap-2 min-w-0 max-w-full ${headerStyle.bg}`}>
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
           {typeof index === 'number' && (
             <span className={`font-mono text-xs font-black ${headerStyle.indexBadge} px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg shadow-xs shrink-0 tracking-wide`}>
               #{index + 1}
@@ -132,7 +132,7 @@ export function EscrowCard({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap min-w-0">
           <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">
             {escrow.leadSource || 'Zillow'}
           </span>
@@ -476,24 +476,24 @@ export function EscrowCard({
         })()}
 
         {/* Quick Access Buttons */}
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-4 grid grid-cols-3 gap-2 min-w-0">
           <button 
             onClick={(e) => {
               e.stopPropagation();
               onSendUpdate();
             }}
-            className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
+            className="w-full py-2.5 px-1 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer min-w-0"
           >
-            <span>Notifications</span>
+            <span className="truncate">Notifications</span>
           </button>
           <button 
             onClick={(e) => {
               e.stopPropagation();
               onOpenContacts?.();
             }}
-            className="w-full py-2.5 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer"
+            className="w-full py-2.5 px-1 bg-slate-50 hover:bg-[#1B3A5C]/5 border border-[#e5e5ea] hover:border-[#1B3A5C]/20 rounded-xl text-xs font-bold text-[#1B3A5C] flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer min-w-0"
           >
-            <span>Contacts</span>
+            <span className="truncate">Contacts</span>
           </button>
           {(() => {
             const docCount = escrow.documents?.length || 0;
@@ -504,14 +504,14 @@ export function EscrowCard({
                   e.stopPropagation();
                   onOpenDocuments?.();
                 }}
-                className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer ${
+                className={`w-full py-2.5 px-1 rounded-xl text-xs font-bold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer min-w-0 ${
                   hasDocs
                     ? 'bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/90'
                     : 'bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 animate-pulse'
                 }`}
                 title={hasDocs ? `${docCount} document(s) attached` : 'No documents attached'}
               >
-                <span>{hasDocs ? `Documents (${docCount})` : 'No Documents'}</span>
+                <span className="truncate">{hasDocs ? `Documents (${docCount})` : 'No Documents'}</span>
               </button>
             );
           })()}
