@@ -101,48 +101,31 @@ export function StockMarketGoalsBar({
   ];
 
   return (
-    /* Expands cleanly until the middle of the 4th tab on laptop/desktop */
+    /* Expands cleanly until the middle of the 4th tab on laptop/desktop, perfectly fits the 2 top cards width on mobile */
     <div 
-      className="w-full sm:w-[calc(87.5%+4.5px)] max-w-full min-w-0 bg-white hover:bg-slate-50 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden transition-all flex items-center h-12 select-none group shrink-0"
+      className="w-full sm:w-[calc(87.5%+4.5px)] max-w-full min-w-0 bg-white hover:bg-slate-50 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden transition-all flex items-center h-12 select-none group cursor-pointer relative"
       data-ticker="true"
+      onClick={onOpenGoals}
+      title="Hover to pause in place • Click to open Goals & Performance Tracker"
     >
-      {/* Left Anchor: Clickable Goals & Performance Label (icon removed as requested) */}
-      <button
-        type="button"
-        onClick={onOpenGoals}
-        className="flex items-center px-3 sm:px-4 h-full shrink-0 border-r border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer"
-        title="Click to view Goals & Performance Analytics"
-      >
-        <span className="text-xs sm:text-[13px] font-bold text-slate-900 tracking-tight whitespace-nowrap flex items-center gap-1.5">
-          <span>Goals &amp; Performance</span>
-          <span className="text-[#1B3A5C] font-semibold text-xs">({actualYear})</span>
-        </span>
-      </button>
+      {/* Soft gradient edge masks */}
+      <div className="absolute left-0 top-0 bottom-0 w-3 sm:w-4 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-3 sm:w-4 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
-      {/* Right: Running Stock-Style Ticker Track (Hover freezes in place via CSS, never resets) */}
-      <div 
-        className="flex-1 min-w-0 h-full overflow-hidden relative flex items-center cursor-pointer"
-        style={{ contain: 'paint' }}
-        onClick={onOpenGoals}
-        title="Hover to pause in place • Click to open Goals & Performance Tracker"
-      >
-        {/* Soft gradient edge masks */}
-        <div className="absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-3 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-
-        <div className="w-full min-w-0 overflow-hidden flex items-center" style={{ contain: 'paint layout' }}>
-          <div 
-            className="flex items-center gap-7 whitespace-nowrap px-3 animate-marquee"
-            style={{
-              display: 'inline-flex',
-              width: 'max-content',
-              animationDuration: '36s',
-              animationTimingFunction: 'linear',
-              animationIterationCount: 'infinite',
-            }}
-          >
-            {/* Repeated so ticker loops continuously without jumps */}
-            {[...items, ...items, ...items].map((item, idx) => {
+      {/* Running Stock-Style Ticker Track (Full width without title taking up room) */}
+      <div className="w-full min-w-0 overflow-hidden flex items-center" style={{ contain: 'paint layout' }}>
+        <div 
+          className="flex items-center gap-7 whitespace-nowrap px-4 animate-marquee"
+          style={{
+            display: 'inline-flex',
+            width: 'max-content',
+            animationDuration: '36s',
+            animationTimingFunction: 'linear',
+            animationIterationCount: 'infinite',
+          }}
+        >
+          {/* Repeated so ticker loops continuously without jumps */}
+          {[...items, ...items, ...items].map((item, idx) => {
               const Icon = item.isStatus && item.isOnTrack ? TrendingUp : TrendingDown;
 
               return (
@@ -180,6 +163,5 @@ export function StockMarketGoalsBar({
           </div>
         </div>
       </div>
-    </div>
   );
 }

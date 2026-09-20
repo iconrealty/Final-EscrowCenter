@@ -136,7 +136,7 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
         </div>
 
         {/* Goals Bar Below the Cards styled like a Financial Stock Ticker Tape */}
-        <div className="flex items-center">
+        <div className="w-full flex items-center min-w-0">
           <StockMarketGoalsBar 
             onOpenGoals={onOpenGoals}
             actualYear={actualYear}
