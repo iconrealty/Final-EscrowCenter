@@ -119,7 +119,7 @@ export function StockMarketGoalsBar({
           style={{
             display: 'inline-flex',
             width: 'max-content',
-            animationDuration: '36s',
+            animationDuration: '44s',
             animationTimingFunction: 'linear',
             animationIterationCount: 'infinite',
           }}

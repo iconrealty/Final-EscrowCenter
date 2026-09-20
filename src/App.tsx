@@ -200,7 +200,7 @@ function App() {
               />
               
               {filteredEscrows.length > 0 ? (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 gap-8 w-full sm:w-[calc(87.5%+4.5px)] max-w-full">
                   {filteredEscrows.map((escrow, index) => (
                     <EscrowCard 
                       key={escrow.id} 
@@ -221,7 +221,7 @@ function App() {
                   ))}
                 </div>
               ) : (
-                <div className="bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl p-12 text-center">
+                <div className="bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl p-12 text-center w-full sm:w-[calc(87.5%+4.5px)] max-w-full">
                   <h3 className="text-[#1d1d1f] font-bold text-lg mb-2">No escrows found</h3>
                   <p className="text-[#86868b] mb-6">Create a new escrow to get started.</p>
                   <button
