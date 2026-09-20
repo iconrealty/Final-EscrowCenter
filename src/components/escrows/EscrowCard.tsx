@@ -144,7 +144,7 @@ export function EscrowCard({
       </div>
 
       {/* Main Content Area */}
-      <div className="p-5 flex-1 flex flex-col gap-4">
+      <div className="p-3.5 sm:p-5 flex-1 flex flex-col gap-3.5 sm:gap-4">
         {/* Address & Client Name with Days to Closing Box */}
         <div className="flex items-center gap-3.5">
           {/* Days to Closing Big Number Box */}

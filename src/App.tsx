@@ -160,10 +160,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans">
+    <div className="min-h-screen bg-slate-50 flex font-sans w-full max-w-full overflow-x-hidden">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      <div className="flex-1 md:ml-[60px] flex flex-col min-h-screen pb-24 md:pb-0">
+      <div className="flex-1 md:ml-[60px] flex flex-col min-h-screen pb-24 md:pb-0 min-w-0 w-full max-w-full overflow-x-hidden">
         <TopNav 
           activeTab={activeTab} 
           setActiveTab={setActiveTab} 
@@ -183,9 +183,9 @@ function App() {
           <StatsBar escrows={escrows} onOpenGoals={() => setIsGoalsOpen(true)} />
         )}
 
-        <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
+        <main className="flex-1 p-4 sm:p-6 overflow-x-hidden w-full min-w-0 max-w-full">
           {activeTab === 'active' && (
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-7xl mx-auto space-y-5 sm:space-y-6 w-full min-w-0">
               <MorningBriefingWidget 
                 escrows={escrows}
                 onSelectEscrow={(escrow) => setDetailEscrow(escrow)}
@@ -200,7 +200,7 @@ function App() {
               />
               
               {filteredEscrows.length > 0 ? (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:gap-8 w-full">
                   {filteredEscrows.map((escrow, index) => (
                     <EscrowCard 
                       key={escrow.id} 
@@ -220,7 +220,7 @@ function App() {
                   ))}
                 </div>
               ) : (
-                <div className="bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl p-12 text-center">
+                <div className="bg-white border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl p-8 sm:p-12 text-center w-full">
                   <h3 className="text-[#1d1d1f] font-bold text-lg mb-2">No escrows found</h3>
                   <p className="text-[#86868b] mb-6">Create a new escrow to get started.</p>
                   <button

@@ -103,17 +103,18 @@ export function StockMarketGoalsBar({
   return (
     /* Matches the full width of the 2 wide tabs above and the escrow tab below */
     <div 
-      className="w-full max-w-full min-w-0 bg-white hover:bg-slate-50 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden transition-all flex items-center h-12 select-none group cursor-pointer relative shrink-0"
+      className="w-full max-w-full min-w-0 bg-white hover:bg-slate-50 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden transition-all flex items-center h-12 select-none group cursor-pointer relative"
       data-ticker="true"
       onClick={onOpenGoals}
       title="Hover to pause in place • Click to open Goals & Performance Tracker"
+      style={{ width: '100%', maxWidth: '100%' }}
     >
       {/* Soft gradient edge masks */}
       <div className="absolute left-0 top-0 bottom-0 w-3 sm:w-4 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-3 sm:w-4 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
       {/* Running Stock-Style Ticker Track (Full width without title taking up room) */}
-      <div className="w-full min-w-0 overflow-hidden flex items-center" style={{ contain: 'paint layout' }}>
+      <div className="w-full max-w-full min-w-0 overflow-hidden flex items-center" style={{ width: '100%', maxWidth: '100%', contain: 'paint layout' }}>
         <div 
           className="flex items-center gap-7 whitespace-nowrap px-4 animate-marquee"
           style={{
@@ -125,7 +126,7 @@ export function StockMarketGoalsBar({
           }}
         >
           {/* Repeated so ticker loops continuously without jumps */}
-          {[...items, ...items, ...items].map((item, idx) => {
+          {[...items, ...items].map((item, idx) => {
               const Icon = item.isStatus && item.isOnTrack ? TrendingUp : TrendingDown;
 
               return (

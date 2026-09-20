@@ -90,8 +90,8 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   return (
-    <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-b border-[#e5e5ea] overflow-x-hidden">
-      <div className="max-w-7xl mx-auto space-y-3 min-w-0 w-full overflow-hidden">
+    <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-b border-[#e5e5ea] overflow-x-hidden w-full max-w-full min-w-0">
+      <div className="max-w-7xl mx-auto space-y-3 min-w-0 w-full max-w-full overflow-hidden">
         {/* Metric Cards Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {/* Closed Commission Card */}
@@ -135,8 +135,8 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
           </div>
         </div>
 
-        {/* Goals Bar Below the Cards styled like a Financial Stock Ticker Tape */}
-        <div className="w-full flex items-center min-w-0">
+        {/* Live Goals Bar */}
+        <div className="w-full max-w-full min-w-0 overflow-hidden">
           <StockMarketGoalsBar 
             onOpenGoals={onOpenGoals}
             actualYear={actualYear}
