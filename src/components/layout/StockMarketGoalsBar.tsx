@@ -1,5 +1,12 @@
 import React from 'react';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowUp, ArrowDown } from 'lucide-react';
+
+export interface MetricComparison {
+  diff: number;
+  percent: number | null;
+  hasLastYearData: boolean;
+  lastYearVal: number;
+}
 
 interface StockMarketGoalsBarProps {
   onOpenGoals?: () => void;
@@ -19,6 +26,12 @@ interface StockMarketGoalsBarProps {
   avgPricePoint: number;
   daysRemaining: number;
   totalGci: number;
+  closedVolume: number;
+  volumeComparison?: MetricComparison;
+  commissionComparison?: MetricComparison;
+  unitsComparison?: MetricComparison;
+  gciComparison?: MetricComparison;
+  avgPriceComparison?: MetricComparison;
   formatCurrency: (val: number) => string;
 }
 
@@ -40,12 +53,58 @@ export function StockMarketGoalsBar({
   avgPricePoint,
   daysRemaining,
   totalGci,
+  closedVolume,
+  volumeComparison,
+  commissionComparison,
+  unitsComparison,
+  gciComparison,
+  avgPriceComparison,
   formatCurrency,
 }: StockMarketGoalsBarProps) {
-  // Metrics list: ONLY Units Sold and Net Commission have colored status badges.
-  // The values are highlighted with crisp, high-contrast badges.
+  // Helper to format stock market ticker comparison vs last year at this point (Arrows up/down and the %)
+  const formatComparison = (
+    comp: MetricComparison | undefined
+  ): {
+    isUp: boolean;
+    isDown: boolean;
+    isEqual: boolean;
+    percentText: string;
+  } | null => {
+    if (!comp) return null;
+    const { diff, percent } = comp;
+    const isUp = diff > 0;
+    const isDown = diff < 0;
+    const isEqual = diff === 0;
+
+    let pct = 0;
+    if (percent !== null && !isNaN(percent)) {
+      pct = percent;
+    } else if (isUp) {
+      pct = 100;
+    } else if (isDown) {
+      pct = -100;
+    }
+
+    const sign = pct > 0 ? '+' : '';
+    const percentText = `${sign}${pct.toFixed(1)}%`;
+
+    return {
+      isUp,
+      isDown,
+      isEqual,
+      percentText
+    };
+  };
+
+  const compUnits = formatComparison(unitsComparison);
+  const compVolume = formatComparison(volumeComparison);
+  const compCommission = formatComparison(commissionComparison);
+  const compGci = formatComparison(gciComparison);
+  const compAvgPrice = formatComparison(avgPriceComparison);
+
+  // Metrics list: running live ticker with Total Sales Volume and Last Year comparison
   const items = [
-    // 1. Units Sold (On Track / Off Track)
+    // 1. Units Sold (On Track / Off Track + vs Last Year)
     {
       id: 'units-sold',
       label: 'UNITS SOLD:',
@@ -53,8 +112,17 @@ export function StockMarketGoalsBar({
       value: `(${closedYtd}/${goalTargetUnits})`,
       isStatus: true,
       isOnTrack: isUnitsOnTrack,
+      comparison: compUnits,
     },
-    // 2. Net Commission (On Track / Off Track)
+    // 2. Total Sales Volume (Requested by user + vs Last Year)
+    {
+      id: 'sales-volume',
+      label: 'TOTAL SALES VOLUME:',
+      value: formatCurrency(closedVolume),
+      isStatus: false,
+      comparison: compVolume,
+    },
+    // 3. Net Commission (On Track / Off Track + vs Last Year)
     {
       id: 'net-commission',
       label: 'NET COMMISSION:',
@@ -62,36 +130,39 @@ export function StockMarketGoalsBar({
       value: `(${formatCurrency(closedCommission)} / ${formatCurrency(goalTargetIncome)})`,
       isStatus: true,
       isOnTrack: isIncomeOnTrack,
+      comparison: compCommission,
     },
-    // 3. Total GCI
+    // 4. Total GCI (+ vs Last Year)
     {
       id: 'total-gci',
       label: 'TOTAL GCI:',
       value: formatCurrency(totalGci),
       isStatus: false,
+      comparison: compGci,
     },
-    // 4. Units Needed
+    // 5. Avg Price Point (+ vs Last Year)
+    {
+      id: 'avg-price-point',
+      label: 'AVG PRICE POINT:',
+      value: `${avgPricePoint > 0 ? formatCurrency(avgPricePoint) : '$0'} / unit`,
+      isStatus: false,
+      comparison: compAvgPrice,
+    },
+    // 6. Units Needed
     {
       id: 'units-needed',
       label: 'UNITS NEEDED:',
       value: `${remainingUnitsNeeded === 0 ? 'Goal Met' : `${remainingUnitsNeeded} needed`} (${monthlyUnitsNeeded > 0 ? (Math.round(monthlyUnitsNeeded * 10) / 10).toFixed(1) : 0}/mo)`,
       isStatus: false,
     },
-    // 5. Net Income Needed
+    // 7. Net Income Needed
     {
       id: 'income-needed',
       label: 'INCOME NEEDED:',
       value: `${remainingCommissionNeeded === 0 ? 'Goal Met' : `${formatCurrency(remainingCommissionNeeded)} to go`} (${formatCurrency(monthlyIncomeNeeded)}/mo)`,
       isStatus: false,
     },
-    // 6. Avg Price Point
-    {
-      id: 'avg-price-point',
-      label: 'AVG PRICE POINT:',
-      value: `${avgPricePoint > 0 ? formatCurrency(avgPricePoint) : '$0'} / unit`,
-      isStatus: false,
-    },
-    // 7. Days Left
+    // 8. Days Left
     {
       id: 'days-left',
       label: 'DAYS LEFT:',
@@ -120,7 +191,7 @@ export function StockMarketGoalsBar({
           style={{
             display: 'inline-flex',
             width: 'max-content',
-            animationDuration: '44s',
+            animationDuration: '52s',
             animationTimingFunction: 'linear',
             animationIterationCount: 'infinite',
           }}
@@ -152,9 +223,31 @@ export function StockMarketGoalsBar({
                   )}
 
                   {/* Highlighted Value Badge: large and clear on mobile UI */}
-                  <span className="font-black text-slate-900 text-sm sm:text-xs font-mono bg-slate-100 border border-slate-200/90 px-2.5 sm:px-2 py-0.5 rounded-md shadow-2xs tracking-tight">
+                  <span className="font-black text-slate-900 text-xs sm:text-[11px] font-mono bg-slate-100 border border-slate-200/90 px-2.5 sm:px-2 py-0.5 rounded-md shadow-2xs tracking-tight">
                     {item.value}
                   </span>
+
+                  {/* Stock Market Up / Down Comparison Pill vs Last Year at this point */}
+                  {item.comparison && (
+                    <span className={`inline-flex items-center gap-0.5 text-[11px] font-mono font-black px-1.5 py-0.5 rounded-md border shadow-2xs tracking-tight ${
+                      item.comparison.isUp
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300/80'
+                        : item.comparison.isDown
+                          ? 'bg-rose-50 text-rose-700 border-rose-300/80'
+                          : 'bg-slate-50 text-slate-600 border-slate-200'
+                    }`}>
+                      {item.comparison.isUp && (
+                        <ArrowUp size={12} strokeWidth={3} className="shrink-0 text-emerald-600" />
+                      )}
+                      {item.comparison.isDown && (
+                        <ArrowDown size={12} strokeWidth={3} className="shrink-0 text-rose-600" />
+                      )}
+                      {item.comparison.isEqual && (
+                        <span className="text-[9px] leading-none shrink-0 text-slate-400">■</span>
+                      )}
+                      <span>{item.comparison.percentText}</span>
+                    </span>
+                  )}
 
                   {/* Divider bullet */}
                   <span className="text-slate-300 font-bold ml-2">•</span>

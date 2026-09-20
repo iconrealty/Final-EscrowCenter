@@ -86,6 +86,103 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
 
   const avgPricePoint = targetAvgPricePoint > 0 ? targetAvgPricePoint : (closedAvgPricePoint > 0 ? closedAvgPricePoint : 0);
 
+  // --- LAST YEAR YTD COMPARISON CALCULATIONS ---
+  const lastYear = (Number(actualYear) - 1).toString();
+
+  // Helper to parse closing date
+  const parseClosingDate = (e: Partial<Escrow>): Date | null => {
+    const str = (e.coeDate || e.acceptanceDate || '').trim();
+    if (!str) return null;
+    const mdyMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (mdyMatch) {
+      const [, m, d, y] = mdyMatch;
+      const dt = new Date(Number(y), Number(m) - 1, Number(d));
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    const ymdMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (ymdMatch) {
+      const [, y, m, d] = ymdMatch;
+      const dt = new Date(Number(y), Number(m) - 1, Number(d));
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    const dt = new Date(str);
+    return isNaN(dt.getTime()) ? null : dt;
+  };
+
+  const getDayOfYear = (d: Date) => {
+    const start = new Date(d.getFullYear(), 0, 0);
+    const diff = d.getTime() - start.getTime();
+    const oneDay = 1000 * 60 * 60 * 24;
+    return Math.floor(diff / oneDay);
+  };
+
+  const currentDayOfYear = getDayOfYear(now);
+
+  const lastYearAllClosed = escrows.filter(
+    e => e.status === 'Closed' && getEscrowYear(e) === lastYear
+  );
+  const hasLastYearData = lastYearAllClosed.length > 0;
+
+  // Filter closed escrows from last year that closed on or before the current day of year (apples-to-apples YTD)
+  const lastYearClosedEscrowsYtd = lastYearAllClosed.filter(e => {
+    const dt = parseClosingDate(e);
+    if (!dt) return true;
+    return getDayOfYear(dt) <= currentDayOfYear;
+  });
+
+  const lastYearUnits = lastYearClosedEscrowsYtd.length;
+  const lastYearVolume = lastYearClosedEscrowsYtd.reduce((sum, e) => sum + (Number(e.price) || 0), 0);
+  const lastYearCommission = lastYearClosedEscrowsYtd.reduce((sum, e) => sum + (Number(e.netCommission) || 0), 0);
+  const lastYearGci = lastYearClosedEscrowsYtd.reduce((sum, e) => {
+    if (e.grossCommission !== undefined && e.grossCommission !== null) return sum + Number(e.grossCommission);
+    if (e.price && e.commissionPercent) return sum + (Number(e.price) * Number(e.commissionPercent)) / 100;
+    return sum + (Number(e.netCommission) || 0);
+  }, 0);
+  const lastYearAvgPricePoint = lastYearUnits > 0 ? Math.round(lastYearVolume / lastYearUnits) : 0;
+
+  // Helper to calculate clean percentage change
+  const calcPercent = (current: number, past: number, hasData: boolean): number => {
+    if (!hasData) return current > 0 ? 100 : 0;
+    if (past === 0) return current > 0 ? 100 : 0;
+    return ((current - past) / past) * 100;
+  };
+
+  // Compute comparisons
+  const volumeComparison = {
+    diff: closedVolume - lastYearVolume,
+    percent: calcPercent(closedVolume, lastYearVolume, hasLastYearData),
+    hasLastYearData,
+    lastYearVal: lastYearVolume
+  };
+
+  const commissionComparison = {
+    diff: closedCommission - lastYearCommission,
+    percent: calcPercent(closedCommission, lastYearCommission, hasLastYearData),
+    hasLastYearData,
+    lastYearVal: lastYearCommission
+  };
+
+  const unitsComparison = {
+    diff: closedYtd - lastYearUnits,
+    percent: calcPercent(closedYtd, lastYearUnits, hasLastYearData),
+    hasLastYearData,
+    lastYearVal: lastYearUnits
+  };
+
+  const gciComparison = {
+    diff: totalGci - lastYearGci,
+    percent: calcPercent(totalGci, lastYearGci, hasLastYearData),
+    hasLastYearData,
+    lastYearVal: lastYearGci
+  };
+
+  const avgPriceComparison = {
+    diff: avgPricePoint - lastYearAvgPricePoint,
+    percent: calcPercent(avgPricePoint, lastYearAvgPricePoint, hasLastYearData),
+    hasLastYearData,
+    lastYearVal: lastYearAvgPricePoint
+  };
+
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
@@ -155,6 +252,12 @@ export function StatsBar({ escrows, onOpenGoals }: StatsBarProps) {
             avgPricePoint={avgPricePoint}
             daysRemaining={daysRemaining}
             totalGci={totalGci}
+            closedVolume={closedVolume}
+            volumeComparison={volumeComparison}
+            commissionComparison={commissionComparison}
+            unitsComparison={unitsComparison}
+            gciComparison={gciComparison}
+            avgPriceComparison={avgPriceComparison}
             formatCurrency={formatCurrency}
           />
         </div>
