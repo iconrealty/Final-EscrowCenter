@@ -101,9 +101,9 @@ export function StockMarketGoalsBar({
   ];
 
   return (
-    /* Expands cleanly until the middle of the 4th tab on laptop/desktop, perfectly fits the 2 top cards width on mobile */
+    /* Compact 270px width on mobile matching original static tab, expands to middle of 4th tab on desktop */
     <div 
-      className="w-full sm:w-[calc(87.5%+4.5px)] max-w-full min-w-0 bg-white hover:bg-slate-50 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden transition-all flex items-center h-12 select-none group cursor-pointer relative"
+      className="w-[270px] sm:w-[calc(87.5%+4.5px)] max-w-full min-w-0 bg-white hover:bg-slate-50 border border-[#e5e5ea] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden transition-all flex items-center h-12 select-none group cursor-pointer relative shrink-0"
       data-ticker="true"
       onClick={onOpenGoals}
       title="Hover to pause in place • Click to open Goals & Performance Tracker"
