@@ -247,7 +247,7 @@ export function EscrowCard({
           {/* Next Step Section */}
           <div className="flex flex-col gap-1.5 mb-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs sm:text-sm font-black text-[#1B3A5C] uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
                 Next Step
               </span>
               {nextMilestone && (
@@ -257,7 +257,7 @@ export function EscrowCard({
                     e.stopPropagation();
                     onUpdateTasks();
                   }}
-                  className="text-xs sm:text-sm font-bold text-[#3B82F6] hover:underline cursor-pointer"
+                  className="text-[10px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
                 >
                   Click to update tasks &rarr;
                 </button>
@@ -270,14 +270,14 @@ export function EscrowCard({
                   e.stopPropagation();
                   onUpdateTasks();
                 }}
-                className="relative overflow-hidden bg-slate-100 border border-slate-300 hover:border-slate-400 rounded-xl transition-all cursor-pointer group/step select-none min-h-[46px]"
+                className="relative overflow-hidden bg-slate-100 border border-slate-300 hover:border-slate-400 rounded-xl transition-all cursor-pointer group/step select-none"
                 title={`Click to update milestone (${completedMilestones}/${MILESTONES.length} completed)`}
               >
                 {/* Base Layer: Unfilled area with dark text */}
-                <div className="flex items-center justify-between p-3">
+                <div className="flex items-center justify-between p-2.5">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#1B3A5C] shrink-0" />
-                    <span className="text-sm sm:text-base font-bold text-slate-900 truncate">
+                    <span className="w-2 h-2 rounded-full bg-[#1B3A5C] shrink-0" />
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                       {nextMilestone.label}
                     </span>
                   </div>
@@ -290,12 +290,12 @@ export function EscrowCard({
 
                 {/* Filling Rich Blue Progress Bar Layer (clipped to milestone progress) */}
                 <div 
-                  className="absolute inset-0 bg-[#3B82F6] flex items-center justify-between p-3 transition-all duration-500 ease-out pointer-events-none"
+                  className="absolute inset-0 bg-[#3B82F6] flex items-center justify-between p-2.5 transition-all duration-500 ease-out pointer-events-none"
                   style={{ clipPath: `inset(0 ${Math.max(0, 100 - milestonePct)}% 0 0)` }}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-white shrink-0" />
-                    <span className="text-sm sm:text-base font-bold text-white truncate">
+                    <span className="w-2 h-2 rounded-full bg-white shrink-0" />
+                    <span className="text-xs sm:text-sm font-bold text-white truncate">
                       {nextMilestone.label}
                     </span>
                   </div>
@@ -312,16 +312,16 @@ export function EscrowCard({
                   e.stopPropagation();
                   onUpdateTasks();
                 }}
-                className="flex items-center justify-between bg-emerald-600 text-white border border-emerald-700 p-3 rounded-xl hover:bg-emerald-700 transition-all cursor-pointer select-none min-h-[46px]"
+                className="flex items-center justify-between bg-emerald-600 text-white border border-emerald-700 p-2.5 rounded-xl hover:bg-emerald-700 transition-all cursor-pointer select-none"
                 title={`All ${MILESTONES.length} milestones completed! Click to view details.`}
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <CheckCircle2 size={18} className="text-white shrink-0" />
-                  <span className="text-sm sm:text-base font-bold text-white truncate">
+                  <CheckCircle2 size={16} className="text-white shrink-0" />
+                  <span className="text-xs sm:text-sm font-bold text-white truncate">
                     All {MILESTONES.length} Milestones Completed / COE Ready
                   </span>
                 </div>
-                <span className="text-xs sm:text-sm font-black text-white shrink-0 font-mono">
+                <span className="text-xs sm:text-sm font-black text-white shrink-0">
                   {completedMilestones}/{MILESTONES.length} (100%)
                 </span>
               </div>
@@ -338,8 +338,8 @@ export function EscrowCard({
             {/* Overall Completion Header */}
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#1B3A5C]" />
-                <span className="text-xs sm:text-sm font-black text-[#1B3A5C] uppercase tracking-wider">Escrow Completion</span>
+                <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
+                <span className="text-xs font-bold text-[#1B3A5C] uppercase tracking-wider">Escrow Completion</span>
               </div>
               <div className="flex items-center gap-1 font-mono text-xs sm:text-sm">
                 <span className="font-black text-slate-900">{completedTasks}/{totalTasksCount} Tasks</span>
