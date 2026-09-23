@@ -39,33 +39,28 @@ export function ActiveContingenciesTicker({
     return (
       <div className="w-full flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span 
-              className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded bg-emerald-600 text-white font-mono text-xs font-black leading-none"
-              title="0 active contingencies"
-            >
-              0
-            </span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-[#1B3A5C] uppercase tracking-wider">
-              Active Contingencies
-            </span>
-          </div>
+          <span className="text-xs sm:text-sm font-black text-[#1B3A5C] uppercase tracking-wider">
+            Active Contingencies <span className="font-mono font-black text-emerald-600">(0)</span>
+          </span>
+          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+            All Cleared
+          </span>
         </div>
         <div 
           onClick={(e) => {
             e.stopPropagation();
             onUpdateTasks?.();
           }}
-          className="w-full flex items-center justify-between bg-emerald-600 text-white border border-emerald-700/80 p-2.5 rounded-xl shadow-xs hover:bg-emerald-700 transition-all cursor-pointer select-none gap-2"
+          className="w-full flex items-center justify-between bg-emerald-600 text-white border border-emerald-700/80 p-3 rounded-xl shadow-xs hover:bg-emerald-700 transition-all cursor-pointer select-none gap-2"
           title="All contingencies removed! Click to view details."
         >
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <CheckCircle2 size={16} className="text-white shrink-0" />
-            <span className="text-xs font-bold text-white truncate">
+            <CheckCircle2 size={18} className="text-white shrink-0" />
+            <span className="text-sm sm:text-base font-bold text-white truncate">
               All {applicableContingencies.length} Contingencies Removed / Cleared
             </span>
           </div>
-          <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded-md shrink-0 shadow-2xs whitespace-nowrap">
+          <span className="text-xs sm:text-sm font-bold text-emerald-800 bg-white px-2.5 py-1 rounded-md shrink-0 shadow-2xs whitespace-nowrap">
             {applicableContingencies.length} / {applicableContingencies.length} Done
           </span>
         </div>
@@ -128,28 +123,21 @@ export function ActiveContingenciesTicker({
       onMouseLeave={() => setIsPaused(false)}
       className="w-full flex flex-col gap-1.5"
     >
-      {/* Title Header with active count in front */}
+      {/* Title Header with integrated count (no isolated square box) */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <span 
-            className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded text-white font-mono text-xs font-black leading-none ${
-              hasAnyUrgent ? 'bg-rose-600' : 'bg-[#D97706]'
-            }`}
-            title={`${activeContingencies.length} active contingencies remaining`}
-          >
-            {activeContingencies.length}
+        <span className="text-xs sm:text-sm font-black text-[#1B3A5C] uppercase tracking-wider">
+          Active Contingencies{' '}
+          <span className={`font-mono font-black ${hasAnyUrgent ? 'text-rose-600' : 'text-amber-600'}`}>
+            ({activeContingencies.length})
           </span>
-          <span className="text-[10px] sm:text-[11px] font-bold text-[#1B3A5C] uppercase tracking-wider">
-            Active Contingencies
-          </span>
-        </div>
+        </span>
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onUpdateTasks?.();
           }}
-          className="text-[10px] sm:text-[11px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
+          className="text-xs sm:text-sm font-bold text-[#3B82F6] hover:underline cursor-pointer"
         >
           {currentIndex + 1} of {activeContingencies.length} Active &rarr;
         </button>
@@ -161,7 +149,7 @@ export function ActiveContingenciesTicker({
           e.stopPropagation();
           onUpdateTasks?.();
         }}
-        className={`w-full relative min-h-[42px] flex items-center text-white border p-2.5 rounded-xl shadow-xs transition-colors duration-500 cursor-pointer group/step select-none overflow-hidden ${boxBgClass}`}
+        className={`w-full relative min-h-[46px] flex items-center text-white border p-3 rounded-xl shadow-xs transition-colors duration-500 cursor-pointer group/step select-none overflow-hidden ${boxBgClass}`}
         title={dueDate ? `${currentItem?.label} - Due: ${format(dueDate, 'EEE, MMM d, yyyy')} (${daysLeft}d left). Click to manage tasks.` : 'Active contingency. Click to manage tasks.'}
       >
         <AnimatePresence mode="popLayout" initial={false}>
@@ -177,16 +165,16 @@ export function ActiveContingenciesTicker({
             className="w-full flex items-center justify-between gap-2.5 min-w-0"
           >
             <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-              <span className="w-2 h-2 rounded-full bg-white shrink-0 shadow-2xs animate-pulse" />
-              <span className="text-[10px] font-mono font-bold bg-white/20 text-white px-1.5 py-0.5 rounded shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-white shrink-0 shadow-2xs animate-pulse" />
+              <span className="text-xs font-mono font-black bg-white/20 text-white px-2 py-0.5 rounded shrink-0">
                 {currentItem?.key}
               </span>
-              <span className="text-xs font-bold text-white truncate min-w-0">
+              <span className="text-sm sm:text-base font-bold text-white truncate min-w-0">
                 {currentItem?.label}
               </span>
             </div>
 
-            <span className={`text-[10px] font-bold bg-white px-2.5 py-1 rounded-md shrink-0 shadow-2xs whitespace-nowrap flex items-center gap-1 ${badgeTextClass}`}>
+            <span className={`text-xs sm:text-sm font-bold bg-white px-2.5 py-1 rounded-md shrink-0 shadow-2xs whitespace-nowrap flex items-center gap-1.5 ${badgeTextClass}`}>
               {renderDaysText()}
             </span>
           </motion.div>
