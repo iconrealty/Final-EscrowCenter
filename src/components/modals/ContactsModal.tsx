@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Escrow, formatPropertyAddress, parseAddressComponents } from '../../types';
-import { X, Copy, Check, Phone, MessageSquare, Mail } from 'lucide-react';
+import { X, Copy, Check, Phone, MessageSquare, Mail, ExternalLink } from 'lucide-react';
 import { parseISO, format } from 'date-fns';
 
 interface ContactsModalProps {

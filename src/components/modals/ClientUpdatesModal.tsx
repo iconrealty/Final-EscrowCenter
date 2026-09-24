@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { DEFAULT_TEMPLATES, EmailTemplate, TemplateSide } from '../../data/defaultTemplates';
+import { formatUtilitiesForAddress } from '../../utils/utilityLookup';
 
 export type { TemplateSide, EmailTemplate };
 
@@ -24,7 +25,7 @@ const OLD_LISTING_OPEN_V3 = 'Hi [Escrow Officer],\n\nPlease open escrow for our 
 
 const TEMPLATES: EmailTemplate[] = DEFAULT_TEMPLATES;
 
-const upgradeTemplateIfNeeded = (t: EmailTemplate, custom?: { id: string; text?: string; subject?: string }): EmailTemplate => {
+const upgradeTemplateIfNeeded = (t: EmailTemplate, custom?: { id: string; text?: string; subject?: string; label?: string }): EmailTemplate => {
   if (!custom || !custom.text) return t;
 
   // Upgrade 'request_open_escrow_listing' if it doesn't contain Lender or Seller 2 details or EscrowDays
@@ -52,6 +53,20 @@ const upgradeTemplateIfNeeded = (t: EmailTemplate, custom?: { id: string; text?:
     const textLower = custom.text.toLowerCase();
     const hasLender = textLower.includes('lender');
     if (!hasLender || custom.text === OLD_OPENING) {
+      return t;
+    }
+  }
+
+  // Upgrade 'utilities_buyer' if saved custom contains old '3Rd applicant', old 'Utilities for:', or does not contain utilities placeholder
+  if (t.id === 'utilities_buyer') {
+    if (
+      !custom ||
+      custom.text.includes('3Rd applicant') ||
+      custom.text.includes('Utilities for:') ||
+      custom.text.includes('Utilities for :') ||
+      custom.label !== t.label ||
+      (!custom.text.includes('Utilities') && !custom.text.includes('Utility') && !custom.text.includes('utilities'))
+    ) {
       return t;
     }
   }
@@ -107,6 +122,17 @@ export function ClientUpdatesModal({
           const saved = localStorage.getItem('escrow_custom_templates');
           if (!saved) {
             setTemplates(data.templates);
+          } else {
+            try {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed)) {
+                const merged = data.templates.map((t: EmailTemplate) => {
+                  const custom = parsed.find((p: any) => p.id === t.id);
+                  return upgradeTemplateIfNeeded(t, custom);
+                });
+                setTemplates(merged);
+              }
+            } catch {}
           }
         }
       })
@@ -435,6 +461,19 @@ export function ClientUpdatesModal({
     text = text.replace(/\[AgentEmail\]/g, escrow.agentEmail || 'N/A');
     text = text.replace(/\[Agent Email\]/g, escrow.agentEmail || 'N/A');
     text = text.replace(/\[Agent email\]/g, escrow.agentEmail || 'N/A');
+
+    // Utilities placeholders
+    const utilitiesFormatted = formatUtilitiesForAddress(escrow);
+    text = text.replace(/\[UtilitiesList\]/g, utilitiesFormatted);
+    text = text.replace(/\[Utilities List\]/g, utilitiesFormatted);
+    text = text.replace(/\[Utilities\]/g, utilitiesFormatted);
+    text = text.replace(/\[UtilityList\]/g, utilitiesFormatted);
+    text = text.replace(/\[Utility List\]/g, utilitiesFormatted);
+    text = text.replace(/\[UtilitiesBlock\]/g, utilitiesFormatted);
+
+    // Replace any legacy '3Rd applicant' or 'Utilities for:' if still lingering in customized text
+    text = text.replace(/3Rd applicant:?\s*/gi, `Here are the utilities for\n${fullPropertyAddress || 'the property'}\n\n`);
+    text = text.replace(/Utilities for:\s*(\[Address\])?/gi, `Here are the utilities for\n${fullPropertyAddress || 'the property'}`);
 
     return text;
   };
@@ -955,7 +994,8 @@ export function ClientUpdatesModal({
                       { tag: '[EscrowPhone]', label: 'Escrow Phone' },
                       { tag: '[Commission]', label: 'Commission' },
                       { tag: '[AgentPhone]', label: 'Agent Phone' },
-                      { tag: '[AgentEmail]', label: 'Agent Email' }
+                      { tag: '[AgentEmail]', label: 'Agent Email' },
+                      { tag: '[UtilitiesList]', label: 'Utilities List' }
                     ].map(p => (
                       <button
                         key={p.tag}

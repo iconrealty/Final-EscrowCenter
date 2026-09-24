@@ -22,6 +22,13 @@ export interface AnniversaryInteraction {
   createdAt: string;
 }
 
+export interface UtilityItem {
+  utility: string;
+  company: string;
+  phone: string;
+  website: string;
+}
+
 export interface Escrow {
   id: string;
   escrowNumber?: string;
@@ -73,6 +80,7 @@ export interface Escrow {
   contingencyStartDate?: string;
   documents?: EscrowDocument[];
   anniversaryInteractions?: AnniversaryInteraction[];
+  utilities?: UtilityItem[];
   lastUpdated: string;
   createdAt?: string;
 }

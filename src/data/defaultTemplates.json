@@ -10,91 +10,98 @@
     "id": "request_open_escrow_listing",
     "label": "Request to Open Escrow (Listing side)",
     "subject": "Request to Open Escrow: [Address]",
-    "text": "Hi [Escrow Officer],\n\nPlease open escrow for our new listing at [Address].\n\nEscrow Length: [EscrowDays] Days\nEstimated Closing Date (COE): [COE]\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Seller2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!",
+    "text": "Hi [Escrow Officer],\n\nMay you Please open escrow for our new listing at \n[Address].\n\nEscrow Length: [EscrowDays] Days\nEstimated Closing Date (COE): [COE]\n\nSellers\nName: [ClientFirstName] [ClientLastName]\nEmail: [ClientEmail]\nPhone: [ClientPhone][Seller2Block]\n\nLender Information\nLender: [LenderName]\nEmail: [LenderEmail]\nPhone: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nEmail: brittany@iconrealty.io\n\nKatya Abellar\nEmail: tc@iconrealty.io\n\nPlease include both Brittany and Katya on all escrow-related communications moving forward.\n\nThank you!",
     "side": "seller"
   },
   {
     "id": "opening",
     "label": "Escrow Opened (Buyer)",
     "subject": "Escrow Opened: [Address]",
-    "text": "Hi [ClientName], Escrow has officially been opened 🎉\nTarget Closing Date: [COE] ([EscrowDays] Days Escrow)\n\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nLENDER:\n\nLender: [LenderName]\nLender email: [LenderEmail]\nLender phone number: [LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nEscrow will be sending you wire instructions shortly for the initial deposit (3%). Please follow the instructions carefully. If you have any questions at any time, I’m always available.\n\nInspection: I’m coordinating the inspection, tentatively for Wednesday afternoon. I’ll confirm availability and keep you posted.",
+    "text": "Hi [ClientFirstName], \nEscrow has officially been opened \nHere are the important contacts to keep in mind:\n\nESCROW:\n\n[EscrowCompany]\nEscrow officer: [EscrowOfficer]\n[EscrowEmail]\n[EscrowPhone]\n\nLENDER:\n\n[LenderName]\n[LenderEmail]\n[LenderPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nEscrow will be sending you wire instructions shortly for the initial deposit (3%). Please follow the instructions carefully. If you have any questions at any time, I’m always available.\n\nInspection: I’m coordinating the inspection, for this week. I’ll confirm availability and keep you posted.",
     "side": "buyer"
   },
   {
     "id": "opening_listing",
     "label": "Escrow Opened (Listing)",
     "subject": "Escrow Opened: [Address]",
-    "text": "Hi [ClientName], Escrow has officially been opened 🎉\nTarget Closing Date: [COE] ([EscrowDays] Days Escrow)\n\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: [Collaborator]\nEscrow officer: [EscrowOfficer]\nEscrow email: [EscrowEmail]\nEscrow phone number: [EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nWe will be coordinating the next steps with the buyer's side. If you have any questions at any time, I’m always available.",
+    "text": "Hi [ClientFirstName], \nEscrow has officially been opened !!\nHere are the important contacts to keep in mind:\n\nESCROW:\n\nEscrow company: \n[EscrowCompany]\nEscrow officer: \n[EscrowOfficer]\n[EscrowEmail]\n[EscrowPhone]\n\nTransaction Coordinators\nBrittany Kauten\nbrittany@iconrealty.io\n\nKatya Abellar\ntc@iconrealty.io\n\nWHAT’S NEXT:\n\nWe will be coordinating the next steps with the buyer's side. If you have any questions at any time, I’m always available.",
     "side": "seller"
   },
   {
     "id": "inspection_day",
     "label": "Schedule Inspection",
-    "subject": "Schedule Inspection - [Address]",
-    "text": "Hi [ClientFirstName],\n\nThe inspection usually takes about 1.5 hours, and I recommend that you be present for at least the last 30 minutes so the inspector can walk you through the main findings. \nAt the same time, we’ll be conducting our initial visual home inspection.",
+    "subject": "Inspection Day - [Address]",
+    "text": "NEXT STEP \nThe next step is to schedule your home inspection.\n\nThe inspection usually takes about 1.5 hours, and I recommend that you be present for at least the last 30 minutes so the inspector can walk you through the main findings.\n\nAt the same time, we’ll be conducting our initial visual home inspection.",
     "side": "buyer"
   },
   {
     "id": "emd",
     "label": "EMD Received by Escrow",
     "subject": "EMD Received - [Address]",
-    "text": "Hi [ClientName], this is to confirm that your Earnest Money Deposit (EMD) has been successfully received by [EscrowOfficer]. That is another major milestone complete! I will keep you posted on the next steps. - [AgentName]",
+    "text": "Hi [ClientFirstName], \n your Deposit has been successfully received by [EscrowCompany]\n\nI will keep you posted on the next steps. ",
     "side": "both"
   },
   {
     "id": "insurance",
     "label": "Get Insurance (Buyer)",
     "subject": "Home Insurance Quotes - [Address]",
-    "text": "Hi [ClientName],\n\nNow its time to get quotes on Home insurance, you can try first with your actual insurance company if you need any additional quotes please let me know. - [AgentName]",
+    "text": "Hi [ClientFirstName],\n\nNow its time to get quotes on Home insurance, you can try first with your actual insurance company if you need any additional quotes please let me know.",
     "side": "buyer"
   },
   {
     "id": "appraisal",
     "label": "Appraisal Completed",
     "subject": "Appraisal Completed - [Address]",
-    "text": "Hi [ClientName], fantastic news! The property appraisal for [Address] has been completed and it came in at value! We are in great shape to move forward. - [AgentName]",
+    "text": "\n\nUPDATE:\n\nThe property appraisal has been completed, and it came in at value!\nThe loan process can now continue moving forward without any issues.",
     "side": "both"
   },
   {
     "id": "disclosures",
     "label": "Disclosures Reviewed (Buyer)",
     "subject": "Disclosures Completed - [Address]",
-    "text": "Hi [ClientName], we have successfully completed the review and signature of all seller disclosures for [Address]. Thank you for your prompt responses! - [AgentName]",
+    "text": "Hi [ClientFirstName], \n\nWe’ve successfully completed our review of all the seller disclosures. \nBrittany will be sending them over shortly for your review and signatures. \nPlease let us know if you have any questions!",
     "side": "buyer"
   },
   {
     "id": "loan_approval",
     "label": "Signing Appointment",
-    "subject": "Signing Appointment - [Address]",
-    "text": "Hi [ClientName], congratulations! Your lender ([LenderName]) has issued the Final Loan Approval! This is a major milestone and means we are almost at the finish line. Next up will be signing our final loan documents. - [AgentName]",
+    "subject": "Loan Final Approval Secured - [Address]",
+    "text": "UPDATE\n\nThe lender has sent the loan docs to Escrow.\nThis means we are almost at the finish line.\n\nThe next step is signing your final loan documents.\n\n[EscrowOfficer] from [EscrowCompany] will contact you shortly to schedule your signing appointment.",
     "side": "buyer"
   },
   {
     "id": "contingencies",
     "label": "Contingencies Removal",
-    "subject": "Contingencies Removal - [Address]",
-    "text": "Hi [ClientName], we have officially removed the contingencies for your escrow on [Address]! This is a huge milestone that secures our position and brings us one step closer to closing on [COE]. - [AgentName]",
+    "subject": "Contingencies Removed - [Address]",
+    "text": "Hi [ClientFirstName], \n\nIt's time to remove the contingencies.\nBrittany Will send you for signatures the Contingencies \nRemoval.",
     "side": "both"
   },
   {
     "id": "signing",
     "label": "Signed Docs sent to lender",
-    "subject": "Signed Docs Sent to Lender - [Address]",
-    "text": "Hi [ClientName], great job signing the final escrow and loan documents today! We are now waiting on the final lender review, funding, and recording. - [AgentName]",
+    "subject": "Signing Complete - [Address]",
+    "text": "UPDATE:\n\n[EscrowCompany] has been sent The final escrow and loan documents to the Lender.\nWe are now waiting on the final lender review.",
     "side": "buyer"
   },
   {
     "id": "funds",
     "label": "Final Funds Wired",
     "subject": "Final Wire Received - [Address]",
-    "text": "Hi [ClientName], the escrow company has confirmed receipt of your final wire deposit. Everything is set on your side for recording. - [AgentName]",
+    "text": "UPDATE\nThe Final wire has been received by\n[EscrowCompany]",
+    "side": "buyer"
+  },
+  {
+    "id": "utilities_buyer",
+    "label": "Utilities information",
+    "subject": "Utilities Information - [Address]",
+    "text": "Here are the utilities for\n[Address]\n\n[UtilitiesList]",
     "side": "buyer"
   },
   {
     "id": "closing",
     "label": "Transaction Closed",
     "subject": "Congratulations! Escrow Closed - [Address]",
-    "text": "Hi [ClientName], IT IS OFFICIAL! Our transaction has recorded and escrow is officially CLOSED on [Address]! Congratulations on your home! It has been an absolute pleasure working with you. - [AgentName]",
+    "text": "Hi [ClientFirstName],\n\n IT IS OFFICIAL!\n\nOur transaction has recorded and escrow is officially CLOSED!!\n\nCongratulations on your home! ",
     "side": "both"
   }
 ]
