@@ -86,29 +86,31 @@ export function EscrowCard({
   const isSeller = normalizedRep.includes('seller');
   const isDual = normalizedRep.includes('dual');
 
-  // Soft, refined pastel top header backgrounds:
-  // Buyer: Soft sky blue tone
-  // Seller: Soft mint/sage green tone
-  // Dual: Soft warm peach/apricot tone
+  // Inverted top header styles:
+  // Tab background: dark tone corresponding to representation (Navy for Buyer, Rich Emerald for Seller, Terracotta/Orange for Dual).
+  // Inner badges: inverted from dark to soft pastel tones with dark legible text.
   const headerStyle = isSeller
     ? {
-        bg: 'bg-emerald-50/75 border-b border-emerald-100',
-        indexBadge: 'bg-emerald-700 text-white',
-        repBadge: 'bg-emerald-600 text-white',
-        escrowNumBadge: 'bg-white border-emerald-200 text-emerald-900',
+        bg: 'bg-emerald-700 border-b border-emerald-800 text-white',
+        indexBadge: 'bg-emerald-100 text-emerald-950 border border-emerald-200/60',
+        repBadge: 'bg-emerald-100 text-emerald-900 border border-emerald-200/60',
+        escrowNumBadge: 'bg-white/15 border-white/25 text-white',
+        leadBadge: 'bg-white/15 border border-white/20 text-white',
       }
     : isDual
     ? {
-        bg: 'bg-orange-50/75 border-b border-orange-100',
-        indexBadge: 'bg-orange-600 text-white',
-        repBadge: 'bg-orange-500 text-white',
-        escrowNumBadge: 'bg-white border-orange-200 text-orange-900',
+        bg: 'bg-orange-600 border-b border-orange-700 text-white',
+        indexBadge: 'bg-orange-100 text-orange-950 border border-orange-200/60',
+        repBadge: 'bg-orange-100 text-orange-950 border border-orange-200/60',
+        escrowNumBadge: 'bg-white/15 border-white/25 text-white',
+        leadBadge: 'bg-white/15 border border-white/20 text-white',
       }
     : {
-        bg: 'bg-blue-50/75 border-b border-blue-100',
-        indexBadge: 'bg-[#1B3A5C] text-white',
-        repBadge: 'bg-[#1B3A5C] text-white',
-        escrowNumBadge: 'bg-white border-blue-200 text-blue-900',
+        bg: 'bg-[#1B3A5C] border-b border-[#142C47] text-white',
+        indexBadge: 'bg-blue-100 text-[#1B3A5C] border border-blue-200/60',
+        repBadge: 'bg-blue-100 text-[#1B3A5C] border border-blue-200/60',
+        escrowNumBadge: 'bg-white/15 border-white/25 text-white',
+        leadBadge: 'bg-white/15 border border-white/20 text-white',
       };
 
   return (
@@ -133,13 +135,13 @@ export function EscrowCard({
           )}
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap min-w-0">
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">
+          <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full ${headerStyle.leadBadge}`}>
             {escrow.leadSource || 'Zillow'}
           </span>
           <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${headerStyle.repBadge}`}>
             {rawRep}
           </span>
-          <StatusBadge status={escrow.status} />
+          <StatusBadge status={escrow.status} onDark={true} />
         </div>
       </div>
 
