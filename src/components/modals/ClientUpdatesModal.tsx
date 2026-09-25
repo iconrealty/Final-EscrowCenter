@@ -57,13 +57,16 @@ const upgradeTemplateIfNeeded = (t: EmailTemplate, custom?: { id: string; text?:
     }
   }
 
-  // Upgrade 'utilities_buyer' if saved custom contains old '3Rd applicant', old 'Utilities for:', or does not contain utilities placeholder
+  // Upgrade 'utilities_buyer' if saved custom contains old '3Rd applicant', old 'Utilities for:', old 'Company:/phone:/website:', or does not contain utilities placeholder
   if (t.id === 'utilities_buyer') {
     if (
       !custom ||
       custom.text.includes('3Rd applicant') ||
       custom.text.includes('Utilities for:') ||
       custom.text.includes('Utilities for :') ||
+      custom.text.includes('Company:') ||
+      custom.text.includes('phone:') ||
+      custom.text.includes('website:') ||
       custom.label !== t.label ||
       (!custom.text.includes('Utilities') && !custom.text.includes('Utility') && !custom.text.includes('utilities'))
     ) {

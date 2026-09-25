@@ -1102,21 +1102,18 @@ export function getUtilitiesForAddress(
  * Formats utility list into the exact user-specified structure:
  *
  * [Utility Name]
- * Company: [Company Name]
- * phone: [Phone Number]
- * website: [Website URL]
+ * [Company Name]
+ * [Phone Number]
+ * [Website URL]
  */
 export function formatUtilitiesForAddress(
   escrow?: { address?: string; city?: string; zipCode?: string; utilities?: UtilityItem[] } | null
 ): string {
   const utilities = getUtilitiesForAddress(escrow);
   return utilities
-    .map(
-      item =>
-`${item.utility}
-Company: ${item.company}
-phone: ${item.phone}
-website: ${item.website}`
-    )
+    .map(item => {
+      const lines = [item.utility, item.company, item.phone, item.website].filter(Boolean);
+      return lines.join('\n');
+    })
     .join('\n\n');
 }
