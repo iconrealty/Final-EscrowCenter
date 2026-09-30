@@ -29,6 +29,74 @@ export interface UtilityItem {
   website: string;
 }
 
+export interface ListingDocument {
+  id: string;
+  name: string;
+  url: string;
+  uploadedAt: string;
+  size?: number;
+  type?: string;
+}
+
+export type ListingStatus = 'Pre-Listing' | 'Active' | 'Off Market' | 'Pending Offer' | 'Under Contract' | 'Cancelled' | 'Closed';
+
+export interface Listing {
+  id: string;
+  address: string;
+  city?: string;
+  zipCode?: string;
+  apn?: string;
+  mlsId?: string;
+  listPrice: number;
+  propertyType?: string;
+  bedrooms?: number | string;
+  bathrooms?: number | string;
+  squareFeet?: number | string;
+  yearBuilt?: number | string;
+  
+  // Sellers
+  clientFirstName: string;
+  clientLastName: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  client2FirstName?: string;
+  client2LastName?: string;
+  client2Phone?: string;
+  client2Email?: string;
+  
+  // Assigned Escrow & Title
+  escrowCompany?: string;
+  escrowOfficer?: string;
+  escrowPhone?: string;
+  escrowEmail?: string;
+  titleCompany?: string;
+  titleOfficer?: string;
+  titlePhone?: string;
+  titleEmail?: string;
+
+  // Listing details
+  agentName?: string;
+  agentPhone?: string;
+  agentEmail?: string;
+  coListingAgent?: string;
+  commissionPercent?: number;
+  netCommission?: number;
+  listingAgreementDate?: string;
+  expirationDate?: string;
+  goLiveDate?: string;
+  forSaleDate?: string;
+  lockboxCode?: string;
+  showingInstructions?: string;
+  notes?: string;
+  leadSource?: 'Zillow' | 'Self' | 'Team Lead' | 'Opcity' | 'Other' | string;
+
+  status: ListingStatus;
+  convertedEscrowId?: string;
+  documents?: ListingDocument[];
+  createdAt: string;
+  lastUpdated: string;
+}
+
 export interface Escrow {
   id: string;
   escrowNumber?: string;
@@ -75,6 +143,8 @@ export interface Escrow {
   status: 'Open' | 'Closed' | 'Cancelled';
   representation?: 'Buyer' | 'Seller' | 'Dual';
   leadSource?: 'Zillow' | 'Self' | 'Team Lead' | 'Opcity' | 'Other' | string;
+  listingId?: string;
+  sourceListingId?: string;
   tasks: Record<string, boolean>;
   contingencyDays?: Record<string, number>;
   contingencyStartDate?: string;

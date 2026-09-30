@@ -89,6 +89,12 @@ export function TopNav({ activeTab, setActiveTab, onNewEscrow, onImportEscrows, 
             Home
           </button>
           <button 
+            onClick={() => setActiveTab('listings')}
+            className={`text-xs sm:text-sm font-medium transition-colors shrink-0 cursor-pointer ${activeTab === 'listings' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
+          >
+            Listings
+          </button>
+          <button 
             onClick={() => setActiveTab('summary')}
             className={`text-xs sm:text-sm font-medium transition-colors shrink-0 cursor-pointer ${activeTab === 'summary' ? 'text-[#1d1d1f] font-bold border-b-2 border-[#1B3A5C] pb-0.5' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
           >

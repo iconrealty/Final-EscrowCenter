@@ -3,7 +3,9 @@ import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, getApplicableContingencie
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
-import { CheckCircle2, Users, Phone, MessageSquare, Mail, User, Copy, Check } from 'lucide-react';
+import { CheckCircle2, Users, Phone, MessageSquare, Mail, User, Copy, Check, ExternalLink } from 'lucide-react';
+import { generateCognitoUrl } from '../../utils/cognitoUtils';
+import { useAuth } from '../../context/AuthContext';
 
 export function EscrowCard({ 
   escrow, 
@@ -27,6 +29,7 @@ export function EscrowCard({
   onOpenContacts?: () => void;
   onOpenDocuments?: () => void;
 }) {
+  const { user } = useAuth();
   const [copiedAddress, setCopiedAddress] = useState(false);
   const fullAddress = formatPropertyAddress(escrow) || escrow.address || '';
 
@@ -156,10 +159,6 @@ export function EscrowCard({
                 ? 'bg-[#16a34a]/5 border-[#16a34a]/20 text-[#16a34a]'
                 : escrow.status === 'Cancelled'
                 ? 'bg-rose-50/50 border-rose-100 text-rose-500'
-                : daysToCoe < 0
-                ? 'bg-rose-50/50 border-rose-100 text-rose-600'
-                : daysToCoe <= 2
-                ? 'bg-red-100/60 border-red-200 text-red-700 animate-pulse'
                 : 'bg-[#1B3A5C]/5 border-[#1B3A5C]/15 text-[#1B3A5C]'
             }`}
             title="Days remaining to closing"
@@ -526,7 +525,20 @@ export function EscrowCard({
         <div className="text-[10px] italic text-[#86868b]">
           Last updated: {escrow.lastUpdated ? formatDistanceToNow(parseISO(String(escrow.lastUpdated)), { addSuffix: true }) : 'Unknown'}
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <button 
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              const url = generateCognitoUrl(escrow, user);
+              window.open(url, '_blank', 'noopener,noreferrer');
+            }}
+            className="px-2.5 py-1.5 text-xs font-bold text-[#1B3A5C] bg-white border border-[#1B3A5C]/20 hover:bg-[#1B3A5C]/5 hover:border-[#1B3A5C]/40 rounded-md transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+            title={`Open Cognito Form pre-filled for ${fullAddress || 'this escrow'}`}
+          >
+            <ExternalLink size={12} className="text-[#1B3A5C]" />
+            <span>Cognito Form</span>
+          </button>
           <button 
             onClick={onViewDetails}
             className="px-3 py-1.5 text-xs font-bold text-black hover:text-slate-700 transition-colors cursor-pointer"

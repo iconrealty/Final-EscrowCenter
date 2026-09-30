@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Escrow } from '../../types';
 import { getEscrowYear } from '../../utils/csvUtils';
-import { Trash2, Calendar, User, ChevronRight, Users, Clock, DollarSign } from 'lucide-react';
+import { Trash2, Calendar, User, ChevronRight, Users, Clock, DollarSign, ExternalLink } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { StatusBadge } from '../shared/StatusBadge';
 import { SummaryFilterContext } from './SalesSummary';
+import { generateCognitoUrl } from '../../utils/cognitoUtils';
 
 interface ChecklistTableProps {
   escrows: Escrow[];
@@ -421,17 +422,28 @@ export function ChecklistTable({
                   <StatusBadge status={escrow.status} />
                 </div>
 
-                {/* Delete/Details Actions */}
-                <div className="col-span-1 mt-3 md:mt-0 flex justify-end items-center gap-3">
+                {/* Delete/Cognito/Details Actions */}
+                <div className="col-span-1 mt-3 md:mt-0 flex justify-end items-center gap-1.5 sm:gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const url = generateCognitoUrl(escrow);
+                      window.open(url, '_blank', 'noopener,noreferrer');
+                    }}
+                    className="p-1.5 text-[#86868b] hover:text-[#1B3A5C] hover:bg-blue-50 rounded-lg transition-all inline-flex justify-center items-center active:scale-90"
+                    title="Open Cognito Form for this Escrow"
+                  >
+                    <ExternalLink size={14} />
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeleteEscrow(escrow.id);
                     }}
-                    className="p-2 text-[#86868b] hover:text-red-500 hover:bg-red-50 rounded-xl transition-all inline-flex justify-center items-center active:scale-90"
+                    className="p-1.5 text-[#86868b] hover:text-red-500 hover:bg-red-50 rounded-lg transition-all inline-flex justify-center items-center active:scale-90"
                     title="Delete Escrow"
                   >
-                    <Trash2 size={15} strokeWidth={2.2} />
+                    <Trash2 size={14} />
                   </button>
                   <ChevronRight size={16} className="text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all md:block hidden shrink-0" />
                 </div>

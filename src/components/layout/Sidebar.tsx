@@ -1,9 +1,10 @@
 import React from 'react';
-import { LayoutDashboard, Home, Calendar, Gift } from 'lucide-react';
+import { LayoutDashboard, Home, Calendar, Gift, Building2 } from 'lucide-react';
 
 export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (t: string) => void }) {
   const icons = [
     { id: 'active', icon: Home, label: 'Home' },
+    { id: 'listings', icon: Building2, label: 'Listings' },
     { id: 'summary', icon: LayoutDashboard, label: 'Summary' },
     { id: 'calendar', icon: Calendar, label: 'Production' },
     { id: 'anniversaries', icon: Gift, label: 'Anniversaries' },

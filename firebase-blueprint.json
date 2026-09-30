@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "Escrow": {
+      "title": "Escrow",
+      "description": "An active or historical real estate escrow transaction",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the escrow"
+        },
+        "address": {
+          "type": "string",
+          "description": "Property street address"
+        },
+        "price": {
+          "type": "number",
+          "description": "Purchase or contract price"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Open", "Closed", "Cancelled"],
+          "description": "Current status of the escrow"
+        }
+      },
+      "required": ["id", "address"]
+    },
+    "Listing": {
+      "title": "Listing",
+      "description": "A pre-escrow real estate listing prepared for marketing and team intake",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the listing"
+        },
+        "address": {
+          "type": "string",
+          "description": "Property street address"
+        },
+        "listPrice": {
+          "type": "number",
+          "description": "Asking list price"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Pre-Listing", "Active", "Pending Offer", "Under Contract", "Cancelled"],
+          "description": "Status of the listing pipeline"
+        },
+        "escrowCompany": {
+          "type": "string",
+          "description": "Pre-assigned preferred escrow company"
+        },
+        "titleCompany": {
+          "type": "string",
+          "description": "Pre-assigned preferred title company"
+        }
+      },
+      "required": ["id", "address", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/escrows/{escrowId}": {
+      "schema": "Escrow",
+      "description": "User private escrow transactions"
+    },
+    "/users/{userId}/listings/{listingId}": {
+      "schema": "Listing",
+      "description": "User private pre-escrow listings"
+    }
+  }
+}

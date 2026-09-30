@@ -25,15 +25,24 @@ import { EscrowTableModal } from './components/modals/EscrowTableModal';
 import { MobileFloatingNav } from './components/layout/MobileFloatingNav';
 
 import { useEscrows } from './hooks/useEscrows';
+import { useListings } from './hooks/useListings';
+import { ListingsView } from './components/listings/ListingsView';
+import { AddEditListingModal } from './components/listings/AddEditListingModal';
+import { CognitoIntakeModal } from './components/listings/CognitoIntakeModal';
+import { ListingDetailModal } from './components/listings/ListingDetailModal';
+import { ListingDocumentsModal } from './components/listings/ListingDocumentsModal';
+import { AcceptOfferModal, OfferAcceptanceData } from './components/listings/AcceptOfferModal';
+import { CancelEscrowListingPromptModal } from './components/modals/CancelEscrowListingPromptModal';
 import { useToast } from './context/ToastContext';
-import { Escrow } from './types';
+import { Escrow, Listing } from './types';
 import { getEscrowYear } from './utils/csvUtils';
 import { differenceInCalendarDays, parseISO, getISOWeek, getISOWeekYear } from 'date-fns';
 import { Home, LayoutDashboard, Calendar, Gift } from 'lucide-react';
 
 function App() {
   const { escrows, addEscrow, editEscrow, deleteEscrow, restoreEscrow, clearAllEscrows, toggleTask, importEscrows } = useEscrows();
-  const { info: showInfo } = useToast();
+  const { listings, addListing, editListing, deleteListing } = useListings();
+  const { info: showInfo, success: showSuccess } = useToast();
   
   const [activeTab, setActiveTab] = useState('active');
   const [filter, setFilter] = useState('Open');
@@ -62,8 +71,89 @@ function App() {
 
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingEscrow, setEditingEscrow] = useState<Escrow | null>(null);
+
+  // Listings State
+  const [isAddEditListingOpen, setIsAddEditListingOpen] = useState(false);
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [cognitoModalListing, setCognitoModalListing] = useState<Listing | null>(null);
+  const [isCognitoModalOpen, setIsCognitoModalOpen] = useState(false);
+
+  // Accept Offer Verification Modal State
+  const [isAcceptOfferOpen, setIsAcceptOfferOpen] = useState(false);
+  const [acceptOfferListing, setAcceptOfferListing] = useState<Listing | null>(null);
+
+  // Prompt when a seller escrow is cancelled
+  const [cancelEscrowPrompt, setCancelEscrowPrompt] = useState<{ escrow: Escrow; linkedListing: Listing } | null>(null);
+
+  const handleOpenCognitoModal = (l?: Listing) => {
+    setCognitoModalListing(l || null);
+    setIsCognitoModalOpen(true);
+  };
+
+  const handleConvertListingToEscrow = (listing: Listing) => {
+    setAcceptOfferListing(listing);
+    setIsAcceptOfferOpen(true);
+  };
+
+  const handleConfirmAcceptOffer = async (listing: Listing, data: OfferAcceptanceData) => {
+    const newEscrowId = 'esc_' + Math.random().toString(36).substring(2, 11);
+    const newEscrow: any = {
+      id: newEscrowId,
+      address: listing.address,
+      city: listing.city || '',
+      zipCode: listing.zipCode || '',
+      apn: listing.apn || '',
+      mlsId: listing.mlsId || '',
+      representation: 'Seller',
+      leadSource: listing.leadSource || 'Self',
+      price: data.price,
+      commissionPercent: data.commissionPercent,
+      netCommission: data.netCommission,
+      acceptanceDate: data.acceptanceDate,
+      coeDate: data.coeDate,
+      coeDays: data.coeDays,
+      clientFirstName: listing.clientFirstName || '',
+      clientLastName: listing.clientLastName || '',
+      clientPhone: listing.clientPhone || '',
+      clientEmail: listing.clientEmail || '',
+      client2FirstName: listing.client2FirstName || '',
+      client2LastName: listing.client2LastName || '',
+      client2Phone: listing.client2Phone || '',
+      client2Email: listing.client2Email || '',
+      escrowCompany: listing.escrowCompany || '',
+      escrowOfficer: listing.escrowOfficer || '',
+      escrowPhone: listing.escrowPhone || '',
+      escrowEmail: listing.escrowEmail || '',
+      titleCompany: listing.titleCompany || '',
+      titleOfficer: listing.titleOfficer || '',
+      titlePhone: listing.titlePhone || '',
+      titleEmail: listing.titleEmail || '',
+      agentName: listing.agentName || '',
+      agentPhone: listing.agentPhone || '',
+      agentEmail: listing.agentEmail || '',
+      cooperatingBrokerage: data.buyerAgentBrokerage || '',
+      escrowNumber: data.escrowNumber || '',
+      documents: listing.documents ? [...listing.documents] : [],
+      notes: data.notes || (listing.notes ? `[Listing Notes]: ${listing.notes}` : ''),
+      listingId: listing.id,
+      sourceListingId: listing.id,
+      status: 'Open',
+    };
+
+    await addEscrow(newEscrow);
+    await editListing(listing.id, { 
+      status: 'Under Contract',
+      convertedEscrowId: newEscrowId
+    });
+
+    setIsAcceptOfferOpen(false);
+    setAcceptOfferListing(null);
+    showSuccess(`Offer accepted! Escrow created for ${listing.address} and listing moved to Under Contract.`);
+  };
   
   const [detailEscrow, setDetailEscrow] = useState<Escrow | null>(null);
+  const [detailListing, setDetailListing] = useState<Listing | null>(null);
+  const [documentsListing, setDocumentsListing] = useState<Listing | null>(null);
   const [clientUpdateEscrow, setClientUpdateEscrow] = useState<Escrow | null>(null);
   const [updateTasksEscrow, setUpdateTasksEscrow] = useState<Escrow | null>(null);
   const [contactsEscrow, setContactsEscrow] = useState<Escrow | null>(null);
@@ -127,12 +217,69 @@ function App() {
     return list;
   }, [escrows, filter, search, selectedYear]);
 
+  const handleUpdateEscrow = (id: string, data: Partial<Escrow>) => {
+    editEscrow(id, data);
+    if (data.status === 'Closed') {
+      const targetEscrow = escrows.find(e => e.id === id);
+      const targetListingId = targetEscrow?.listingId || targetEscrow?.sourceListingId;
+      const linkedListing = listings.find(l =>
+        (targetListingId && l.id === targetListingId) ||
+        (l.convertedEscrowId === id) ||
+        (Boolean(l.address) && Boolean(targetEscrow?.address) && l.address.trim().toLowerCase() === targetEscrow?.address.trim().toLowerCase())
+      );
+      if (linkedListing && linkedListing.status !== 'Closed') {
+        editListing(linkedListing.id, { status: 'Closed' });
+      }
+    }
+  };
+
   const handleSaveEscrow = (data: any) => {
     console.log("Saving escrow with data:", data);
-    if (editingEscrow) {
-      editEscrow(editingEscrow.id, data);
+    const isCancelledNow = data.status === 'Cancelled';
+    const wasNotCancelledBefore = editingEscrow ? (editingEscrow as any).status !== 'Cancelled' : false;
+
+    if (editingEscrow && 'id' in editingEscrow && (editingEscrow as any).id) {
+      editEscrow((editingEscrow as any).id, data);
+      showSuccess('Escrow updated successfully.');
+
+      // Check if escrow closed - update linked listing to Closed
+      if (data.status === 'Closed') {
+        const escrowId = (editingEscrow as any)?.id;
+        const targetListingId = (editingEscrow as any)?.listingId || (editingEscrow as any)?.sourceListingId || data?.listingId || data?.sourceListingId;
+        const linkedListing = listings.find(l => 
+          (targetListingId && l.id === targetListingId) ||
+          (escrowId && l.convertedEscrowId === escrowId) ||
+          (Boolean(l.address) && Boolean((editingEscrow as any)?.address) && l.address.trim().toLowerCase() === (editingEscrow as any).address.trim().toLowerCase())
+        );
+        if (linkedListing && linkedListing.status !== 'Closed') {
+          editListing(linkedListing.id, { status: 'Closed' });
+        }
+      }
+
+      // Check if seller escrow cancelled with a linked listing in Under Contract
+      if (isCancelledNow && wasNotCancelledBefore) {
+        const escrowId = (editingEscrow as any)?.id;
+        const targetListingId = (editingEscrow as any)?.listingId || (editingEscrow as any)?.sourceListingId || data?.listingId || data?.sourceListingId;
+        const linkedListing = listings.find(l => 
+          (targetListingId && l.id === targetListingId) ||
+          (escrowId && l.convertedEscrowId === escrowId) ||
+          (Boolean(l.address) && Boolean((editingEscrow as any)?.address) && l.address.trim().toLowerCase() === (editingEscrow as any).address.trim().toLowerCase())
+        );
+
+        if (linkedListing && (linkedListing.status === 'Under Contract' || linkedListing.status === 'Pending Offer')) {
+          setCancelEscrowPrompt({ escrow: { ...(editingEscrow as any), ...data }, linkedListing });
+        }
+      }
     } else {
       addEscrow(data);
+      // If this escrow was converted from a listing, transition the listing to Under Contract upon confirmation!
+      const linkedListingId = (editingEscrow as any)?.sourceListingId || (editingEscrow as any)?.listingId || data?.sourceListingId || data?.listingId;
+      if (linkedListingId) {
+        editListing(linkedListingId, { status: 'Under Contract' });
+        showSuccess('New escrow opened and listing moved to Under Contract!');
+      } else {
+        showSuccess('New escrow opened successfully.');
+      }
     }
     setIsAddEditOpen(false);
     setEditingEscrow(null);
@@ -237,6 +384,34 @@ function App() {
             </div>
           )}
 
+          {activeTab === 'listings' && (
+            <ListingsView
+              listings={listings}
+              escrows={escrows}
+              onNewListing={() => {
+                setEditingListing(null);
+                setIsAddEditListingOpen(true);
+              }}
+              onEditListing={(listing) => {
+                setEditingListing(listing);
+                setIsAddEditListingOpen(true);
+              }}
+              onDeleteListing={(id) => deleteListing(id)}
+              onViewDetailsListing={(listing) => setDetailListing(listing)}
+              onOpenDocumentsListing={(listing) => setDocumentsListing(listing)}
+              onConvertToEscrow={handleConvertListingToEscrow}
+              onOpenCognitoModal={handleOpenCognitoModal}
+              onViewEscrow={(escrow) => {
+                setActiveTab('active');
+                setDetailEscrow(escrow);
+              }}
+              onReturnToActive={async (listing) => {
+                await editListing(listing.id, { status: 'Active' });
+                showSuccess(`${listing.address} returned to Active Listings!`);
+              }}
+            />
+          )}
+
           {activeTab === 'summary' && (
             <div className="max-w-[1600px] mx-auto flex flex-col gap-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[400px] h-auto">
@@ -282,7 +457,7 @@ function App() {
               <AnniversaryTracker 
                 escrows={escrows} 
                 onSelectEscrow={(escrow) => setDetailEscrow(escrow)} 
-                onUpdateEscrow={(id, data) => editEscrow(id, data)}
+                onUpdateEscrow={(id, data) => handleUpdateEscrow(id, data)}
               />
             </div>
           )}
@@ -312,7 +487,7 @@ function App() {
           onDelete={() => setConfirmDeleteId(detailEscrow.id)}
           onToggleTask={toggleTask}
           onUpdateTasks={(id, tasks) => editEscrow(id, { tasks })}
-          onUpdateEscrow={(id, data) => editEscrow(id, data)}
+          onUpdateEscrow={(id, data) => handleUpdateEscrow(id, data)}
           onOpenContacts={() => setContactsEscrow(detailEscrow)}
         />
       )}
@@ -328,7 +503,7 @@ function App() {
         <DocumentsModal 
           escrow={escrows.find(e => e.id === documentsEscrow.id) || documentsEscrow} 
           onClose={() => setDocumentsEscrow(null)}
-          onUpdateEscrow={(id, data) => editEscrow(id, data)}
+          onUpdateEscrow={(id, data) => handleUpdateEscrow(id, data)}
         />
       )}
 
@@ -336,7 +511,7 @@ function App() {
         <ClientUpdatesModal 
           escrow={escrows.find(e => e.id === clientUpdateEscrow.id) || clientUpdateEscrow} 
           onClose={() => setClientUpdateEscrow(null)}
-          onUpdateEscrow={(id, data) => editEscrow(id, data)}
+          onUpdateEscrow={(id, data) => handleUpdateEscrow(id, data)}
         />
       )}
 
@@ -357,7 +532,7 @@ function App() {
           anniversaryDateFormatted={wishModalEscrow.dateFormatted}
           wishType={wishModalEscrow.wishType}
           onClose={() => setWishModalEscrow(null)}
-          onUpdateEscrow={(id, data) => editEscrow(id, data)}
+          onUpdateEscrow={(id, data) => handleUpdateEscrow(id, data)}
         />
       )}
 
@@ -416,6 +591,103 @@ function App() {
               });
             }
           }}
+        />
+      )}
+
+      {/* Listing Preparation & Team Cognito Intake Modals */}
+      {isAddEditListingOpen && (
+        <AddEditListingModal
+          listing={editingListing}
+          onClose={() => {
+            setIsAddEditListingOpen(false);
+            setEditingListing(null);
+          }}
+          onSave={async (data) => {
+            if (editingListing?.id) {
+              await editListing(editingListing.id, data);
+              showSuccess('Listing updated successfully.');
+            } else {
+              await addListing(data);
+              showSuccess('Listing created! Escrow & Title are ready for accepted offers.');
+            }
+            setIsAddEditListingOpen(false);
+            setEditingListing(null);
+          }}
+        />
+      )}
+
+      {isCognitoModalOpen && (
+        <CognitoIntakeModal
+          listing={cognitoModalListing}
+          allListings={listings}
+          onClose={() => {
+            setIsCognitoModalOpen(false);
+            setCognitoModalListing(null);
+          }}
+          onSelectListing={(l) => setCognitoModalListing(l)}
+        />
+      )}
+
+      {detailListing && (
+        <ListingDetailModal
+          listing={listings.find(l => l.id === detailListing.id) || detailListing}
+          onClose={() => setDetailListing(null)}
+          onEdit={() => {
+            setEditingListing(detailListing);
+            setIsAddEditListingOpen(true);
+            setDetailListing(null);
+          }}
+          onDelete={() => {
+            deleteListing(detailListing.id);
+            setDetailListing(null);
+            showSuccess('Listing deleted');
+          }}
+          onUpdateListing={(id, data) => editListing(id, data)}
+          onConvertToEscrow={(l) => {
+            setDetailListing(null);
+            handleConvertListingToEscrow(l);
+          }}
+        />
+      )}
+
+      {documentsListing && (
+        <ListingDocumentsModal
+          listing={listings.find(l => l.id === documentsListing.id) || documentsListing}
+          onClose={() => setDocumentsListing(null)}
+          onUpdateListing={(id, data) => editListing(id, data)}
+        />
+      )}
+
+      {/* Offer Accepted Verification & Transfer to Escrow Modal */}
+      {isAcceptOfferOpen && acceptOfferListing && (
+        <AcceptOfferModal
+          isOpen={isAcceptOfferOpen}
+          listing={acceptOfferListing}
+          onClose={() => {
+            setIsAcceptOfferOpen(false);
+            setAcceptOfferListing(null);
+          }}
+          onConfirm={handleConfirmAcceptOffer}
+        />
+      )}
+
+      {/* Seller Escrow Cancelled -> Smart Prompt to Return Listing to Active */}
+      {cancelEscrowPrompt && (
+        <CancelEscrowListingPromptModal
+          isOpen={Boolean(cancelEscrowPrompt)}
+          escrow={cancelEscrowPrompt.escrow}
+          linkedListing={cancelEscrowPrompt.linkedListing}
+          onReturnToActive={async (listing) => {
+            await editListing(listing.id, { status: 'Active' });
+            setCancelEscrowPrompt(null);
+            showSuccess(`${listing.address} returned to Active Listings!`);
+          }}
+          onKeepOffMarket={async (listing) => {
+            await editListing(listing.id, { status: 'Off Market' });
+            setCancelEscrowPrompt(null);
+            showInfo(`${listing.address} kept as Off Market.`);
+          }}
+          onClose={() => setCancelEscrowPrompt(null)}
         />
       )}
 

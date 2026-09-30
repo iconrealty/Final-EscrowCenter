@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Calendar, Gift } from 'lucide-react';
+import { LayoutDashboard, Calendar, Gift, Building2 } from 'lucide-react';
 
 interface MobileFloatingNavProps {
   activeTab: string;
@@ -12,6 +12,11 @@ export function MobileFloatingNav({ activeTab, setActiveTab }: MobileFloatingNav
       id: 'active',
       isMonogram: true,
       label: 'Home',
+    },
+    {
+      id: 'listings',
+      icon: Building2,
+      label: 'Listings',
     },
     {
       id: 'summary',

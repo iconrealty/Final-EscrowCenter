@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { X, Search, Edit3, Trash2, Calendar, Download, Building, Check } from 'lucide-react';
+import { X, Search, Edit3, Trash2, Calendar, Download, Building, Check, ExternalLink } from 'lucide-react';
 import { Escrow } from '../../types';
 import { downloadEscrowsCsv, getEscrowYear } from '../../utils/csvUtils';
 import { calculateNetFromGross } from '../../utils/commissionUtils';
+import { generateCognitoUrl } from '../../utils/cognitoUtils';
 
 interface EscrowTableModalProps {
   isOpen: boolean;
@@ -528,6 +529,16 @@ export function EscrowTableModal({
                                 <Check size={12} strokeWidth={3} />
                               </span>
                             )}
+                            <button
+                              onClick={() => {
+                                const url = generateCognitoUrl(escrow);
+                                window.open(url, '_blank', 'noopener,noreferrer');
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-[#1B3A5C] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              title="Open Cognito Form for this Escrow"
+                            >
+                              <ExternalLink size={14} />
+                            </button>
                             <button
                               onClick={() => onEditEscrow(escrow)}
                               className="p-1.5 text-slate-400 hover:text-[#1B3A5C] hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer"
