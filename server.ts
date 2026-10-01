@@ -59,6 +59,35 @@ async function startServer() {
     });
   });
 
+  // Mobile-Friendly Zillow Proxy/Redirect
+  // Bypasses iOS Universal Links / Android App Links that force open the broken Zillow native app
+  app.get("/api/open-zillow", (req, res) => {
+    const address = (req.query.address as string) || "";
+    const city = (req.query.city as string) || "";
+    const zipCode = (req.query.zipCode as string) || "";
+
+    if (!address.trim()) {
+      return res.redirect("https://www.zillow.com");
+    }
+
+    const addr = address.trim();
+    const tokens: string[] = [addr];
+    if (city.trim() && !addr.toLowerCase().includes(city.trim().toLowerCase())) {
+      tokens.push(city.trim());
+    }
+    if (!addr.toLowerCase().includes("ca") && (!city || !city.toLowerCase().includes("ca"))) {
+      tokens.push("CA");
+    }
+    if (zipCode.trim() && !addr.includes(zipCode.trim())) {
+      tokens.push(zipCode.trim());
+    }
+
+    const combined = tokens.join(" ");
+    const clean = combined.replace(/[#,./']/g, " ").replace(/\s+/g, "-").trim();
+    const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(clean)}_rb/`;
+    return res.redirect(302, zillowUrl);
+  });
+
   // Global Default Email/SMS Templates Endpoints
   app.get("/api/templates/defaults", (_req, res) => {
     try {

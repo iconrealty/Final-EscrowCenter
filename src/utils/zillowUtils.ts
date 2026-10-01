@@ -1,24 +1,14 @@
 /**
- * Constructs a direct Zillow search/property URL for an address.
- * Zillow automatically redirects this search slug to the specific property details page.
+ * Constructs a safe Zillow URL that routes through /api/open-zillow.
+ * This prevents iOS Universal Links & Android App Links from hijacking the click
+ * into the native Zillow app (which crashes/fails on search query slugs).
+ * The mobile and desktop browser will cleanly load the property on Zillow web.
  */
 export function getZillowUrl(address?: string, city?: string, zipCode?: string): string {
   if (!address || !address.trim()) return 'https://www.zillow.com';
-  const addr = address.trim();
-
-  const tokens: string[] = [addr];
-  if (city && city.trim() && !addr.toLowerCase().includes(city.trim().toLowerCase())) {
-    tokens.push(city.trim());
-  }
-  if (!addr.toLowerCase().includes('ca') && (!city || !city.toLowerCase().includes('ca'))) {
-    tokens.push('CA');
-  }
-  if (zipCode && zipCode.trim() && !addr.includes(zipCode.trim())) {
-    tokens.push(zipCode.trim());
-  }
-
-  const combined = tokens.join(' ');
-  // Clean special characters: remove commas, hash symbols, periods, slashes, apostrophes
-  const clean = combined.replace(/[#,./']/g, ' ').replace(/\s+/g, '-').trim();
-  return `https://www.zillow.com/homes/${encodeURIComponent(clean)}_rb/`;
+  const params = new URLSearchParams();
+  params.set('address', address.trim());
+  if (city && city.trim()) params.set('city', city.trim());
+  if (zipCode && zipCode.trim()) params.set('zipCode', zipCode.trim());
+  return `/api/open-zillow?${params.toString()}`;
 }
