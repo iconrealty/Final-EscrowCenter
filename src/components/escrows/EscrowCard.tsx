@@ -533,7 +533,7 @@ export function EscrowCard({
               const url = generateCognitoUrl(escrow, user);
               window.open(url, '_blank', 'noopener,noreferrer');
             }}
-            className="px-2.5 py-1.5 text-xs font-bold text-[#1B3A5C] bg-white border border-[#1B3A5C]/20 hover:bg-[#1B3A5C]/5 hover:border-[#1B3A5C]/40 rounded-md transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+            className="hidden sm:flex px-2.5 py-1.5 text-xs font-bold text-[#1B3A5C] bg-white border border-[#1B3A5C]/20 hover:bg-[#1B3A5C]/5 hover:border-[#1B3A5C]/40 rounded-md transition-all cursor-pointer items-center gap-1.5 shadow-2xs active:scale-95"
             title={`Open Cognito Form pre-filled for ${fullAddress || 'this escrow'}`}
           >
             <ExternalLink size={12} className="text-[#1B3A5C]" />
