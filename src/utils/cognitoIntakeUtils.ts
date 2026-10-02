@@ -1,10 +1,82 @@
 import { Listing } from '../types';
+import { parseISO, format } from 'date-fns';
 
 export const COGNITO_NEW_LISTING_FORM_URL = 'https://www.cognitoforms.com/IconRealtyPartners/NewListingIntakeForm';
 
+function formatDateForCognito(dateStr?: string): string {
+  if (!dateStr) return '';
+  try {
+    const date = parseISO(dateStr);
+    if (!isNaN(date.getTime())) {
+      return format(date, 'yyyy-MM-dd');
+    }
+  } catch (e) {
+    // fallback
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  return dateStr;
+}
+
+function mapPropertyType(propType?: string): string {
+  if (!propType) return 'Single Family Home';
+  const p = propType.trim().toLowerCase();
+  if (p.includes('condo')) return 'Condo';
+  if (p.includes('town')) return 'Townhome';
+  if (p.includes('mobile')) return 'Mobile Home';
+  if (p.includes('land') || p.includes('lot')) return 'Vacant Land';
+  if (p.includes('duplex')) return 'Duplex';
+  if (p.includes('triplex')) return 'Triplex';
+  if (p.includes('quad')) return 'Quadplex';
+  return 'Single Family Home';
+}
+
+function mapLeadSource(source?: string): string {
+  if (!source) return '';
+  const s = source.trim().toLowerCase();
+  if (s.includes('opcity')) return 'Opcity';
+  if (s.includes('zillow flex')) return 'Zillow Flex';
+  if (s.includes('zillow seller')) return 'Zillow Seller Lead';
+  if (s.includes('zillow nurture') || s.includes('nurture')) return 'Zillow - Nurture';
+  if (s.includes('zillow')) return 'Zillow - No Referral';
+  if (s.includes('self') || s.includes('sphere')) return 'Self Generated';
+  if (s.includes('realtor')) return 'Realtor.com';
+  if (s.includes('redfin')) return 'Redfin';
+  if (s.includes('facebook')) return 'Facebook';
+  if (s.includes('google')) return 'Google';
+  if (s.includes('past client')) return 'Past Client';
+  if (s.includes('sign call')) return 'Sign Call';
+  if (s.includes('door')) return 'Door Knocking';
+  if (s.includes('addressable')) return 'Addressable';
+  if (s.includes('ylopo')) return 'YLOPO';
+  if (s.includes('homelight')) return 'HomeLight';
+  if (s.includes('fsbo')) return 'FSBO';
+  if (s.includes('colton')) return 'Referral From Colton';
+  if (s.includes('referral')) return 'Referral From Agent- if so, include referral agreement paperwork';
+  return source.trim();
+}
+
 /**
- * Builds a URL that opens the Cognito Form with listing data pre-filled where supported.
- * Cognito Forms accepts JSON prefill via the entry parameter: ?entry={"Field":"Value"}
+ * Builds a URL that opens the Cognito Form with listing data pre-filled.
+ * Matches exact canonical Cognito Forms internal fields:
+ * - Bedrooms (text)
+ * - Bathrooms (text)
+ * - SqFootage (text)
+ * - PropertyType (dropdown)
+ * - ClientLegalName (Name: { First, Last })
+ * - ClientsEmail (email)
+ * - ClientPhone (phone)
+ * - ClientInCRM ("Yes")
+ * - Client2Name (Name: { First, Last })
+ * - Client2Email (email)
+ * - Client2Phone (phone)
+ * - ClientInCRM2 ("Yes")
+ * - SourceOfListingLead2 (dropdown)
+ * - ListingPrice (number)
+ * - GoLiveDate (date YYYY-MM-DD)
+ * - CommissionSplitlistingAgent (percent decimal)
+ * - PropertyAddress (Address: { Line1, City, State: "CA", PostalCode })
+ * - YourName (Name: { First, Last })
+ * - YourEmail (email)
  */
 export function buildCognitoFormPrefillUrl(
   listing: Listing,
@@ -13,52 +85,113 @@ export function buildCognitoFormPrefillUrl(
   try {
     const agentName = (listing.agentName || user?.displayName || 'Paul Muner').trim();
     const agentEmail = (listing.agentEmail || user?.email || 'paulmuner@gmail.com').trim();
-    const agentPhone = (listing.agentPhone || user?.phoneNumber || '').trim();
     
     const nameParts = agentName.split(' ');
     const agentFirstName = nameParts[0] || '';
     const agentLastName = nameParts.slice(1).join(' ') || '';
 
-    const entryData: Record<string, any> = {
-      PropertyAddress: {
-        Line1: listing.address || '',
-        City: listing.city || '',
-        State: 'CA',
-        PostalCode: listing.zipCode || '',
-      },
-      Address: listing.address || '',
-      City: listing.city || '',
-      ZipCode: listing.zipCode || '',
-      APN: listing.apn || '',
-      MLSNumber: listing.mlsId || '',
-      ListPrice: listing.listPrice || 0,
-      PropertyType: listing.propertyType || '',
-      Bedrooms: listing.bedrooms || '',
-      Bathrooms: listing.bathrooms || '',
-      SquareFeet: listing.squareFeet || '',
-      SellerName: `${listing.clientFirstName || ''} ${listing.clientLastName || ''}`.trim(),
-      SellerEmail: listing.clientEmail || '',
-      SellerPhone: listing.clientPhone || '',
-      Seller2Name: `${listing.client2FirstName || ''} ${listing.client2LastName || ''}`.trim(),
-      Seller2Email: listing.client2Email || '',
-      Seller2Phone: listing.client2Phone || '',
-      EscrowCompany: listing.escrowCompany || '',
-      EscrowOfficer: listing.escrowOfficer || '',
-      EscrowEmail: listing.escrowEmail || '',
-      EscrowPhone: listing.escrowPhone || '',
-      TitleCompany: listing.titleCompany || '',
-      TitleOfficer: listing.titleOfficer || '',
-      TitleEmail: listing.titleEmail || '',
-      TitlePhone: listing.titlePhone || '',
-      ListingAgent: agentName,
-      AgentName: agentName,
-      CoListingAgent: listing.coListingAgent || '',
-      YourName: { First: agentFirstName, Last: agentLastName },
-      YourEmail: agentEmail,
-      AgentPhone: agentPhone,
-      AgentEmail: agentEmail,
-      Notes: listing.notes || '',
-    };
+    const client1First = (listing.clientFirstName || '').trim();
+    const client1Last = (listing.clientLastName || '').trim();
+    const client2First = (listing.client2FirstName || '').trim();
+    const client2Last = (listing.client2LastName || '').trim();
+
+    const goLive = formatDateForCognito(listing.goLiveDate || listing.forSaleDate);
+
+    const entryData: Record<string, any> = {};
+
+    // Agent Name & Email
+    if (agentFirstName || agentLastName) {
+      entryData['YourName'] = { 'First': agentFirstName, 'Last': agentLastName };
+    }
+    if (agentEmail) {
+      entryData['YourEmail'] = agentEmail;
+    }
+
+    // Property Address
+    const addressObj: Record<string, string> = {};
+    if (listing.address && listing.address.trim()) addressObj['Line1'] = listing.address.trim();
+    if (listing.city && listing.city.trim()) addressObj['City'] = listing.city.trim();
+    addressObj['State'] = 'CA';
+    if (listing.zipCode && listing.zipCode.trim()) addressObj['PostalCode'] = listing.zipCode.trim();
+    if (Object.keys(addressObj).length > 0) {
+      entryData['PropertyAddress'] = addressObj;
+    }
+
+    // Bedrooms (Cognito field name: 'Bedrooms', type: string)
+    if (listing.bedrooms !== undefined && listing.bedrooms !== null && String(listing.bedrooms).trim() !== '') {
+      entryData['Bedrooms'] = String(listing.bedrooms).trim();
+    }
+
+    // Bathrooms (Cognito field name: 'Bathrooms', type: string)
+    if (listing.bathrooms !== undefined && listing.bathrooms !== null && String(listing.bathrooms).trim() !== '') {
+      entryData['Bathrooms'] = String(listing.bathrooms).trim();
+    }
+
+    // Square Footage (Cognito field name: 'SqFootage', type: string)
+    if (listing.squareFeet !== undefined && listing.squareFeet !== null && String(listing.squareFeet).trim() !== '') {
+      const cleanSqft = String(listing.squareFeet).replace(/[^0-9]/g, '').trim();
+      entryData['SqFootage'] = cleanSqft || String(listing.squareFeet).trim();
+    }
+
+    // Property Type (Cognito field name: 'PropertyType', type: choice dropdown)
+    if (listing.propertyType) {
+      entryData['PropertyType'] = mapPropertyType(listing.propertyType);
+    }
+
+    // Client 1 (Seller 1)
+    if (client1First || client1Last) {
+      entryData['ClientLegalName'] = { 'First': client1First, 'Last': client1Last };
+    }
+    if (listing.clientEmail && listing.clientEmail.trim()) {
+      entryData['ClientsEmail'] = listing.clientEmail.trim();
+    }
+    if (listing.clientPhone && listing.clientPhone.trim()) {
+      entryData['ClientPhone'] = listing.clientPhone.trim();
+    }
+    entryData['ClientInCRM'] = 'Yes';
+
+    // Client 2 (Seller 2)
+    if (client2First || client2Last) {
+      entryData['Client2Name'] = { 'First': client2First, 'Last': client2Last };
+    }
+    if (listing.client2Email && listing.client2Email.trim()) {
+      entryData['Client2Email'] = listing.client2Email.trim();
+    }
+    if (listing.client2Phone && listing.client2Phone.trim()) {
+      entryData['Client2Phone'] = listing.client2Phone.trim();
+    }
+    if (client2First || client2Last || listing.client2Email || listing.client2Phone) {
+      entryData['ClientInCRM2'] = 'Yes';
+    }
+
+    // Source of Listing Lead (Cognito field name: 'SourceOfListingLead2', type: choice dropdown)
+    if (listing.leadSource) {
+      entryData['SourceOfListingLead2'] = mapLeadSource(listing.leadSource);
+    }
+
+    // Go Live Date (Cognito field name: 'GoLiveDate', type: date YYYY-MM-DD)
+    if (goLive) {
+      entryData['GoLiveDate'] = goLive;
+    }
+
+    // Listing Price (Cognito field name: 'ListingPrice', type: number)
+    if (listing.listPrice && !isNaN(Number(listing.listPrice))) {
+      entryData['ListingPrice'] = Math.round(Number(listing.listPrice));
+    }
+
+    // Commission Split (Cognito field name: 'CommissionSplitlistingAgent', type: percent decimal)
+    if (listing.commissionPercent !== undefined && listing.commissionPercent !== null && !isNaN(Number(listing.commissionPercent))) {
+      const commNum = Number(listing.commissionPercent);
+      entryData['CommissionSplitlistingAgent'] = commNum > 1 ? commNum / 100 : commNum;
+    }
+
+    // HOA default
+    entryData['IsThereAnHOA'] = 'NO';
+
+    // Notes
+    if (listing.notes && listing.notes.trim()) {
+      entryData['Notes'] = listing.notes.trim();
+    }
 
     const encodedEntry = encodeURIComponent(JSON.stringify(entryData));
     return `${COGNITO_NEW_LISTING_FORM_URL}?entry=${encodedEntry}`;

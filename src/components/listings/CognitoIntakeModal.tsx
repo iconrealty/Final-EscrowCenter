@@ -1,29 +1,23 @@
 import React, { useState } from 'react';
 import { Listing } from '../../types';
-import { X, ExternalLink, Copy, Check, Eye, FileText, Send, Building2, User, Phone, Mail, MapPin, DollarSign, Sparkles } from 'lucide-react';
-import { COGNITO_NEW_LISTING_FORM_URL, buildCognitoFormPrefillUrl, formatListingForTeamIntake } from '../../utils/cognitoIntakeUtils';
+import { X, ExternalLink, Copy, Check, Eye, Send } from 'lucide-react';
+import { COGNITO_NEW_LISTING_FORM_URL, buildCognitoFormPrefillUrl } from '../../utils/cognitoIntakeUtils';
 import { useAuth } from '../../context/AuthContext';
 
 interface CognitoIntakeModalProps {
   listing?: Listing | null;
-  allListings?: Listing[];
   onClose: () => void;
-  onSelectListing?: (listing: Listing) => void;
 }
 
 export function CognitoIntakeModal({
-  listing: initialListing,
-  allListings = [],
+  listing,
   onClose,
-  onSelectListing,
 }: CognitoIntakeModalProps) {
   const { user } = useAuth();
-  const [selectedListing, setSelectedListing] = useState<Listing | null>(() => {
-    return initialListing || (allListings.length > 0 ? allListings[0] : null);
-  });
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [embedMode, setEmbedMode] = useState(false);
 
+  const selectedListing = listing || null;
   const agentName = (selectedListing?.agentName || user?.displayName || 'Paul Muner').trim();
   const agentEmail = (selectedListing?.agentEmail || user?.email || 'paulmuner@gmail.com').trim();
   const agentPhone = (selectedListing?.agentPhone || user?.phoneNumber || '').trim();
@@ -35,40 +29,39 @@ export function CognitoIntakeModal({
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const handleCopyAll = () => {
-    if (!selectedListing) return;
-    const formatted = formatListingForTeamIntake(selectedListing, user);
-    handleCopy(formatted, 'all');
-  };
-
   const prefillUrl = selectedListing 
     ? buildCognitoFormPrefillUrl(selectedListing, user) 
     : COGNITO_NEW_LISTING_FORM_URL;
 
+  const fullAddress = selectedListing 
+    ? [selectedListing.address, selectedListing.city, selectedListing.zipCode].filter(Boolean).join(', ')
+    : '';
+
   const quickFields = selectedListing ? [
-    { label: 'Property Address', value: [selectedListing.address, selectedListing.city, selectedListing.zipCode].filter(Boolean).join(', '), key: 'address' },
-    { label: 'APN / Parcel #', value: selectedListing.apn || '', key: 'apn' },
-    { label: 'MLS #', value: selectedListing.mlsId || '', key: 'mls' },
-    ...(selectedListing.forSaleDate ? [{ label: 'For Sale Date', value: selectedListing.forSaleDate, key: 'forSaleDate' }] : []),
-    { label: 'List Price', value: selectedListing.listPrice ? `$${selectedListing.listPrice.toLocaleString()}` : '', key: 'price' },
-    { label: 'Seller 1 Name', value: `${selectedListing.clientFirstName || ''} ${selectedListing.clientLastName || ''}`.trim(), key: 'seller1Name' },
-    { label: 'Seller 1 Phone', value: selectedListing.clientPhone || '', key: 'seller1Phone' },
-    { label: 'Seller 1 Email', value: selectedListing.clientEmail || '', key: 'seller1Email' },
-    { label: 'Seller 2 Name', value: `${selectedListing.client2FirstName || ''} ${selectedListing.client2LastName || ''}`.trim(), key: 'seller2Name' },
-    { label: 'Seller 2 Phone', value: selectedListing.client2Phone || '', key: 'seller2Phone' },
-    { label: 'Seller 2 Email', value: selectedListing.client2Email || '', key: 'seller2Email' },
-    { label: 'Escrow Company', value: selectedListing.escrowCompany || '', key: 'escrowCompany' },
-    { label: 'Escrow Officer', value: selectedListing.escrowOfficer || '', key: 'escrowOfficer' },
-    { label: 'Escrow Email', value: selectedListing.escrowEmail || '', key: 'escrowEmail' },
-    { label: 'Escrow Phone', value: selectedListing.escrowPhone || '', key: 'escrowPhone' },
-    { label: 'Title Company', value: selectedListing.titleCompany || '', key: 'titleCompany' },
-    { label: 'Title Officer', value: selectedListing.titleOfficer || '', key: 'titleOfficer' },
-    { label: 'Title Email', value: selectedListing.titleEmail || '', key: 'titleEmail' },
-    { label: 'Title Phone', value: selectedListing.titlePhone || '', key: 'titlePhone' },
+    { label: 'Property Address', value: fullAddress, key: 'address' },
+    { label: 'Listing Price', value: selectedListing.listPrice ? `$${selectedListing.listPrice.toLocaleString()}` : '', key: 'price' },
+    ...(selectedListing.goLiveDate ? [{ label: 'Go Live Date', value: selectedListing.goLiveDate, key: 'goLiveDate' }] : []),
+    ...(selectedListing.forSaleDate && !selectedListing.goLiveDate ? [{ label: 'For Sale Date', value: selectedListing.forSaleDate, key: 'forSaleDate' }] : []),
+    { label: 'Bedrooms', value: selectedListing.bedrooms !== undefined && selectedListing.bedrooms !== null ? String(selectedListing.bedrooms) : '', key: 'bedrooms' },
+    { label: 'Bathrooms', value: selectedListing.bathrooms !== undefined && selectedListing.bathrooms !== null ? String(selectedListing.bathrooms) : '', key: 'bathrooms' },
+    { label: 'Sq. Footage', value: selectedListing.squareFeet ? `${selectedListing.squareFeet}` : '', key: 'sqft' },
+    { label: 'Property Type', value: selectedListing.propertyType || '', key: 'propertyType' },
+    { label: 'Source of Listing Lead', value: selectedListing.leadSource || '', key: 'leadSource' },
+    { label: 'Client 1 Legal Name', value: `${selectedListing.clientFirstName || ''} ${selectedListing.clientLastName || ''}`.trim(), key: 'seller1Name' },
+    { label: 'Client 1 Phone', value: selectedListing.clientPhone || '', key: 'seller1Phone' },
+    { label: 'Client 1 Email', value: selectedListing.clientEmail || '', key: 'seller1Email' },
+    { label: 'Client 2 Legal Name', value: `${selectedListing.client2FirstName || ''} ${selectedListing.client2LastName || ''}`.trim(), key: 'seller2Name' },
+    { label: 'Client 2 Phone', value: selectedListing.client2Phone || '', key: 'seller2Phone' },
+    { label: 'Client 2 Email', value: selectedListing.client2Email || '', key: 'seller2Email' },
     { label: 'Listing Agent', value: agentName, key: 'agentName' },
-    ...(selectedListing.coListingAgent ? [{ label: 'Co-Listing Agent', value: selectedListing.coListingAgent, key: 'coListingAgent' }] : []),
     ...(agentEmail ? [{ label: 'Agent Email', value: agentEmail, key: 'agentEmail' }] : []),
     ...(agentPhone ? [{ label: 'Agent Phone', value: agentPhone, key: 'agentPhone' }] : []),
+    ...(selectedListing.commissionPercent ? [{ label: 'Commission (Listing Agent)', value: `${selectedListing.commissionPercent}%`, key: 'commission' }] : []),
+    { label: 'Escrow Company', value: selectedListing.escrowCompany || '', key: 'escrowCompany' },
+    { label: 'Title Company', value: selectedListing.titleCompany || '', key: 'titleCompany' },
+    { label: 'APN / Parcel #', value: selectedListing.apn || '', key: 'apn' },
+    { label: 'MLS #', value: selectedListing.mlsId || '', key: 'mls' },
+    ...(selectedListing.notes ? [{ label: 'Notes', value: selectedListing.notes, key: 'notes' }] : []),
   ].filter(f => Boolean(f.value)) : [];
 
   return (
@@ -87,15 +80,9 @@ export function CognitoIntakeModal({
               <Send size={18} />
             </div>
             <div className="min-w-0">
-              <h2 className="font-bold text-base sm:text-lg text-[#1d1d1f] truncate flex items-center gap-2">
+              <h2 className="font-bold text-base sm:text-lg text-[#1d1d1f] truncate">
                 Cognito Listing Intake
-                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0">
-                  Cognito Form
-                </span>
               </h2>
-              <p className="text-xs text-slate-500 truncate">
-                Icon Realty Partners New Listing Intake Form Integration
-              </p>
             </div>
           </div>
           <button
@@ -109,43 +96,16 @@ export function CognitoIntakeModal({
 
         {/* Top Controls Bar */}
         <div className="px-5 sm:px-6 py-3 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-          {/* Listing Picker */}
-          {allListings.length > 0 && (
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="font-bold text-slate-600 shrink-0">Listing:</span>
-              <select
-                value={selectedListing?.id || ''}
-                onChange={(e) => {
-                  const found = allListings.find(l => l.id === e.target.value);
-                  if (found) {
-                    setSelectedListing(found);
-                    if (onSelectListing) onSelectListing(found);
-                  }
-                }}
-                className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1B3A5C] max-w-[280px] truncate"
-              >
-                {allListings.map(l => (
-                  <option key={l.id} value={l.id}>
-                    {l.address || 'Untitled Listing'} ({l.listPrice ? `$${l.listPrice.toLocaleString()}` : 'No price'})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* Selected Address Display */}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px] shrink-0">Address:</span>
+            <span className="font-bold text-[#1B3A5C] text-xs sm:text-sm truncate">
+              {fullAddress || selectedListing?.address || 'Selected Listing'}
+            </span>
+          </div>
 
-          {/* Quick Action Buttons */}
+          {/* Action Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={handleCopyAll}
-              disabled={!selectedListing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-slate-300 font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
-              title="Copy all listing details to clipboard"
-            >
-              {copiedKey === 'all' ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-              <span>{copiedKey === 'all' ? 'Copied All!' : 'Copy All Details'}</span>
-            </button>
-
             <button
               type="button"
               onClick={() => setEmbedMode(!embedMode)}
@@ -174,20 +134,10 @@ export function CognitoIntakeModal({
 
         {/* Content Body */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-          {/* Quick Copy Helper Side Drawer */}
+          {/* Quick Copy Fields Grid */}
           <div className={`overflow-y-auto p-4 sm:p-5 flex flex-col gap-4 border-r border-slate-200 ${
             embedMode ? 'w-full md:w-80 shrink-0 bg-slate-50/60 max-h-[40vh] md:max-h-full' : 'w-full'
           }`}>
-            <div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
-                <span>1-Click Copy Field Helper</span>
-                <span className="text-[10px] font-normal normal-case text-slate-400">Click to copy field</span>
-              </h3>
-              <p className="text-xs text-slate-500">
-                Click any row below to copy that specific value to your clipboard so you can paste it directly into the Cognito form.
-              </p>
-            </div>
-
             {selectedListing ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 {quickFields.map((field) => {
@@ -220,22 +170,7 @@ export function CognitoIntakeModal({
               </div>
             ) : (
               <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400">
-                No listing selected. Select or create a listing to see quick-copy fields.
-              </div>
-            )}
-
-            {/* Escrow & Title Readiness Callout */}
-            {selectedListing && (
-              <div className="mt-2 p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl flex items-start gap-3">
-                <Sparkles size={18} className="text-[#1B3A5C] shrink-0 mt-0.5" />
-                <div className="text-xs">
-                  <span className="font-bold text-[#1B3A5C] block">
-                    Escrow & Title Ready for Accepted Offers
-                  </span>
-                  <span className="text-slate-600 leading-relaxed block mt-0.5">
-                    Your assigned Escrow Company ({selectedListing.escrowCompany || 'Not set'}) and Title Company ({selectedListing.titleCompany || 'Not set'}) are logged and will automatically carry over when you convert this listing to an open escrow.
-                  </span>
-                </div>
+                No listing selected.
               </div>
             )}
           </div>
@@ -244,7 +179,7 @@ export function CognitoIntakeModal({
           {embedMode && (
             <div className="flex-1 h-full min-h-[450px] bg-slate-100 flex flex-col relative">
               <iframe
-                src={COGNITO_NEW_LISTING_FORM_URL}
+                src={prefillUrl}
                 title="Icon Realty Partners New Listing Intake Form"
                 className="w-full h-full border-0 rounded-b-2xl md:rounded-bl-none"
                 allow="clipboard-write"

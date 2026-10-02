@@ -619,12 +619,10 @@ function App() {
       {isCognitoModalOpen && (
         <CognitoIntakeModal
           listing={cognitoModalListing}
-          allListings={listings}
           onClose={() => {
             setIsCognitoModalOpen(false);
             setCognitoModalListing(null);
           }}
-          onSelectListing={(l) => setCognitoModalListing(l)}
         />
       )}
 
