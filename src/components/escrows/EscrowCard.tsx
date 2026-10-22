@@ -3,7 +3,8 @@ import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, getApplicableContingencie
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
-import { CheckCircle2, Users, Phone, MessageSquare, Mail, User, Copy, Check, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Users, Phone, MessageSquare, Mail, User, Copy, Check, ExternalLink, Building2, Landmark } from 'lucide-react';
+import { ContactFastBar } from '../shared/ContactFastBar';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
 import { useAuth } from '../../context/AuthContext';
 
@@ -334,147 +335,83 @@ export function EscrowCard({
             <ActiveContingenciesTicker escrow={escrow} onUpdateTasks={onUpdateTasks} />
           </div>
 
-          {/* Progress Bars Section */}
-          <div className="pt-2.5 border-t border-slate-200/80">
-            {/* Overall Completion Header */}
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#1B3A5C]" />
-                <span className="text-xs font-bold text-[#1B3A5C] uppercase tracking-wider">Escrow Completion</span>
-              </div>
-              <div className="flex items-center gap-1 font-mono text-xs sm:text-sm">
-                <span className="font-black text-slate-900">{completedTasks}/{totalTasksCount} Tasks</span>
-                <span className="font-black text-slate-900">
-                  ({Math.round((completedTasks / (totalTasksCount || 1)) * 100)}%)
-                </span>
-              </div>
-            </div>
-
-            {/* Primary Horizontal Progress Bar */}
-            <div className="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-[#1B3A5C] to-[#2B5A8C] rounded-full transition-all duration-500"
-                style={{ width: `${Math.round((completedTasks / (totalTasksCount || 1)) * 100)}%` }}
-              />
-            </div>
-          </div>
         </div>
 
-        {/* Quick Agent Fast Contact Bar */}
-        {(() => {
-          const agentName = escrow.agentName?.trim();
-          const agentPhone = escrow.agentPhone?.trim();
-          const agentEmail = escrow.agentEmail?.trim();
-          const cleanPhone = agentPhone ? agentPhone.replace(/[^0-9+]/g, '') : '';
-          const hasPhone = !!cleanPhone;
-          const hasEmail = !!agentEmail;
-          const emailSubject = formatPropertyAddress(escrow) || escrow.address || 'Property';
+        {/* Contacts Section: Agent, Primary Client, Escrow, Lender - exact same format as Listing page */}
+        <div className="flex flex-col gap-2">
+          {/* Agent Contact Bar */}
+          <ContactFastBar
+            role="Agent"
+            title={escrow.agentName?.trim() || 'Agent Not Assigned'}
+            subTitle={escrow.cooperatingBrokerage?.trim() || undefined}
+            phone={escrow.agentPhone}
+            email={escrow.agentEmail}
+            avatarBg="bg-[#1B3A5C]"
+            icon={<User size={14} />}
+            subject={fullAddress || 'Escrow'}
+            onEdit={onEdit}
+          />
 
-          return (
-            <div 
-              onClick={(e) => e.stopPropagation()} 
-              className="mt-3 px-3 py-2 bg-slate-100 hover:bg-slate-100/90 border border-slate-300 rounded-xl shadow-xs transition-colors"
-            >
-              <div className="flex items-center justify-between gap-2">
-                {/* Agent Identity & Info */}
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1B3A5C] border border-[#11253C] flex items-center justify-center text-white shrink-0 font-bold text-xs shadow-xs">
-                    {agentName ? agentName.charAt(0).toUpperCase() : <User size={13} />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 uppercase tracking-wider leading-none mb-0.5">
-                      Agent
-                    </div>
-                    <div className="text-xs sm:text-sm font-bold text-slate-900 truncate" title={agentName || 'Agent Not Assigned'}>
-                      {agentName || 'Agent Not Assigned'}
-                    </div>
-                  </div>
-                </div>
+          {/* Primary Client Contact Bar */}
+          {(() => {
+            const client1Name = `${escrow.clientFirstName || ''} ${escrow.clientLastName || ''}`.trim() || 'Client Not Assigned';
+            const client2Name = `${escrow.client2FirstName || ''} ${escrow.client2LastName || ''}`.trim();
+            return (
+              <ContactFastBar
+                role="Primary Client"
+                title={client1Name}
+                subTitle={client2Name ? `& ${client2Name}` : undefined}
+                phone={escrow.clientPhone}
+                email={escrow.clientEmail}
+                avatarBg="bg-blue-800"
+                icon={<User size={14} />}
+                subject={fullAddress || 'Escrow'}
+                onEdit={onEdit}
+              />
+            );
+          })()}
 
-                {/* Fast Action Buttons: Call (Soft Green), Text (Blue), Email (Red) in Circular Badges */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Call Action - Soft Green Circle */}
-                  {hasPhone ? (
-                    <a
-                      href={`tel:${cleanPhone}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs cursor-pointer border border-emerald-600/40"
-                      title={`Call ${agentName || 'Agent'}: ${agentPhone}`}
-                      aria-label={`Call ${agentName || 'Agent'}`}
-                    >
-                      <Phone size={14} className="text-white" />
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit();
-                      }}
-                      className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
-                      title="No phone number recorded. Click to edit."
-                      aria-label="No phone number"
-                    >
-                      <Phone size={14} />
-                    </button>
-                  )}
+          {/* Escrow Contact Bar */}
+          <ContactFastBar
+            role="Escrow"
+            title={escrow.escrowCompany?.trim() || 'Escrow Not Assigned'}
+            subTitle={escrow.escrowOfficer?.trim() ? `Officer: ${escrow.escrowOfficer.trim()}` : undefined}
+            phone={escrow.escrowPhone}
+            email={escrow.escrowEmail}
+            avatarBg="bg-indigo-900"
+            icon={<Building2 size={14} />}
+            subject={fullAddress ? `Escrow - ${fullAddress}` : 'Escrow'}
+            onEdit={onEdit}
+          />
 
-                  {/* Text / SMS Action - Blue Circle */}
-                  {hasPhone ? (
-                    <a
-                      href={`sms:${cleanPhone}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs cursor-pointer border border-blue-700/60"
-                      title={`Text ${agentName || 'Agent'}: ${agentPhone}`}
-                      aria-label={`Text ${agentName || 'Agent'}`}
-                    >
-                      <MessageSquare size={14} className="text-white" />
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit();
-                      }}
-                      className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
-                      title="No phone number recorded. Click to edit."
-                      aria-label="No phone number"
-                    >
-                      <MessageSquare size={14} />
-                    </button>
-                  )}
+          {/* Lender Contact Bar */}
+          {(() => {
+            const hasLenderCompany = !!escrow.lenderCompany?.trim();
+            const hasLenderName = !!escrow.lenderName?.trim();
+            const lenderTitle = hasLenderCompany 
+              ? escrow.lenderCompany!.trim() 
+              : hasLenderName 
+              ? escrow.lenderName!.trim() 
+              : 'Lender Not Assigned';
+            const lenderSubTitle = hasLenderCompany && hasLenderName 
+              ? `Officer: ${escrow.lenderName!.trim()}` 
+              : undefined;
 
-                  {/* Email Action - Red Circle */}
-                  {hasEmail ? (
-                    <a
-                      href={`mailto:${agentEmail}?subject=${encodeURIComponent(emailSubject)}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs cursor-pointer border border-red-700/60"
-                      title={`Email ${agentName || 'Agent'}: ${agentEmail}`}
-                      aria-label={`Email ${agentName || 'Agent'}`}
-                    >
-                      <Mail size={14} className="text-white" />
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit();
-                      }}
-                      className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
-                      title="No email address recorded. Click to edit."
-                      aria-label="No email address"
-                    >
-                      <Mail size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+            return (
+              <ContactFastBar
+                role="Lender"
+                title={lenderTitle}
+                subTitle={lenderSubTitle}
+                phone={escrow.lenderPhone}
+                email={escrow.lenderEmail}
+                avatarBg="bg-teal-800"
+                icon={<Landmark size={14} />}
+                subject={fullAddress ? `Lender - ${fullAddress}` : 'Lender'}
+                onEdit={onEdit}
+              />
+            );
+          })()}
+        </div>
 
         {/* Quick Access Buttons */}
         <div className="mt-4 grid grid-cols-3 gap-2 min-w-0">
