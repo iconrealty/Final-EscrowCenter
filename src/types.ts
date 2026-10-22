@@ -142,6 +142,7 @@ export interface Escrow {
   notes: string;
   status: 'Open' | 'Closed' | 'Cancelled';
   representation?: 'Buyer' | 'Seller' | 'Dual';
+  isCash?: boolean;
   leadSource?: 'Zillow' | 'Self' | 'Team Lead' | 'Opcity' | 'Other' | string;
   listingId?: string;
   sourceListingId?: string;

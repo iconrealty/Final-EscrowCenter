@@ -399,10 +399,24 @@ export function EscrowCard({
             );
           })()}
 
-          {/* Lender Contact Bar */}
+          {/* Lender Contact Bar - Hidden if transaction is cash or has no lender info */}
           {(() => {
             const hasLenderName = !!escrow.lenderName?.trim();
             const hasLenderCompany = !!escrow.lenderCompany?.trim();
+            const hasLenderPhone = !!escrow.lenderPhone?.trim();
+            const hasLenderEmail = !!escrow.lenderEmail?.trim();
+
+            const isCashExplicit = Boolean(
+              escrow.isCash ||
+              /^\s*(cash|all\s*cash|n\/?a|none)\s*$/i.test(escrow.lenderName || '') ||
+              /^\s*(cash|all\s*cash|n\/?a|none)\s*$/i.test(escrow.lenderCompany || '')
+            );
+
+            // If transaction is cash or there is no lender information, do not show on the main page
+            if (isCashExplicit || (!hasLenderName && !hasLenderCompany && !hasLenderPhone && !hasLenderEmail)) {
+              return null;
+            }
+
             const lenderTitle = hasLenderName 
               ? escrow.lenderName!.trim() 
               : hasLenderCompany 

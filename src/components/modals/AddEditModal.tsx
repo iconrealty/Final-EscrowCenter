@@ -87,6 +87,7 @@ export function AddEditModal({
       status: 'Open',
       representation: 'Buyer' as 'Buyer' | 'Seller' | 'Dual',
       leadSource: 'Zillow' as 'Zillow' | 'Self' | 'Other',
+      isCash: false,
       notes: '',
       contingencyDays: {
         'L1': '14', 'L2': '10', 'L3': '7', 'L4': '7', 'L5': '7', 'L6': '7', 'L7': '7', 'L8': '7', 'L9': '7'
@@ -583,6 +584,7 @@ export function AddEditModal({
         status: escrow.status || 'Open',
         representation: escrow.representation || 'Buyer',
         leadSource: (escrow.leadSource as any) || 'Zillow',
+        isCash: !!escrow.isCash,
         notes: escrow.notes || '',
         contingencyDays: stringifiedDays
       });
@@ -643,6 +645,7 @@ export function AddEditModal({
         status: 'Open',
         representation: 'Buyer',
         leadSource: 'Zillow',
+        isCash: false,
         notes: '',
         contingencyDays: {
           'L1': '14', 'L2': '10', 'L3': '7', 'L4': '7', 'L5': '7', 'L6': '7', 'L7': '7', 'L8': '7', 'L9': '7'
@@ -1619,51 +1622,88 @@ export function AddEditModal({
 
             {/* Section 5: Lender Details */}
             <div className="bg-amber-50/40 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-amber-200/70">
-                <h3 className="text-sm font-bold text-amber-950 uppercase tracking-wider">LENDER</h3>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <QuickPasteContact
-                    role="lender"
-                    roleLabel="Lender"
-                    onApply={(p) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        lenderName: p.name || prev.lenderName,
-                        lenderCompany: p.company || prev.lenderCompany,
-                        lenderPhone: p.phone || prev.lenderPhone,
-                        lenderEmail: cleanEmail(p.email) || prev.lenderEmail,
-                      }));
-                    }}
-                  />
-                  <PartnerDropdown
-                    category="lender"
-                    categoryLabel="Lender"
-                    partners={partners}
-                    onAddNew={addPartner}
-                    onDelete={deletePartner}
-                    onSelect={(p: PreferredPartner) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        lenderName: p.name || p.company,
-                        lenderCompany: p.company || '',
-                        lenderPhone: p.phone,
-                        lenderEmail: cleanEmail(p.email),
-                      }));
-                    }}
-                  />
+              <div className="flex items-center justify-between pb-2 border-b border-amber-200/70 flex-wrap gap-2">
+                <div className="flex items-center gap-2.5">
+                  <h3 className="text-sm font-bold text-amber-950 uppercase tracking-wider">LENDER</h3>
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-[11px] font-bold text-amber-900 bg-amber-100 hover:bg-amber-200/70 px-2 py-0.5 rounded-md border border-amber-300/80 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={!!formData.isCash}
+                      onChange={e => {
+                        const checked = e.target.checked;
+                        setFormData(prev => ({
+                          ...prev,
+                          isCash: checked,
+                          ...(checked ? {
+                            lenderName: '',
+                            lenderCompany: '',
+                            lenderPhone: '',
+                            lenderEmail: '',
+                          } : {})
+                        }));
+                      }}
+                      className="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5 cursor-pointer"
+                    />
+                    <span>All Cash Deal (No Lender)</span>
+                  </label>
                 </div>
+                {!formData.isCash && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <QuickPasteContact
+                      role="lender"
+                      roleLabel="Lender"
+                      onApply={(p) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          lenderName: p.name || prev.lenderName,
+                          lenderCompany: p.company || prev.lenderCompany,
+                          lenderPhone: p.phone || prev.lenderPhone,
+                          lenderEmail: cleanEmail(p.email) || prev.lenderEmail,
+                        }));
+                      }}
+                    />
+                    <PartnerDropdown
+                      category="lender"
+                      categoryLabel="Lender"
+                      partners={partners}
+                      onAddNew={addPartner}
+                      onDelete={deletePartner}
+                      onSelect={(p: PreferredPartner) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          lenderName: p.name || p.company,
+                          lenderCompany: p.company || '',
+                          lenderPhone: p.phone,
+                          lenderEmail: cleanEmail(p.email),
+                        }));
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-bold text-amber-950 mb-1">Lender Company / Institution</label>
-                  <input type="text" placeholder="e.g. CrossCountry Mortgage, Chase, Zillow Home Loans" value={formData.lenderCompany} onChange={e => setFormData({...formData, lenderCompany: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
+              {formData.isCash ? (
+                <div className="p-3 bg-white/70 border border-amber-200/70 rounded-xl text-xs font-semibold text-amber-900 flex items-center justify-between">
+                  <span>💵 All Cash transaction selected — no lender will be displayed on the card.</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, isCash: false }))}
+                    className="text-amber-700 underline text-[11px] font-bold hover:text-amber-950"
+                  >
+                    Add Lender Instead
+                  </button>
                 </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-amber-950 mb-1">Lender Company / Institution</label>
+                    <input type="text" placeholder="e.g. CrossCountry Mortgage, Chase, Zillow Home Loans" value={formData.lenderCompany} onChange={e => setFormData({...formData, lenderCompany: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-amber-950 mb-1">Loan Officer / Contact Name</label>
-                  <input type="text" placeholder="e.g. Thomas Sciutto" value={formData.lenderName} onChange={e => setFormData({...formData, lenderName: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold text-amber-950 mb-1">Loan Officer / Contact Name</label>
+                    <input type="text" placeholder="e.g. Thomas Sciutto" value={formData.lenderName} onChange={e => setFormData({...formData, lenderName: e.target.value})} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" />
+                  </div>
 
                 <div>
                   <label className="block text-xs font-bold text-amber-950 mb-1">Lender Phone</label>
@@ -1682,7 +1722,8 @@ export function AddEditModal({
                   />
                 </div>
               </div>
-            </div>
+            )}
+          </div>
 
             {/* Section 6: Escrow Company & Officer */}
             <div className="bg-indigo-50/40 border border-indigo-200/80 rounded-2xl p-4 sm:p-5 space-y-4">

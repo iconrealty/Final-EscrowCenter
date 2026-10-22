@@ -349,16 +349,29 @@ export function DetailModal({
 
             {/* Lender */}
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C] pb-3 mb-4 border-b border-slate-200">
-                LENDER
-              </h3>
-
-              <div className="grid grid-cols-2 gap-y-4 gap-x-4">
-                <InfoItem label="COMPANY" value={escrow.lenderCompany} valueClassName="font-bold" />
-                <InfoItem label="LOAN OFFICER" value={escrow.lenderName} />
-                <InfoItem label="PHONE" value={escrow.lenderPhone} hrefType="tel" />
-                <InfoItem label="EMAIL" value={escrow.lenderEmail} hrefType="mailto" emailSubject={fullAddress} />
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B3A5C]">
+                  LENDER
+                </h3>
+                {(escrow.isCash || (!escrow.lenderName && !escrow.lenderCompany)) && (
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                    All Cash Transaction
+                  </span>
+                )}
               </div>
+
+              {escrow.isCash || (!escrow.lenderName && !escrow.lenderCompany && !escrow.lenderPhone && !escrow.lenderEmail) ? (
+                <div className="text-xs text-slate-500 italic py-1">
+                  All Cash transaction — no lender involved.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-y-4 gap-x-4">
+                  <InfoItem label="LOAN OFFICER" value={escrow.lenderName} valueClassName="font-bold" />
+                  <InfoItem label="COMPANY" value={escrow.lenderCompany} />
+                  <InfoItem label="PHONE" value={escrow.lenderPhone} hrefType="tel" />
+                  <InfoItem label="EMAIL" value={escrow.lenderEmail} hrefType="mailto" emailSubject={fullAddress} />
+                </div>
+              )}
             </div>
 
             {/* Escrow */}

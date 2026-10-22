@@ -411,6 +411,7 @@ export function useEscrows() {
         notes: data.notes || '',
         status: data.status || 'Open',
         representation: data.representation || 'Buyer',
+        isCash: !!data.isCash,
         leadSource: data.leadSource || 'Zillow',
         contingencyDays: {
           'L1': 14, 'L2': 10, 'L3': 7, 'L4': 7, 'L5': 7, 'L6': 7, 'L7': 7, 'L8': 7, 'L9': 7,
