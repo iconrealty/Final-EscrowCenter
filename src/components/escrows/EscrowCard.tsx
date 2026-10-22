@@ -372,29 +372,44 @@ export function EscrowCard({
           })()}
 
           {/* Escrow Contact Bar */}
-          <ContactFastBar
-            role="Escrow"
-            title={escrow.escrowCompany?.trim() || 'Escrow Not Assigned'}
-            subTitle={escrow.escrowOfficer?.trim() ? `Officer: ${escrow.escrowOfficer.trim()}` : undefined}
-            phone={escrow.escrowPhone}
-            email={escrow.escrowEmail}
-            avatarBg="bg-indigo-900"
-            icon={<Building2 size={14} />}
-            subject={fullAddress ? `Escrow - ${fullAddress}` : 'Escrow'}
-            onEdit={onEdit}
-          />
+          {(() => {
+            const hasOfficer = !!escrow.escrowOfficer?.trim();
+            const hasCompany = !!escrow.escrowCompany?.trim();
+            const escrowTitle = hasOfficer 
+              ? escrow.escrowOfficer!.trim() 
+              : hasCompany 
+              ? escrow.escrowCompany!.trim() 
+              : 'Escrow Not Assigned';
+            const escrowSubTitle = hasOfficer && hasCompany 
+              ? escrow.escrowCompany!.trim() 
+              : undefined;
+
+            return (
+              <ContactFastBar
+                role="Escrow"
+                title={escrowTitle}
+                subTitle={escrowSubTitle}
+                phone={escrow.escrowPhone}
+                email={escrow.escrowEmail}
+                avatarBg="bg-indigo-900"
+                icon={<User size={14} />}
+                subject={fullAddress ? `Escrow - ${fullAddress}` : 'Escrow'}
+                onEdit={onEdit}
+              />
+            );
+          })()}
 
           {/* Lender Contact Bar */}
           {(() => {
-            const hasLenderCompany = !!escrow.lenderCompany?.trim();
             const hasLenderName = !!escrow.lenderName?.trim();
-            const lenderTitle = hasLenderCompany 
-              ? escrow.lenderCompany!.trim() 
-              : hasLenderName 
+            const hasLenderCompany = !!escrow.lenderCompany?.trim();
+            const lenderTitle = hasLenderName 
               ? escrow.lenderName!.trim() 
+              : hasLenderCompany 
+              ? escrow.lenderCompany!.trim() 
               : 'Lender Not Assigned';
-            const lenderSubTitle = hasLenderCompany && hasLenderName 
-              ? `Officer: ${escrow.lenderName!.trim()}` 
+            const lenderSubTitle = hasLenderName && hasLenderCompany 
+              ? escrow.lenderCompany!.trim() 
               : undefined;
 
             return (
@@ -405,7 +420,7 @@ export function EscrowCard({
                 phone={escrow.lenderPhone}
                 email={escrow.lenderEmail}
                 avatarBg="bg-teal-800"
-                icon={<Landmark size={14} />}
+                icon={<User size={14} />}
                 subject={fullAddress ? `Lender - ${fullAddress}` : 'Lender'}
                 onEdit={onEdit}
               />
