@@ -3,6 +3,7 @@ import { Escrow, MILESTONES, CONTINGENCIES, ALL_TASKS, getApplicableContingencie
 import { StatusBadge } from '../shared/StatusBadge';
 import { differenceInCalendarDays, parseISO, formatDistanceToNow, format } from 'date-fns';
 import { ActiveContingenciesTicker } from './ActiveContingenciesTicker';
+import { MilestonesTimelineSlider } from './MilestonesTimelineSlider';
 import { CheckCircle2, Users, Phone, MessageSquare, Mail, User, Copy, Check, ExternalLink, Building2, Landmark } from 'lucide-react';
 import { ContactFastBar } from '../shared/ContactFastBar';
 import { generateCognitoUrl } from '../../utils/cognitoUtils';
@@ -246,89 +247,12 @@ export function EscrowCard({
           className="mt-1 p-3 bg-slate-50 border border-slate-200/80 rounded-xl cursor-pointer hover:bg-slate-100/70 transition-all group/progress"
           title="Click to view full escrow tasks details"
         >
-          {/* Next Step Section */}
-          <div className="flex flex-col gap-1.5 mb-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-[#1B3A5C] uppercase tracking-wider">
-                Next Step
-              </span>
-              {nextMilestone && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUpdateTasks();
-                  }}
-                  className="text-[10px] font-bold text-[#3B82F6] hover:underline cursor-pointer"
-                >
-                  Click to update tasks &rarr;
-                </button>
-              )}
-            </div>
-
-            {nextMilestone ? (
-              <div 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUpdateTasks();
-                }}
-                className="relative overflow-hidden bg-slate-100 border border-slate-300 hover:border-slate-400 rounded-xl transition-all cursor-pointer group/step select-none"
-                title={`Click to update milestone (${completedMilestones}/${MILESTONES.length} completed)`}
-              >
-                {/* Base Layer: Unfilled area with dark text */}
-                <div className="flex items-center justify-between p-2.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-[#1B3A5C] shrink-0" />
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                      {nextMilestone.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                    <span className="text-xs sm:text-sm font-black text-slate-900 font-mono">
-                      {completedMilestones}/{MILESTONES.length} ({milestonePct}%)
-                    </span>
-                  </div>
-                </div>
-
-                {/* Filling Rich Blue Progress Bar Layer (clipped to milestone progress) */}
-                <div 
-                  className="absolute inset-0 bg-[#3B82F6] flex items-center justify-between p-2.5 transition-all duration-500 ease-out pointer-events-none"
-                  style={{ clipPath: `inset(0 ${Math.max(0, 100 - milestonePct)}% 0 0)` }}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-white shrink-0" />
-                    <span className="text-xs sm:text-sm font-bold text-white truncate">
-                      {nextMilestone.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                    <span className="text-xs sm:text-sm font-black text-white font-mono">
-                      {completedMilestones}/{MILESTONES.length} ({milestonePct}%)
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUpdateTasks();
-                }}
-                className="flex items-center justify-between bg-emerald-600 text-white border border-emerald-700 p-2.5 rounded-xl hover:bg-emerald-700 transition-all cursor-pointer select-none"
-                title={`All ${MILESTONES.length} milestones completed! Click to view details.`}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <CheckCircle2 size={16} className="text-white shrink-0" />
-                  <span className="text-xs sm:text-sm font-bold text-white truncate">
-                    All {MILESTONES.length} Milestones Completed / COE Ready
-                  </span>
-                </div>
-                <span className="text-xs sm:text-sm font-black text-white shrink-0">
-                  {completedMilestones}/{MILESTONES.length} (100%)
-                </span>
-              </div>
-            )}
-          </div>
+          {/* Next Step Milestones Timeline Slider */}
+          <MilestonesTimelineSlider
+            escrow={escrow}
+            onUpdateTasks={onUpdateTasks}
+            onToggleTask={onToggleTask}
+          />
 
           {/* Active Contingencies Ticker */}
           <div className="mb-3">
