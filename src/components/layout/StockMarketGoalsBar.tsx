@@ -1,5 +1,4 @@
-import React from 'react';
-import { TrendingUp, TrendingDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUp, ArrowDown } from 'lucide-react';
 
 export interface MetricComparison {
   diff: number;
@@ -198,38 +197,35 @@ export function StockMarketGoalsBar({
         >
           {/* Repeated so ticker loops continuously without jumps */}
           {[...items, ...items].map((item, idx) => {
-              const Icon = item.isStatus && item.isOnTrack ? TrendingUp : TrendingDown;
-
               return (
                 <div 
                   key={`${item.id}-${idx}`} 
-                  className="flex items-center gap-2 text-xs shrink-0 select-none py-0.5"
+                  className="flex items-center gap-2.5 shrink-0 select-none py-1"
                 >
                   {/* Stock Ticker Label */}
-                  <span className="font-extrabold font-mono text-[#1B3A5C] text-xs sm:text-[11px] tracking-tight">
+                  <span className="font-extrabold text-[#1B3A5C] text-xs sm:text-sm tracking-tight">
                     {item.label}
                   </span>
 
-                  {/* Stock Ticker Badge ONLY for ON TRACK / OFF TRACK status */}
+                  {/* Stock Ticker Badge ONLY for ON TRACK / OFF TRACK status - no icon */}
                   {item.isStatus && (
-                    <span className={`inline-flex items-center gap-1 text-xs sm:text-[11px] font-black px-2 py-0.5 rounded tracking-wider ${
+                    <span className={`inline-flex items-center text-xs sm:text-[13px] font-black px-2.5 py-0.5 rounded-md tracking-wider ${
                       item.isOnTrack 
                         ? 'bg-emerald-600 text-white' 
                         : 'bg-rose-600 text-white'
                     }`}>
-                      <Icon size={12} strokeWidth={2.5} />
                       <span>{item.badge}</span>
                     </span>
                   )}
 
-                  {/* Highlighted Value Badge: large and clear on mobile UI */}
-                  <span className="font-black text-slate-900 text-xs sm:text-[11px] font-mono bg-slate-100 border border-slate-200/90 px-2.5 sm:px-2 py-0.5 rounded-md shadow-2xs tracking-tight">
+                  {/* Highlighted Value Badge: clean app font, larger and clear */}
+                  <span className="font-bold text-slate-900 text-xs sm:text-sm bg-slate-100 border border-slate-200/90 px-2.5 sm:px-3 py-0.5 rounded-md shadow-2xs tracking-tight">
                     {item.value}
                   </span>
 
                   {/* Stock Market Up / Down Comparison Pill vs Last Year at this point */}
                   {item.comparison && (
-                    <span className={`inline-flex items-center gap-0.5 text-[11px] font-mono font-black px-1.5 py-0.5 rounded-md border shadow-2xs tracking-tight ${
+                    <span className={`inline-flex items-center gap-1 text-xs sm:text-[13px] font-bold px-2 py-0.5 rounded-md border shadow-2xs tracking-tight ${
                       item.comparison.isUp
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-300/80'
                         : item.comparison.isDown
@@ -237,13 +233,13 @@ export function StockMarketGoalsBar({
                           : 'bg-slate-50 text-slate-600 border-slate-200'
                     }`}>
                       {item.comparison.isUp && (
-                        <ArrowUp size={12} strokeWidth={3} className="shrink-0 text-emerald-600" />
+                        <ArrowUp size={13} strokeWidth={3} className="shrink-0 text-emerald-600" />
                       )}
                       {item.comparison.isDown && (
-                        <ArrowDown size={12} strokeWidth={3} className="shrink-0 text-rose-600" />
+                        <ArrowDown size={13} strokeWidth={3} className="shrink-0 text-rose-600" />
                       )}
                       {item.comparison.isEqual && (
-                        <span className="text-[9px] leading-none shrink-0 text-slate-400">■</span>
+                        <span className="text-[10px] leading-none shrink-0 text-slate-400">■</span>
                       )}
                       <span>{item.comparison.percentText}</span>
                     </span>
