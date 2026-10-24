@@ -1,5 +1,5 @@
-import React from 'react';
-import { Phone, MessageSquare, Mail, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { Phone, MessageSquare, Mail, User, Copy, Check } from 'lucide-react';
 
 export interface ContactFastBarProps {
   role: string;
@@ -24,9 +24,40 @@ export function ContactFastBar({
   subject,
   onEdit,
 }: ContactFastBarProps) {
+  const [copied, setCopied] = useState(false);
   const cleanPhone = phone ? phone.replace(/[^0-9+]/g, '') : '';
   const hasPhone = !!cleanPhone;
   const hasEmail = !!email;
+
+  const handleCopyContact = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const lines: string[] = [];
+    if (title?.trim()) lines.push(title.trim());
+    if (phone?.trim()) lines.push(phone.trim());
+    if (email?.trim()) lines.push(email.trim());
+
+    const textToCopy = lines.length > 0 ? lines.join('\n') : (title || '');
+    if (!textToCopy) return;
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const el = document.createElement('textarea');
+        el.value = textToCopy;
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.warn('Copy contact failed:', err);
+    }
+  };
 
   return (
     <div
@@ -56,8 +87,27 @@ export function ContactFastBar({
           </div>
         </div>
 
-        {/* Fast Action Buttons: Call (Soft Green), Text (Blue), Email (Red) in Circular Badges */}
+        {/* Fast Action Buttons: Copy, Call (Soft Green), Text (Blue), Email (Red) in Circular Badges */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Copy Contact Details - In front of Phone icon */}
+          <button
+            type="button"
+            onClick={handleCopyContact}
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-xs cursor-pointer border ${
+              copied
+                ? 'bg-emerald-600 text-white border-emerald-700 ring-2 ring-emerald-500/20'
+                : 'bg-slate-100 hover:bg-[#1B3A5C] text-slate-600 hover:text-white border-slate-300 hover:border-[#1B3A5C]'
+            }`}
+            title={copied ? `Copied ${role} details!` : `Copy ${role} contact details`}
+            aria-label={`Copy ${role} contact details`}
+          >
+            {copied ? (
+              <Check size={13} className="text-white stroke-[2.5]" />
+            ) : (
+              <Copy size={13} className="stroke-[2.2]" />
+            )}
+          </button>
+
           {/* Call Action - Soft Green Circle */}
           {hasPhone ? (
             <a
