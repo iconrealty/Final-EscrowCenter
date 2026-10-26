@@ -9,7 +9,9 @@ export function ContingencyChip({
   onClick,
   readOnly = false,
   daysLeft = null,
-  dueDate = null
+  dueDate = null,
+  isHighlighted = false,
+  highlightBadgeText = 'Active Appraisal'
 }: { 
   key?: string | number;
   taskKey: string;
@@ -20,6 +22,8 @@ export function ContingencyChip({
   readOnly?: boolean;
   daysLeft?: number | null;
   dueDate?: Date | null;
+  isHighlighted?: boolean;
+  highlightBadgeText?: string;
 }) {
   const expDateStr = dueDate ? format(dueDate, 'MMM d') : null;
   const isUrgent = isOverdue || (daysLeft !== null && daysLeft !== undefined && daysLeft <= 2);
@@ -28,6 +32,10 @@ export function ContingencyChip({
   let containerClasses = "w-full flex items-center justify-between gap-2.5 p-2.5 rounded-xl border transition-all duration-150 select-none shadow-xs text-left ";
   let keyBadgeClasses = "text-xs font-mono font-bold px-2 py-0.5 rounded-md shrink-0 ";
   let labelClasses = "text-xs sm:text-sm truncate min-w-0 flex-1 ";
+
+  if (isHighlighted) {
+    containerClasses += "ring-2 ring-blue-500 ring-offset-2 shadow-md ";
+  }
 
   if (isDone) {
     containerClasses += "bg-[#1B3A5C] border-[#1B3A5C] text-white shadow-xs";
@@ -116,6 +124,11 @@ export function ContingencyChip({
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <span className={keyBadgeClasses}>{taskKey}</span>
         <span className={labelClasses}>{label}</span>
+        {isHighlighted && (
+          <span className="text-[10px] font-black uppercase tracking-wider bg-blue-600 text-white px-2 py-0.5 rounded-md shadow-xs animate-pulse shrink-0">
+            {highlightBadgeText}
+          </span>
+        )}
       </div>
       {statusBadgeContent}
     </>

@@ -4,7 +4,7 @@ import { Check, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 interface MilestonesTimelineSliderProps {
   escrow: Escrow;
-  onUpdateTasks: () => void;
+  onUpdateTasks: (targetKey?: string) => void;
   onToggleTask?: (escrowId: string, taskKey: string) => void;
 }
 
@@ -27,7 +27,6 @@ const SHORT_LABELS: Record<string, string> = {
 export function MilestonesTimelineSlider({
   escrow,
   onUpdateTasks,
-  onToggleTask,
 }: MilestonesTimelineSliderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeNodeRef = useRef<HTMLDivElement>(null);
@@ -81,9 +80,9 @@ export function MilestonesTimelineSlider({
           </span>
           {nextMilestone ? (
             <span 
-              onClick={onUpdateTasks}
+              onClick={() => onUpdateTasks('APR')}
               className="font-bold text-slate-900 truncate hover:text-[#006AFF] hover:underline cursor-pointer"
-              title={`${nextMilestone.label} - Click to update`}
+              title={`${nextMilestone.label} - Click to open active appraisal`}
             >
               {nextMilestone.label}
             </span>
@@ -101,8 +100,9 @@ export function MilestonesTimelineSlider({
           </span>
           <button
             type="button"
-            onClick={onUpdateTasks}
+            onClick={() => onUpdateTasks('APR')}
             className="text-[10px] font-bold text-[#006AFF] hover:underline cursor-pointer hidden sm:inline"
+            title="Open milestones modal on active appraisal"
           >
             Update &rarr;
           </button>
@@ -110,7 +110,11 @@ export function MilestonesTimelineSlider({
       </div>
 
       {/* Interactive Horizontal Timeline Slider Container */}
-      <div className="relative bg-slate-100/80 hover:bg-slate-100 border border-slate-200 rounded-xl p-2 transition-all group/timeline select-none">
+      <div 
+        onClick={() => onUpdateTasks('APR')}
+        className="relative bg-slate-100/80 hover:bg-slate-100 border border-slate-200 hover:border-blue-400 rounded-xl p-2 transition-all group/timeline select-none cursor-pointer"
+        title="Click timeline bar to open active appraisal in milestones modal"
+      >
         {/* Left Slide Arrow Button */}
         {canScrollLeft && (
           <button
@@ -175,15 +179,12 @@ export function MilestonesTimelineSlider({
                   {/* Milestone Node */}
                   <div
                     ref={isCurrentNext ? activeNodeRef : undefined}
-                    onClick={() => {
-                      if (onToggleTask) {
-                        onToggleTask(escrow.id, m.key);
-                      } else {
-                        onUpdateTasks();
-                      }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpdateTasks('APR');
                     }}
                     className="flex flex-col items-center shrink-0 cursor-pointer group/node px-0.5"
-                    title={`${idx + 1}. ${m.label} (${isCompleted ? 'Completed - click to toggle' : isCurrentNext ? 'Next Milestone - click to complete' : 'Upcoming'})`}
+                    title={`${idx + 1}. ${m.label} (${isCompleted ? 'Completed' : isCurrentNext ? 'Next Milestone' : 'Upcoming'}) • Click to open active appraisal`}
                   >
                     {/* Circle Node Indicator */}
                     {isCompleted ? (

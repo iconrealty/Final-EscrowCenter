@@ -27,7 +27,7 @@ export function EscrowCard({
   onEdit: () => void;
   onViewDetails: () => void;
   onSendUpdate: () => void;
-  onUpdateTasks: () => void;
+  onUpdateTasks: (targetKey?: string) => void;
   onOpenContacts?: () => void;
   onOpenDocuments?: () => void;
 }) {

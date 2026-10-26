@@ -156,6 +156,7 @@ function App() {
   const [documentsListing, setDocumentsListing] = useState<Listing | null>(null);
   const [clientUpdateEscrow, setClientUpdateEscrow] = useState<Escrow | null>(null);
   const [updateTasksEscrow, setUpdateTasksEscrow] = useState<Escrow | null>(null);
+  const [updateTasksInitialFocus, setUpdateTasksInitialFocus] = useState<string | null>(null);
   const [contactsEscrow, setContactsEscrow] = useState<Escrow | null>(null);
   const [documentsEscrow, setDocumentsEscrow] = useState<Escrow | null>(null);
   const [wishModalEscrow, setWishModalEscrow] = useState<{ escrow: Escrow; years: number; dateFormatted: string; wishType?: 'anniversary' | 'birthday' } | null>(null);
@@ -360,7 +361,10 @@ function App() {
                       }}
                       onViewDetails={() => setDetailEscrow(escrow)}
                       onSendUpdate={() => setClientUpdateEscrow(escrow)}
-                      onUpdateTasks={() => setUpdateTasksEscrow(escrow)}
+                      onUpdateTasks={(targetKey?: string) => {
+                        setUpdateTasksEscrow(escrow);
+                        setUpdateTasksInitialFocus(targetKey || 'APR');
+                      }}
                       onOpenContacts={() => setContactsEscrow(escrow)}
                       onOpenDocuments={() => setDocumentsEscrow(escrow)}
                     />
@@ -518,7 +522,11 @@ function App() {
       {updateTasksEscrow && (
         <MilestonesContingenciesModal 
           escrow={escrows.find(e => e.id === updateTasksEscrow.id) || updateTasksEscrow} 
-          onClose={() => setUpdateTasksEscrow(null)}
+          initialFocusKey={updateTasksInitialFocus || undefined}
+          onClose={() => {
+            setUpdateTasksEscrow(null);
+            setUpdateTasksInitialFocus(null);
+          }}
           onToggleTask={toggleTask}
           onUpdateTasks={(id, tasks) => editEscrow(id, { tasks })}
         />
