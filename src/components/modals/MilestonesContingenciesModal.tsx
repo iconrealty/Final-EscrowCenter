@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Escrow, MILESTONES, CONTINGENCIES, getApplicableContingencies, isContingencyUrgent, getContingencyDaysLeft, getContingencyDueDate, ALL_TASKS } from '../../types';
-import { X, Search } from 'lucide-react';
+import { X } from 'lucide-react';
 import { MilestoneChip } from '../escrows/MilestoneChip';
 import { ContingencyChip } from '../escrows/ContingencyChip';
 import { differenceInCalendarDays, parseISO, format } from 'date-fns';
@@ -98,52 +98,6 @@ export function MilestonesContingenciesModal({
         {/* Content */}
         <div id="tasks-modal-content" className="p-4 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-6">
           
-          {/* Active Appraisal Banner when opened from timeline */}
-          {isAppraisalFocus && (
-            <div className="bg-blue-50 border border-blue-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="relative flex h-3 w-3 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#006AFF]"></span>
-                </span>
-                <div>
-                  <h4 className="text-xs font-black text-[#1B3A5C] uppercase tracking-wide">
-                    Active Appraisal Selected
-                  </h4>
-                  <p className="text-[11px] text-slate-600">
-                    {escrow.tasks['APR'] && escrow.tasks['L2']
-                      ? 'Both Property Appraisal milestone and Appraisal contingency are complete.'
-                      : !escrow.tasks['APR']
-                      ? 'Property Appraisal milestone is pending completion.'
-                      : 'Appraisal contingency removal is currently pending.'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const el = document.getElementById('milestone-chip-apr');
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                  className="text-[11px] font-bold text-[#006AFF] bg-white hover:bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg cursor-pointer transition-colors shadow-2xs"
-                >
-                  APR Milestone &darr;
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const el = document.getElementById('contingency-chip-l2');
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                  className="text-[11px] font-bold text-[#006AFF] bg-white hover:bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg cursor-pointer transition-colors shadow-2xs"
-                >
-                  L2 Contingency &darr;
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Progress Bar Display */}
           <div id="tasks-progress-summary" className="bg-slate-50 border border-[#e5e5ea] rounded-xl p-4">
             <div className="flex justify-between items-center mb-2">
@@ -185,21 +139,16 @@ export function MilestonesContingenciesModal({
               )}
             </div>
             <div id="milestones-pills-list" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {MILESTONES.map(m => {
-                const isHighlight = (isAppraisalFocus && m.key === 'APR') || (initialFocusKey === m.key);
-                return (
-                  <MilestoneChip 
-                    key={m.key}
-                    taskKey={m.key}
-                    label={m.label}
-                    isDone={escrow.tasks[m.key]}
-                    isOverdue={!escrow.tasks[m.key] && isUrgent}
-                    isHighlighted={isHighlight}
-                    highlightBadgeText="Active Appraisal"
-                    onClick={() => onToggleTask(escrow.id, m.key)}
-                  />
-                );
-              })}
+              {MILESTONES.map(m => (
+                <MilestoneChip 
+                  key={m.key}
+                  taskKey={m.key}
+                  label={m.label}
+                  isDone={escrow.tasks[m.key]}
+                  isOverdue={!escrow.tasks[m.key] && isUrgent}
+                  onClick={() => onToggleTask(escrow.id, m.key)}
+                />
+              ))}
             </div>
           </div>
 
@@ -237,23 +186,18 @@ export function MilestonesContingenciesModal({
               )}
             </div>
             <div id="contingencies-pills-list" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {applicableContingencies.map(c => {
-                const isHighlight = (isAppraisalFocus && c.key === 'L2') || (initialFocusKey === c.key);
-                return (
-                  <ContingencyChip 
-                    key={c.key}
-                    taskKey={c.key}
-                    label={c.label}
-                    isDone={escrow.tasks[c.key]}
-                    isOverdue={isContingencyUrgent(escrow, c.key)}
-                    daysLeft={getContingencyDaysLeft(escrow, c.key)}
-                    dueDate={getContingencyDueDate(escrow, c.key)}
-                    isHighlighted={isHighlight}
-                    highlightBadgeText="Active Appraisal"
-                    onClick={() => onToggleTask(escrow.id, c.key)}
-                  />
-                );
-              })}
+              {applicableContingencies.map(c => (
+                <ContingencyChip 
+                  key={c.key}
+                  taskKey={c.key}
+                  label={c.label}
+                  isDone={escrow.tasks[c.key]}
+                  isOverdue={isContingencyUrgent(escrow, c.key)}
+                  daysLeft={getContingencyDaysLeft(escrow, c.key)}
+                  dueDate={getContingencyDueDate(escrow, c.key)}
+                  onClick={() => onToggleTask(escrow.id, c.key)}
+                />
+              ))}
             </div>
           </div>
 

@@ -192,7 +192,7 @@ export function MilestonesTimelineSlider({
                         <Check size={11} className="stroke-[3]" />
                       </div>
                     ) : isCurrentNext ? (
-                      <div className="w-6 h-6 -my-0.5 rounded-full bg-[#006AFF] text-white flex items-center justify-center font-black text-[11px] ring-3 ring-blue-200 border border-blue-600 shadow-xs group-hover/node:scale-110 transition-transform animate-pulse">
+                      <div className="w-6 h-6 -my-0.5 rounded-full bg-[#006AFF] text-white flex items-center justify-center font-black text-[11px] ring-3 ring-blue-200 border border-blue-600 shadow-xs group-hover/node:scale-110 transition-transform">
                         <span>{idx + 1}</span>
                       </div>
                     ) : (
